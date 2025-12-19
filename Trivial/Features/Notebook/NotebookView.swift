@@ -43,8 +43,15 @@ private struct DrawingCanvasWithScrollBar: View {
   // Tracks the current zoom scale for scroll bar calculations.
   @State private var zoomScale: CGFloat = 1.0
 
-  // The height of the scrollable canvas area in points.
-  private let canvasHeight: CGFloat = 5000
+  // The current height of the scrollable canvas area in points.
+  // This grows dynamically as the user scrolls near the bottom.
+  @State private var canvasHeight: CGFloat = 5000
+
+  // Initial canvas height when the view first loads.
+  private let initialCanvasHeight: CGFloat = 5000
+
+  // Amount to extend the canvas when the user reaches near the bottom.
+  private let canvasExtensionAmount: CGFloat = 2000
 
   // Width reserved for the scroll bar area on the right side.
   private let scrollBarAreaWidth: CGFloat = 24
@@ -53,7 +60,8 @@ private struct DrawingCanvasWithScrollBar: View {
     HStack(spacing: 0) {
       // The canvas fills the available space, leaving room for the scroll bar.
       PKCanvasViewRepresentable(
-        canvasHeight: canvasHeight,
+        canvasHeight: $canvasHeight,
+        canvasExtensionAmount: canvasExtensionAmount,
         scrollPosition: $scrollPosition,
         showScrollBar: $showScrollBar,
         zoomScale: $zoomScale
@@ -81,9 +89,12 @@ private struct DrawingCanvasWithScrollBar: View {
 // UIViewRepresentable wrapper for PKCanvasView.
 // This bridges PencilKit (UIKit) to SwiftUI and tracks scroll position.
 private struct PKCanvasViewRepresentable: UIViewRepresentable {
-  // The height of the scrollable canvas area in points.
-  // This allows the user to scroll and draw on a long vertical surface.
-  let canvasHeight: CGFloat
+  // The current height of the scrollable canvas area in points.
+  // This grows dynamically as the user scrolls near the bottom.
+  @Binding var canvasHeight: CGFloat
+
+  // Amount to extend the canvas when the user reaches near the bottom.
+  let canvasExtensionAmount: CGFloat
 
   // Binding to track the current scroll position (0.0 to 1.0).
   @Binding var scrollPosition: CGFloat
@@ -124,20 +135,37 @@ private struct PKCanvasViewRepresentable: UIViewRepresentable {
   }
 
   func updateUIView(_ canvasView: PKCanvasView, context: Context) {
-    // Set content size for vertical scrolling once the view has a valid width.
-    if canvasView.bounds.width > 0 {
-      canvasView.contentSize = CGSize(width: canvasView.bounds.width, height: canvasHeight)
+    guard canvasView.bounds.width > 0 else { return }
 
-      // Update scroll position if it was changed externally (e.g., by dragging the scroll bar).
-      if context.coordinator.lastExternalScrollPosition != scrollPosition {
-        // Account for zoom when calculating target offset.
-        let zoomScale = canvasView.zoomScale
-        let scaledContentHeight = canvasHeight * zoomScale
-        let maxOffset = max(0, scaledContentHeight - canvasView.bounds.height)
-        let targetOffset = scrollPosition * maxOffset
-        canvasView.contentOffset = CGPoint(x: canvasView.contentOffset.x, y: targetOffset)
-        context.coordinator.lastExternalScrollPosition = scrollPosition
-      }
+    // Resolve and cache the internal scroll view.
+    let scrollView: UIScrollView
+    if let cached = context.coordinator.scrollView {
+      scrollView = cached
+    } else if let found = context.coordinator.findScrollView(in: canvasView) {
+      context.coordinator.scrollView = found
+      scrollView = found
+      scrollView.delegate = context.coordinator
+    } else {
+      return
+    }
+
+    // Update content size using the actual scroll view.
+    let currentZoom = scrollView.zoomScale
+    scrollView.contentSize = CGSize(
+      width: scrollView.bounds.width, height: canvasHeight * currentZoom)
+
+    // Update scroll position if it was changed externally (e.g., by dragging the scroll bar).
+    if context.coordinator.lastExternalScrollPosition != scrollPosition {
+      let initialTargetOffset = context.coordinator.targetOffset(
+        for: scrollPosition, in: scrollView, zoomScale: currentZoom)
+
+      // Extend the canvas if the target is near the bottom.
+      let adjustedOffset = context.coordinator.extendCanvasIfNeeded(
+        scrollView: scrollView, proposedOffset: initialTargetOffset, zoomScale: currentZoom)
+
+      // Apply the final offset (clamped after any extension).
+      scrollView.contentOffset = CGPoint(x: scrollView.contentOffset.x, y: adjustedOffset)
+      context.coordinator.lastExternalScrollPosition = scrollPosition
     }
 
     // Ensure the canvas can receive pencil input.
@@ -151,7 +179,8 @@ private struct PKCanvasViewRepresentable: UIViewRepresentable {
       scrollPosition: $scrollPosition,
       showScrollBar: $showScrollBar,
       zoomScale: $zoomScale,
-      canvasHeight: canvasHeight
+      canvasHeight: $canvasHeight,
+      canvasExtensionAmount: canvasExtensionAmount
     )
   }
 
@@ -160,7 +189,8 @@ private struct PKCanvasViewRepresentable: UIViewRepresentable {
     @Binding var scrollPosition: CGFloat
     @Binding var showScrollBar: Bool
     @Binding var zoomScale: CGFloat
-    let canvasHeight: CGFloat
+    @Binding var canvasHeight: CGFloat
+    let canvasExtensionAmount: CGFloat
     var scrollView: UIScrollView?
     var lastExternalScrollPosition: CGFloat = 0.0
 
@@ -171,12 +201,54 @@ private struct PKCanvasViewRepresentable: UIViewRepresentable {
       scrollPosition: Binding<CGFloat>,
       showScrollBar: Binding<Bool>,
       zoomScale: Binding<CGFloat>,
-      canvasHeight: CGFloat
+      canvasHeight: Binding<CGFloat>,
+      canvasExtensionAmount: CGFloat
     ) {
       _scrollPosition = scrollPosition
       _showScrollBar = showScrollBar
       _zoomScale = zoomScale
-      self.canvasHeight = canvasHeight
+      _canvasHeight = canvasHeight
+      self.canvasExtensionAmount = canvasExtensionAmount
+    }
+
+    // Calculates the maximum vertical offset based on current canvas height and zoom.
+    func maxOffset(in scrollView: UIScrollView, zoomScale: CGFloat) -> CGFloat {
+      let scaledHeight = canvasHeight * zoomScale
+      return max(0, scaledHeight - scrollView.bounds.height)
+    }
+
+    // Calculates the content offset for a given normalized scroll position.
+    func targetOffset(
+      for position: CGFloat, in scrollView: UIScrollView, zoomScale: CGFloat
+    ) -> CGFloat {
+      let maxOffset = maxOffset(in: scrollView, zoomScale: zoomScale)
+      return position * maxOffset
+    }
+
+    // Extends the canvas if the user is near the bottom. Returns a clamped offset to apply.
+    func extendCanvasIfNeeded(
+      scrollView: UIScrollView, proposedOffset: CGFloat, zoomScale: CGFloat
+    ) -> CGFloat {
+      let scaledHeight = canvasHeight * zoomScale
+      let visibleHeight = scrollView.bounds.height
+      let distanceFromBottom = scaledHeight - (proposedOffset + visibleHeight)
+      let extensionThreshold = visibleHeight
+
+      var adjustedOffset = proposedOffset
+
+      if distanceFromBottom < extensionThreshold {
+        canvasHeight += canvasExtensionAmount
+        scrollView.contentSize = CGSize(
+          width: scrollView.contentSize.width, height: canvasHeight * zoomScale)
+      }
+
+      let newMaxOffset = maxOffset(in: scrollView, zoomScale: zoomScale)
+      adjustedOffset = min(adjustedOffset, newMaxOffset)
+
+      // Update scroll bar visibility based on new height.
+      showScrollBar = canvasHeight > visibleHeight
+
+      return adjustedOffset
     }
 
     // Finds the UIScrollView inside the PKCanvasView hierarchy.
@@ -214,9 +286,20 @@ private struct PKCanvasViewRepresentable: UIViewRepresentable {
 extension PKCanvasViewRepresentable.Coordinator: UIScrollViewDelegate {
   func scrollViewDidScroll(_ scrollView: UIScrollView) {
     // Account for zoom when calculating scroll position.
-    let zoomScale = scrollView.zoomScale
-    let scaledContentHeight = canvasHeight * zoomScale
-    let maxOffset = max(0, scaledContentHeight - scrollView.bounds.height)
+    let currentZoom = scrollView.zoomScale
+    let maxOffset = maxOffset(in: scrollView, zoomScale: currentZoom)
+
+    // Extend canvas if user is near the bottom based on current offset.
+    let adjustedOffset = extendCanvasIfNeeded(
+      scrollView: scrollView,
+      proposedOffset: scrollView.contentOffset.y,
+      zoomScale: currentZoom
+    )
+    if adjustedOffset != scrollView.contentOffset.y {
+      scrollView.contentOffset.y = adjustedOffset
+    }
+
+    // Update normalized scroll position.
     if maxOffset > 0 {
       scrollPosition = scrollView.contentOffset.y / maxOffset
       scrollPosition = max(0, min(1, scrollPosition))
