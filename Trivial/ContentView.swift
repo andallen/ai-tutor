@@ -2,7 +2,9 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        DashboardMockupView()
+        NavigationStack {
+            DashboardMockupView()
+        }
     }
 }
 
@@ -37,12 +39,7 @@ private struct RightPane: View {
     let columns: [GridItem]
     
     private let notes: [(title: String, subtitle: String, date: String)] = [
-        ("Linear Algebra — Eigenvectors", "Intuition, geometric meaning, and worked examples…", "Dec 18"),
-        ("History Essay Outline", "Thesis, counterpoints, sources, and structure…", "Dec 12"),
-        ("Biology — Cell Signaling", "Pathways, key terms, diagrams to add…", "Nov 30"),
-        ("Meeting Notes", "Decisions, open questions, next steps…", "Nov 22"),
-        ("Economics — Market Failures", "Externalities, public goods, interventions…", "Nov 10"),
-        ("Computer Science — Complexity", "Big-O, examples, and practice problems…", "Oct 28")
+        ("Linear Algebra — Eigenvectors", "Intuition, geometric meaning, and worked examples…", "Dec 18")
     ]
 
     var body: some View {
@@ -64,8 +61,14 @@ private struct RightPane: View {
                 NewNoteCard()
                 
                 ForEach(notes, id: \.title) { note in
-                    NoteCard(title: note.title, subtitle: note.subtitle, date: note.date)
+                    NavigationLink(value: note.title) {
+                        NoteCard(title: note.title, subtitle: note.subtitle, date: note.date)
+                    }
+                    .buttonStyle(.plain)
                 }
+            }
+            .navigationDestination(for: String.self) { notebookName in
+                NotebookView(notebookName: notebookName)
             }
 
             Spacer(minLength: 22)
@@ -96,24 +99,9 @@ private struct BackgroundWhite: View {
 // MARK: - Sidebar
 
 private struct Sidebar: View {
-    private let rows: [(icon: String, title: String)] = [
-        ("tray.full", "All Notes"),
-        ("pin", "Pinned"),
-        ("sparkles", "AI Tools"),
-        ("bookmark", "Reading List"),
-        ("clock", "Recent"),
-        ("gearshape", "Settings")
-    ]
-
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Workspace")
-                .font(.system(.title3, weight: .semibold))
-                .foregroundStyle(Color.ink)
-
-            ForEach(rows, id: \.title) { row in
-                SidebarRow(icon: row.icon, title: row.title)
-            }
+            SidebarRow(icon: "tray.full", title: "Notes")
 
             Spacer(minLength: 0)
         }
@@ -164,6 +152,27 @@ private struct SearchBar: View {
     }
 }
 
+// MARK: - Notebook View
+
+struct NotebookView: View {
+    let notebookName: String
+    
+    var body: some View {
+        ZStack {
+            BackgroundWhite()
+                .ignoresSafeArea()
+            
+            VStack {
+                Text(notebookName)
+                    .font(.system(size: 48, weight: .semibold))
+                    .foregroundStyle(Color.ink)
+            }
+        }
+        .fontDesign(.rounded)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
 // MARK: - Cards
 
 private struct NoteCard: View {
@@ -193,7 +202,6 @@ private struct NoteCard: View {
         .padding(16)
         .frame(maxWidth: .infinity, minHeight: 160, alignment: .topLeading)
         .glassBackground(cornerRadius: 14)
-        .cardShadow()
     }
 }
 
@@ -239,13 +247,6 @@ private extension View {
                     )
             }
         }
-    }
-    
-    func cardShadow() -> some View {
-        self
-            .shadow(color: Color.black.opacity(0.22), radius: 22, x: 0, y: 16)
-            .shadow(color: Color.black.opacity(0.14), radius: 10, x: 0, y: 6)
-            .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 1)
     }
 }
 
