@@ -53,7 +53,8 @@ actor BundleManager {
         let manifest = try await MainActor.run { () throws -> Manifest in
           try JSONDecoder().decode(Manifest.self, from: data)
         }
-        notebooks.append(NotebookMetadata(id: manifest.notebookID, displayName: manifest.displayName))
+        notebooks.append(
+          NotebookMetadata(id: manifest.notebookID, displayName: manifest.displayName))
       } catch {
         // Skip Bundles with invalid Manifests.
         continue
@@ -84,7 +85,9 @@ actor BundleManager {
     print("Created bundle:", bundleURL.path)
 
     // Create the initial Manifest on the main actor.
-    let manifest = await MainActor.run { Manifest(notebookID: notebookID, displayName: displayName) }
+    let manifest = await MainActor.run {
+      Manifest(notebookID: notebookID, displayName: displayName)
+    }
 
     // Write the Manifest to disk using atomic write.
     let manifestURL = bundleURL.appendingPathComponent(Self.manifestFileName)
@@ -193,7 +196,8 @@ actor BundleManager {
     // Access the main actor-isolated static property safely
     let supportedVersions = await MainActor.run { Manifest.supportedVersions }
     guard supportedVersions.contains(manifest.version) else {
-      throw BundleError.unsupportedManifestVersion(notebookID: notebookID, version: manifest.version)
+      throw BundleError.unsupportedManifestVersion(
+        notebookID: notebookID, version: manifest.version)
     }
 
     // Check required fields are present and valid.
@@ -249,7 +253,8 @@ enum BundleError: LocalizedError {
     case let .manifestNotFound(notebookID):
       return "Manifest not found in Bundle: \(notebookID)"
     case let .manifestDecodingFailed(notebookID, underlyingError):
-      return "Failed to decode Manifest in Bundle \(notebookID): \(underlyingError.localizedDescription)"
+      return
+        "Failed to decode Manifest in Bundle \(notebookID): \(underlyingError.localizedDescription)"
     case let .unsupportedManifestVersion(notebookID, version):
       return "Unsupported Manifest version \(version) in Bundle: \(notebookID)"
     case let .invalidManifest(notebookID, reason):
@@ -257,4 +262,3 @@ enum BundleError: LocalizedError {
     }
   }
 }
-

@@ -239,4 +239,3 @@ private struct NewNoteCard: View {
     .buttonStyle(.plain)
   }
 }
-

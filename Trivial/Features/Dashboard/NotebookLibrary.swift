@@ -1,6 +1,6 @@
+import Combine
 import Foundation
 import SwiftUI
-import Combine
 
 // The Notebook Library connects the Dashboard to the Bundle Manager.
 // It translates Dashboard actions into operations on the Bundle Manager
@@ -86,4 +86,3 @@ class NotebookLibrary: ObservableObject {
     return try await bundleManager.openNotebook(id: notebookID)
   }
 }
-
