@@ -2,12 +2,20 @@ import Foundation
 
 // Represents a Notebook in the list returned by the Bundle Manager.
 // Contains only the metadata needed to display the Notebook in the Dashboard.
-struct NotebookMetadata: Identifiable {
+// Sendable so it can be passed across actor boundaries.
+struct NotebookMetadata: Identifiable, Sendable {
   // Unique identifier for this Notebook.
   let id: String
 
   // Display name shown to the user.
   let displayName: String
+
+  // nonisolated allows this value type to be created from any actor.
+  // The target defaults declarations to MainActor isolation.
+  nonisolated init(id: String, displayName: String) {
+    self.id = id
+    self.displayName = displayName
+  }
 }
 
 // The Bundle Manager is the only code allowed to perform direct file operations on Bundles.
@@ -50,9 +58,7 @@ actor BundleManager {
       // Read and decode the Manifest.
       do {
         let data = try Data(contentsOf: manifestURL)
-        let manifest = try await MainActor.run { () throws -> Manifest in
-          try JSONDecoder().decode(Manifest.self, from: data)
-        }
+        let manifest = try JSONDecoder().decode(Manifest.self, from: data)
         notebooks.append(
           NotebookMetadata(id: manifest.notebookID, displayName: manifest.displayName))
       } catch {
@@ -84,14 +90,12 @@ actor BundleManager {
     )
     print("Created bundle:", bundleURL.path)
 
-    // Create the initial Manifest on the main actor.
-    let manifest = await MainActor.run {
-      Manifest(notebookID: notebookID, displayName: displayName)
-    }
+    // Create the initial Manifest.
+    let manifest = Manifest(notebookID: notebookID, displayName: displayName)
 
     // Write the Manifest to disk using atomic write.
     let manifestURL = bundleURL.appendingPathComponent(Self.manifestFileName)
-    try await writeManifest(manifest, to: manifestURL)
+    try writeManifest(manifest, to: manifestURL)
 
     return NotebookMetadata(id: notebookID, displayName: displayName)
   }
@@ -121,14 +125,11 @@ actor BundleManager {
     }
 
     let data = try Data(contentsOf: manifestURL)
-    let manifest = try await MainActor.run { () throws -> Manifest in
-      var m = try JSONDecoder().decode(Manifest.self, from: data)
-      m.displayName = newDisplayName
-      return m
-    }
+    var manifest = try JSONDecoder().decode(Manifest.self, from: data)
+    manifest.displayName = newDisplayName
 
     // Write the updated Manifest back to disk using atomic write.
-    try await writeManifest(manifest, to: manifestURL)
+    try writeManifest(manifest, to: manifestURL)
   }
 
   // Deletes a Bundle folder and all its contents.
@@ -182,20 +183,16 @@ actor BundleManager {
     // Read the Manifest data.
     let data = try Data(contentsOf: manifestURL)
 
-    // Decode the Manifest on the main actor because its Decodable conformance is main-actor isolated.
+    // Decode the Manifest.
     let manifest: Manifest
     do {
-      manifest = try await MainActor.run { () throws -> Manifest in
-        try JSONDecoder().decode(Manifest.self, from: data)
-      }
+      manifest = try JSONDecoder().decode(Manifest.self, from: data)
     } catch {
       throw BundleError.manifestDecodingFailed(notebookID: notebookID, underlyingError: error)
     }
 
     // Check the Manifest version is supported.
-    // Access the main actor-isolated static property safely
-    let supportedVersions = await MainActor.run { Manifest.supportedVersions }
-    guard supportedVersions.contains(manifest.version) else {
+    guard ManifestVersion.supported.contains(manifest.version) else {
       throw BundleError.unsupportedManifestVersion(
         notebookID: notebookID, version: manifest.version)
     }
@@ -215,13 +212,11 @@ actor BundleManager {
   // Writes a Manifest to disk using atomic write.
   // Writes to a temporary file first, then replaces the target file.
   // This prevents corruption if the write is interrupted.
-  private func writeManifest(_ manifest: Manifest, to url: URL) async throws {
+  private func writeManifest(_ manifest: Manifest, to url: URL) throws {
     // Encode the Manifest to JSON data.
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    let data = try await MainActor.run { () throws -> Data in
-      try encoder.encode(manifest)
-    }
+    let data = try encoder.encode(manifest)
 
     // Write to a temporary file in the same directory as the target.
     let tempURL = url.deletingLastPathComponent().appendingPathComponent(

@@ -1,7 +1,8 @@
 import Foundation
 
 // Data required to save an ink item. Passed by the editor when saving.
-struct InkItemSaveRequest {
+// Sendable so it can be passed across actor boundaries.
+struct InkItemSaveRequest: Sendable {
   // Unique identifier for this Ink Item.
   let id: String
 
@@ -10,15 +11,31 @@ struct InkItemSaveRequest {
 
   // The raw ink data to save (e.g., serialized PKDrawing).
   let payload: Data
+
+  // nonisolated allows this value type to be created from any actor.
+  // The target defaults declarations to MainActor isolation.
+  nonisolated init(id: String, rectangle: InkRectangle, payload: Data) {
+    self.id = id
+    self.rectangle = rectangle
+    self.payload = payload
+  }
 }
 
 // Result of loading an ink item's payload.
-struct LoadedInkPayload {
+// Sendable so it can be passed across actor boundaries.
+struct LoadedInkPayload: Sendable {
   // The Ink Item's identifier.
   let id: String
 
   // The raw ink data loaded from disk.
   let payload: Data
+
+  // nonisolated allows this value type to be created from any actor.
+  // The target defaults declarations to MainActor isolation.
+  nonisolated init(id: String, payload: Data) {
+    self.id = id
+    self.payload = payload
+  }
 }
 
 // A DocumentHandle represents an open Notebook and provides safe operations
@@ -57,8 +74,7 @@ actor DocumentHandle {
   func loadManifest() throws -> Manifest {
     let manifestURL = bundleURL.appendingPathComponent(Self.manifestFileName)
     let data = try Data(contentsOf: manifestURL)
-    let manifest = try JSONDecoder().decode(Manifest.self, from: data)
-    return manifest
+    return try JSONDecoder().decode(Manifest.self, from: data)
   }
 
   // Loads ink payloads for the specified item IDs.
