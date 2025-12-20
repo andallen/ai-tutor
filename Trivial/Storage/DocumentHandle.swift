@@ -127,8 +127,6 @@ actor DocumentHandle {
       }
       try fileManager.moveItem(at: tempURL, to: inkFileURL)
 
-      // print("📄 FILE SAVED: \(inkFileName) (\(request.payload.count) bytes)")
-
       // Build the InkItem for the manifest.
       let payloadPath = "\(Self.inkFolderName)/\(inkFileName)"
       let inkItem = InkItem(id: request.id, rectangle: request.rectangle, payloadPath: payloadPath)
@@ -152,7 +150,6 @@ actor DocumentHandle {
 
     // Write manifest atomically.
     try writeManifest(manifest)
-    // print("📋 MANIFEST UPDATED: Now tracking \(manifest.inkItems.count) InkItem(s)")
   }
 
   // Deletes ink items from disk and updates the manifest.
