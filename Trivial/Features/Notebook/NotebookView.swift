@@ -41,10 +41,6 @@ struct NotebookView: View {
     }
     .fontDesign(.rounded)
     .navigationBarTitleDisplayMode(.inline)
-    .task {
-      // Load existing ink when the view appears.
-      await persistenceController.loadInk()
-    }
   }
 }
 
@@ -83,6 +79,9 @@ private struct DrawingCanvasWithScrollBar: View {
         drawing: $persistenceController.drawing,
         onDrawingChanged: { newDrawing in
           persistenceController.drawingDidChange(newDrawing)
+        },
+        onScroll: { visibleRect in
+          persistenceController.updateViewport(visibleRect: visibleRect)
         },
         canvasHeight: $canvasHeight,
         canvasExtensionAmount: canvasExtensionAmount,

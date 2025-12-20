@@ -10,6 +10,9 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
   // Callback when the drawing changes (for persistence).
   var onDrawingChanged: (PKDrawing) -> Void
 
+  // Callback when scroll or zoom changes the visible region.
+  var onScroll: (CGRect) -> Void
+
   // The current height of the scrollable canvas area in points.
   // This grows dynamically as the user scrolls near the bottom.
   @Binding var canvasHeight: CGFloat
@@ -110,6 +113,7 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
     Coordinator(
       drawing: $drawing,
       onDrawingChanged: onDrawingChanged,
+      onScroll: onScroll,
       scrollPosition: $scrollPosition,
       showScrollBar: $showScrollBar,
       zoomScale: $zoomScale,
@@ -123,6 +127,7 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
   class Coordinator: NSObject {
     @Binding var drawing: PKDrawing
     var onDrawingChanged: (PKDrawing) -> Void
+    var onScroll: (CGRect) -> Void
     @Binding var scrollPosition: CGFloat
     @Binding var showScrollBar: Bool
     @Binding var zoomScale: CGFloat
@@ -140,6 +145,7 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
     init(
       drawing: Binding<PKDrawing>,
       onDrawingChanged: @escaping (PKDrawing) -> Void,
+      onScroll: @escaping (CGRect) -> Void,
       scrollPosition: Binding<CGFloat>,
       showScrollBar: Binding<Bool>,
       zoomScale: Binding<CGFloat>,
@@ -148,6 +154,7 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
     ) {
       _drawing = drawing
       self.onDrawingChanged = onDrawingChanged
+      self.onScroll = onScroll
       _scrollPosition = scrollPosition
       _showScrollBar = showScrollBar
       _zoomScale = zoomScale
@@ -220,8 +227,23 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
           // Determine if scroll bar should be visible based on content height.
           let visibleHeight = canvasView.bounds.height
           self.showScrollBar = self.canvasHeight > visibleHeight
+          
+          // Initial scroll report
+          self.notifyScroll(scrollView)
         }
       }
+    }
+    
+    // Notifies the parent of scroll changes.
+    func notifyScroll(_ scrollView: UIScrollView) {
+      let zoom = scrollView.zoomScale
+      let unscaledRect = CGRect(
+        x: scrollView.contentOffset.x / zoom,
+        y: scrollView.contentOffset.y / zoom,
+        width: scrollView.bounds.width / zoom,
+        height: scrollView.bounds.height / zoom
+      )
+      onScroll(unscaledRect)
     }
   }
 }
@@ -251,6 +273,9 @@ extension PKCanvasViewRepresentable.Coordinator: UIScrollViewDelegate {
       scrollPosition = 0
     }
     lastExternalScrollPosition = scrollPosition
+    
+    // Notify visible rect change
+    notifyScroll(scrollView)
   }
 
   // Returns the view that should be zoomed when pinching.
@@ -280,4 +305,3 @@ extension PKCanvasViewRepresentable.Coordinator: PKCanvasViewDelegate {
     onDrawingChanged(canvasView.drawing)
   }
 }
-
