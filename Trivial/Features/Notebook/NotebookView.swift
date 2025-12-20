@@ -7,8 +7,20 @@ struct NotebookView: View {
   // The in-memory representation of the Notebook.
   let model: NotebookModel
 
-  // The handle for safe file operations. Stored for future save/load operations.
+  // The handle for safe file operations.
   let documentHandle: DocumentHandle
+
+  // Controller that manages ink persistence (save/load).
+  @StateObject private var persistenceController: InkPersistenceController
+
+  // Custom initializer to set up the persistence controller with the document handle.
+  init(model: NotebookModel, documentHandle: DocumentHandle) {
+    self.model = model
+    self.documentHandle = documentHandle
+    // Create the persistence controller as a StateObject.
+    _persistenceController = StateObject(
+      wrappedValue: InkPersistenceController(documentHandle: documentHandle, model: model))
+  }
 
   var body: some View {
     ZStack {
@@ -23,17 +35,147 @@ struct NotebookView: View {
           .padding(.top, 24)
           .padding(.bottom, 16)
 
-        DrawingCanvasWithScrollBar()
+        DrawingCanvasWithScrollBar(persistenceController: persistenceController)
       }
     }
     .fontDesign(.rounded)
     .navigationBarTitleDisplayMode(.inline)
+    .task {
+      // Load existing ink when the view appears.
+      await persistenceController.loadInk()
+    }
+  }
+}
+
+// Controller that manages ink persistence operations.
+// Handles loading ink from disk and saving ink with debouncing.
+@MainActor
+class InkPersistenceController: ObservableObject {
+  // The loaded PKDrawing to display on the canvas.
+  @Published var drawing: PKDrawing = PKDrawing()
+
+  // True while a save operation is in progress.
+  @Published var isSaving: Bool = false
+
+  // The document handle used for file operations.
+  private let documentHandle: DocumentHandle
+
+  // The notebook model with ink item metadata.
+  private let model: NotebookModel
+
+  // The ID used for the single ink item in this milestone.
+  // Uses an existing ID if one exists, otherwise generates a new one.
+  private var inkItemID: String
+
+  // Timer used to debounce save operations.
+  private var saveTask: Task<Void, Never>?
+
+  // Delay before auto-saving after the last drawing change.
+  private let saveDebounceDelay: TimeInterval = 1.0
+
+  init(documentHandle: DocumentHandle, model: NotebookModel) {
+    self.documentHandle = documentHandle
+    self.model = model
+    // Use existing ink item ID or generate a new one for the single-item milestone.
+    self.inkItemID = model.primaryInkItemID ?? UUID().uuidString
+  }
+
+  // Loads existing ink from disk and updates the drawing property.
+  func loadInk() async {
+    // Check if there is an existing ink item to load.
+    guard let existingItemID = model.primaryInkItemID else {
+      // No existing ink, start with empty drawing.
+      return
+    }
+
+    // Load the ink payload on a background thread.
+    let payloads = await Task.detached { [documentHandle] in
+      await documentHandle.loadInkPayloads(for: [existingItemID])
+    }.value
+
+    // Deserialize the first payload into a PKDrawing.
+    guard let payload = payloads.first else { return }
+
+    do {
+      let loadedDrawing = try PKDrawing(data: payload.payload)
+      drawing = loadedDrawing
+    } catch {
+      // Failed to decode drawing. Start with empty canvas.
+      // Could log this error for debugging.
+    }
+  }
+
+  // Called when the drawing changes. Schedules a debounced save.
+  func drawingDidChange(_ newDrawing: PKDrawing) {
+    drawing = newDrawing
+
+    // Cancel any pending save task.
+    saveTask?.cancel()
+
+    // Schedule a new save after the debounce delay.
+    saveTask = Task { [weak self] in
+      guard let self = self else { return }
+
+      // Wait for the debounce delay.
+      try? await Task.sleep(nanoseconds: UInt64(saveDebounceDelay * 1_000_000_000))
+
+      // Check if this task was cancelled during the delay.
+      if Task.isCancelled { return }
+
+      // Perform the save.
+      await self.saveInk()
+    }
+  }
+
+  // Saves the current drawing to disk.
+  private func saveInk() async {
+    // Skip saving empty drawings to avoid creating unnecessary files.
+    guard !drawing.strokes.isEmpty else { return }
+
+    isSaving = true
+    defer { isSaving = false }
+
+    // Serialize the drawing to data.
+    let drawingData = drawing.dataRepresentation()
+
+    // Compute the bounding rectangle for the drawing.
+    let bounds = drawing.bounds
+    let rectangle = InkRectangle(from: bounds)
+
+    // Create the save request.
+    let saveRequest = InkItemSaveRequest(
+      id: inkItemID,
+      rectangle: rectangle,
+      payload: drawingData
+    )
+
+    // Perform the save on a background thread through the actor.
+    do {
+      try await Task.detached { [documentHandle, saveRequest] in
+        try await documentHandle.saveInkItems([saveRequest])
+      }.value
+    } catch {
+      // Save failed. Could show an error to the user or retry.
+      // For now, silently fail to keep the app usable.
+    }
+  }
+
+  // Forces an immediate save. Called when the view is about to disappear.
+  func saveImmediately() async {
+    // Cancel any pending debounced save.
+    saveTask?.cancel()
+
+    // Save immediately if there is content.
+    await saveInk()
   }
 }
 
 // Drawing canvas with a visible scroll bar on the right side.
 // Wraps PencilKit for ink input and provides a custom scroll indicator.
 private struct DrawingCanvasWithScrollBar: View {
+  // Controller that manages ink persistence.
+  @ObservedObject var persistenceController: InkPersistenceController
+
   // Tracks the current scroll position (0.0 to 1.0).
   @State private var scrollPosition: CGFloat = 0.0
 
@@ -60,6 +202,10 @@ private struct DrawingCanvasWithScrollBar: View {
     HStack(spacing: 0) {
       // The canvas fills the available space, leaving room for the scroll bar.
       PKCanvasViewRepresentable(
+        drawing: $persistenceController.drawing,
+        onDrawingChanged: { newDrawing in
+          persistenceController.drawingDidChange(newDrawing)
+        },
         canvasHeight: $canvasHeight,
         canvasExtensionAmount: canvasExtensionAmount,
         scrollPosition: $scrollPosition,
@@ -89,6 +235,12 @@ private struct DrawingCanvasWithScrollBar: View {
 // UIViewRepresentable wrapper for PKCanvasView.
 // This bridges PencilKit (UIKit) to SwiftUI and tracks scroll position.
 private struct PKCanvasViewRepresentable: UIViewRepresentable {
+  // Binding to the current PKDrawing.
+  @Binding var drawing: PKDrawing
+
+  // Callback when the drawing changes (for persistence).
+  var onDrawingChanged: (PKDrawing) -> Void
+
   // The current height of the scrollable canvas area in points.
   // This grows dynamically as the user scrolls near the bottom.
   @Binding var canvasHeight: CGFloat
@@ -125,6 +277,9 @@ private struct PKCanvasViewRepresentable: UIViewRepresentable {
     canvasView.maximumZoomScale = maxZoom
     canvasView.bouncesZoom = true
 
+    // Set up the drawing delegate to track changes.
+    canvasView.delegate = context.coordinator
+
     // Store the canvas view reference in the coordinator for zooming.
     context.coordinator.canvasView = canvasView
 
@@ -136,6 +291,14 @@ private struct PKCanvasViewRepresentable: UIViewRepresentable {
 
   func updateUIView(_ canvasView: PKCanvasView, context: Context) {
     guard canvasView.bounds.width > 0 else { return }
+
+    // Update drawing if it changed externally (e.g., loaded from disk).
+    // Only update if the drawing is different to avoid unnecessary redraws.
+    if !context.coordinator.isUpdatingDrawing && canvasView.drawing != drawing {
+      context.coordinator.isUpdatingDrawing = true
+      canvasView.drawing = drawing
+      context.coordinator.isUpdatingDrawing = false
+    }
 
     // Resolve and cache the internal scroll view.
     let scrollView: UIScrollView
@@ -176,6 +339,8 @@ private struct PKCanvasViewRepresentable: UIViewRepresentable {
 
   func makeCoordinator() -> Coordinator {
     Coordinator(
+      drawing: $drawing,
+      onDrawingChanged: onDrawingChanged,
       scrollPosition: $scrollPosition,
       showScrollBar: $showScrollBar,
       zoomScale: $zoomScale,
@@ -184,8 +349,10 @@ private struct PKCanvasViewRepresentable: UIViewRepresentable {
     )
   }
 
-  // Coordinator that tracks scroll position and manages scroll view interactions.
+  // Coordinator that tracks scroll position, zoom, and drawing changes.
   class Coordinator: NSObject {
+    @Binding var drawing: PKDrawing
+    var onDrawingChanged: (PKDrawing) -> Void
     @Binding var scrollPosition: CGFloat
     @Binding var showScrollBar: Bool
     @Binding var zoomScale: CGFloat
@@ -197,13 +364,20 @@ private struct PKCanvasViewRepresentable: UIViewRepresentable {
     // Reference to the canvas view, used for zooming delegate method.
     weak var canvasView: PKCanvasView?
 
+    // Flag to prevent feedback loops when updating the drawing.
+    var isUpdatingDrawing: Bool = false
+
     init(
+      drawing: Binding<PKDrawing>,
+      onDrawingChanged: @escaping (PKDrawing) -> Void,
       scrollPosition: Binding<CGFloat>,
       showScrollBar: Binding<Bool>,
       zoomScale: Binding<CGFloat>,
       canvasHeight: Binding<CGFloat>,
       canvasExtensionAmount: CGFloat
     ) {
+      _drawing = drawing
+      self.onDrawingChanged = onDrawingChanged
       _scrollPosition = scrollPosition
       _showScrollBar = showScrollBar
       _zoomScale = zoomScale
@@ -322,6 +496,18 @@ extension PKCanvasViewRepresentable.Coordinator: UIScrollViewDelegate {
     zoomScale = scrollView.zoomScale
     // Update scroll position after zoom changes.
     scrollViewDidScroll(scrollView)
+  }
+}
+
+// PKCanvasViewDelegate extension to track drawing changes.
+extension PKCanvasViewRepresentable.Coordinator: PKCanvasViewDelegate {
+  func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
+    // Avoid feedback loops when we programmatically set the drawing.
+    guard !isUpdatingDrawing else { return }
+
+    // Update the binding and notify the persistence controller.
+    drawing = canvasView.drawing
+    onDrawingChanged(canvasView.drawing)
   }
 }
 
