@@ -8,6 +8,6 @@ architecture.md
 *.xcscmblueprint
 *.swp
 *.tmp
-/.cursor
+.cursor/
 *.moved-aside
 
