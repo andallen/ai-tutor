@@ -12,9 +12,7 @@ struct InkItemSaveRequest: Sendable {
   // The raw ink data to save (e.g., serialized PKDrawing).
   let payload: Data
 
-  // nonisolated allows this value type to be created from any actor.
-  // The target defaults declarations to MainActor isolation.
-  nonisolated init(id: String, rectangle: InkRectangle, payload: Data) {
+  init(id: String, rectangle: InkRectangle, payload: Data) {
     self.id = id
     self.rectangle = rectangle
     self.payload = payload
@@ -30,9 +28,7 @@ struct LoadedInkPayload: Sendable {
   // The raw ink data loaded from disk.
   let payload: Data
 
-  // nonisolated allows this value type to be created from any actor.
-  // The target defaults declarations to MainActor isolation.
-  nonisolated init(id: String, payload: Data) {
+  init(id: String, payload: Data) {
     self.id = id
     self.payload = payload
   }

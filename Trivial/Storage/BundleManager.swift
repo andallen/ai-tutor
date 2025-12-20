@@ -10,9 +10,7 @@ struct NotebookMetadata: Identifiable, Sendable {
   // Display name shown to the user.
   let displayName: String
 
-  // nonisolated allows this value type to be created from any actor.
-  // The target defaults declarations to MainActor isolation.
-  nonisolated init(id: String, displayName: String) {
+  init(id: String, displayName: String) {
     self.id = id
     self.displayName = displayName
   }

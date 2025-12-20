@@ -2,6 +2,10 @@
 description: General project-wide rules.
 alwaysApply: true
 ---
+This project is configured with non-isolated default actor isolation, so all data models and DTOs must remain plain structs to ensure they are portable for background tasks like JSON encoding and decoding; meanwhile, use actors for background logic or disk I/O to manage state safely, and explicitly annotate all UI-facing classes, such as ViewModels and ViewControllers, with @MainActor to guarantee thread-safe interface updates.
+
+Do not block the main thread. All disk I/O and expensive work must run off the main thread. UI state updates must happen on the main thread. Prefer structured concurrency (async/await). Ensure storage operations are serialized so concurrent saves do not race (for example, by using an actor or another single-writer design).
+
 Comment frequently with simple and direct language. Comments should concisely spell out what EVERY PART OF THE CODE is doing, being easy to read and understand. Use clear grammar. Avoid any special headers or decorative markers. Do not use comments made of symbols or any section labels. Do not use 2nd person terms like "you" in your comments.
 
 UI must be replaceable. Views and view models may only handle presentation (layout, formatting for display, user input, navigation state). They must not contain persistence logic, file access, data format logic, or “business rules.” All core operations must live in non-UI types and be exposed through a small, stable API (protocol/service). UI code must depend on that API and plain Swift data types, not on file paths or storage details.
@@ -11,8 +15,6 @@ Keep responsibilities separate. UI code should only manage presentation and user
 Keep data formats stable. Any on-disk format must include a version field. Treat the on-disk format as a contract: changes must be backward compatible when possible, and must fail gracefully when not. Never crash because a file is missing, malformed, or from a newer version; return a clear error and keep the app usable.
 
 Write files safely. Never overwrite important files directly. Use atomic write patterns: write to a temporary file in the same folder and then replace. If multiple files must stay consistent, write the payload/data first, then update the index/metadata file second, so metadata never points to missing data.
-
-Do not block the main thread. All disk I/O and expensive work must run off the main thread. UI state updates must happen on the main thread. Prefer structured concurrency (async/await). Ensure storage operations are serialized so concurrent saves do not race (for example, by using an actor or another single-writer design).
 
 Make errors explicit. Do not use force unwrap (`!`), `try!`, `fatalError`, or assertions for normal runtime situations. Use `throws` and return errors to the UI layer so they can be shown as a simple message. Log errors with enough context to debug, but avoid noisy logging in normal operation.
 

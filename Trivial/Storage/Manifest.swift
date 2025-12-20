@@ -2,13 +2,9 @@ import CoreGraphics
 import Foundation
 
 // Version constants for the Manifest format.
-// Kept outside the Manifest struct to avoid actor isolation issues.
-// Sendable enum can be accessed from any actor.
 enum ManifestVersion: Sendable {
-  // nonisolated ensures these constants are usable from any actor.
-  // The project defaults types to MainActor isolation, so this opts out.
-  nonisolated static let current = 1
-  nonisolated static let supported: Set<Int> = [1]
+  static let current = 1
+  static let supported: Set<Int> = [1]
 }
 
 // The Manifest is a JSON file inside the Bundle that describes what ink exists in the Notebook.
@@ -30,8 +26,7 @@ struct Manifest: Codable, @unchecked Sendable {
 
   // Creates a new Manifest with the given notebook ID and display name.
   // Sets version and initializes an empty ink items array.
-  // nonisolated allows creation from non-main actors (like BundleManager).
-  nonisolated init(notebookID: String, displayName: String) {
+  init(notebookID: String, displayName: String) {
     self.notebookID = notebookID
     self.displayName = displayName
     self.version = ManifestVersion.current
@@ -40,8 +35,6 @@ struct Manifest: Codable, @unchecked Sendable {
 }
 
 // Explicit Codable conformance methods.
-// nonisolated is required because the target defaults declarations to MainActor isolation.
-// JSONDecoder/JSONEncoder are used from storage actors, not from the main actor.
 extension Manifest {
   private enum CodingKeys: String, CodingKey {
     case notebookID
@@ -50,8 +43,7 @@ extension Manifest {
     case inkItems
   }
 
-  // Decodes a Manifest from a Decoder without requiring the main actor.
-  nonisolated init(from decoder: any Decoder) throws {
+  init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     self.notebookID = try container.decode(String.self, forKey: .notebookID)
     self.displayName = try container.decode(String.self, forKey: .displayName)
@@ -59,8 +51,7 @@ extension Manifest {
     self.inkItems = try container.decode([InkItem].self, forKey: .inkItems)
   }
 
-  // Encodes a Manifest to an Encoder without requiring the main actor.
-  nonisolated func encode(to encoder: any Encoder) throws {
+  func encode(to encoder: any Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(notebookID, forKey: .notebookID)
     try container.encode(displayName, forKey: .displayName)
@@ -86,8 +77,7 @@ struct InkRectangle: Codable, Equatable, @unchecked Sendable {
   let height: Double
 
   // Creates an InkRectangle from a CGRect.
-  // nonisolated allows this conversion from any actor.
-  nonisolated init(from rect: CGRect) {
+  init(from rect: CGRect) {
     self.x = Double(rect.origin.x)
     self.y = Double(rect.origin.y)
     self.width = Double(rect.size.width)
@@ -95,8 +85,7 @@ struct InkRectangle: Codable, Equatable, @unchecked Sendable {
   }
 
   // Creates an InkRectangle with explicit values.
-  // nonisolated allows creation from any actor.
-  nonisolated init(x: Double, y: Double, width: Double, height: Double) {
+  init(x: Double, y: Double, width: Double, height: Double) {
     self.x = x
     self.y = y
     self.width = width
@@ -104,8 +93,7 @@ struct InkRectangle: Codable, Equatable, @unchecked Sendable {
   }
 
   // Converts to CGRect for use with UIKit/CoreGraphics.
-  // nonisolated allows reading from any actor.
-  nonisolated var cgRect: CGRect {
+  var cgRect: CGRect {
     CGRect(x: CGFloat(x), y: CGFloat(y), width: CGFloat(width), height: CGFloat(height))
   }
 }
@@ -124,7 +112,7 @@ struct InkItem: Codable, Identifiable, @unchecked Sendable {
   let payloadPath: String
 
   // Creates a new InkItem without requiring the main actor.
-  nonisolated init(id: String, rectangle: InkRectangle, payloadPath: String) {
+  init(id: String, rectangle: InkRectangle, payloadPath: String) {
     self.id = id
     self.rectangle = rectangle
     self.payloadPath = payloadPath

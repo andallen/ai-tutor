@@ -351,6 +351,7 @@ private struct PKCanvasViewRepresentable: UIViewRepresentable {
   }
 
   // Coordinator that tracks scroll position, zoom, and drawing changes.
+  @MainActor
   class Coordinator: NSObject {
     @Binding var drawing: PKDrawing
     var onDrawingChanged: (PKDrawing) -> Void
