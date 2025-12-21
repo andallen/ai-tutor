@@ -2,75 +2,76 @@ import Foundation
 import Combine
 
 @MainActor
-class EditorWorker: NSObject, ObservableObject {
+final class EditorWorker: NSObject, ObservableObject {
     @Published private(set) var editor: IINKEditor?
     private var documentHandle: DocumentHandle?
+    private var pendingPart: IINKContentPart?
+    private var toolController: IINKToolController?
 
     func attach(engine: IINKEngine, renderer: IINKRenderer) {
         // Create a tool controller for the editor.
-        let toolController = engine.createToolController()
+        let tc = engine.createToolController()
+        toolController = tc
         
         // Map pointer types to tools.
         // By default, TOUCH → HAND (pan/interaction) and PEN → PEN (ink).
         // Disable "active pen mode" behavior: let finger draw ink.
         do {
-            try toolController.set(tool: IINKPointerTool.toolPen, forType: IINKPointerType.touch)
+            try tc.set(tool: IINKPointerTool.toolPen, forType: IINKPointerType.touch)
             // Keep stylus drawing ink too.
-            try toolController.set(tool: IINKPointerTool.toolPen, forType: IINKPointerType.pen)
+            try tc.set(tool: IINKPointerTool.toolPen, forType: IINKPointerType.pen)
         } catch {
             print("❌ EditorWorker: Failed to map tools: \(error)")
         }
         
         // Create the editor synchronously.
-        // Defer the @Published update to avoid publishing during view updates.
-        let newEditor = engine.createEditor(renderer: renderer, toolController: toolController)
+        let e = engine.createEditor(renderer: renderer, toolController: tc)
         
-        // Diagnostic: Check if toolController is present.
-        print("🔧 EditorWorker: toolController is nil? \(newEditor?.toolController == nil)")
+        // Assign the delegate immediately.
+        e?.delegate = self
         
-        // Define a default CSS theme with 8-digit colors (alpha included).
-        // Without this, colors default to 0x00000000 (fully transparent).
-        let theme = """
-        .ink {
-            color: #000000FF;
-            -myscript-pen-width: 1.5;
-        }
-        """
-        
+        // Apply theme using the correct API (editor.set(theme:), not configuration.set).
+        // Use 8-digit color format (#000000FF) to ensure alpha is included.
         do {
-            // Apply the theme using the correct API (not configuration.set).
-            try newEditor?.set(theme: theme)
-            
-            // Make the active pen tool explicitly visible (this overrides theme if needed).
-            if let editor = newEditor {
-                try editor.toolController.set(
-                    style: "color: #000000FF; -myscript-pen-width: 1.5",
-                    forTool: IINKPointerTool.toolPen
-                )
-            }
-            
-            newEditor?.set(fontMetricsProvider: FontMetricsProvider())
-            
-            // Assign the delegate to this instance of EditorWorker.
-            // This allows the engine to notify of background errors.
-            newEditor?.delegate = self
+            try e?.set(theme: ".ink { color: #000000FF; -myscript-pen-width: 1.5; }")
         } catch {
-            print("❌ EditorWorker: Theme/style failed: \(error)")
+            print("❌ EditorWorker: Failed to set theme: \(error)")
         }
         
-        // Update @Published asynchronously to avoid publishing during view updates.
-        DispatchQueue.main.async { [weak self] in
-            self?.editor = newEditor
+        // Set tool style through the tool controller (not configuration).
+        // This ensures the pen tool has an explicit opaque color.
+        do {
+            try tc.set(style: "color: #000000FF; -myscript-pen-width: 1.5", forTool: IINKPointerTool.toolPen)
+        } catch {
+            print("❌ EditorWorker: Failed to set tool style: \(error)")
+        }
+        
+        // Set font metrics provider.
+        e?.set(fontMetricsProvider: FontMetricsProvider())
+        
+        // Assign editor synchronously to avoid race conditions.
+        // This ensures loadPart can immediately set the part if it arrives first.
+        editor = e
+        
+        // If a part was loaded before the editor was ready, apply it now.
+        if let part = pendingPart {
+            e?.part = part
+            pendingPart = nil
         }
     }
 
     func loadPart(from handle: DocumentHandle) async {
         self.documentHandle = handle
         guard let part = await handle.getPart(at: 0) else { return }
-        // Set the part. Since EditorWorker is @MainActor, this is already on the main thread.
-        // Use Task to defer the @Published update to avoid publishing during view updates.
-        Task { @MainActor in
-            self.editor?.part = part
+        
+        // Set the part synchronously if editor exists, otherwise store it for later.
+        // This prevents the race where loadPart is called before attach completes.
+        await MainActor.run {
+            if let e = editor {
+                e.part = part
+            } else {
+                pendingPart = part
+            }
         }
     }
 

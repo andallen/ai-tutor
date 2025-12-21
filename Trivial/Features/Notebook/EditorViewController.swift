@@ -8,6 +8,7 @@ class EditorViewController: UIViewController {
   let editorWorker: EditorWorker
   private let engine: IINKEngine?
   private var renderer: IINKRenderer?
+  private var editorSubscription: AnyCancellable?
   
   // Use the custom RenderView for high-performance rendering.
   private var renderView: RenderView?
@@ -105,12 +106,25 @@ class EditorViewController: UIViewController {
       canvas.renderer = renderer
       editorWorker.attach(engine: engine, renderer: renderer)
       
-      // Pass the editor reference to the RenderView for input handling.
-      // The editor will be set asynchronously by attach(), so we need to wait for it.
-      DispatchQueue.main.async { [weak self] in
-        guard let self = self else { return }
-        canvas.editor = self.editorWorker.editor
-      }
+      // Observe the @Published editor property to set it on the canvas and configure view size.
+      // This ensures the editor is set deterministically after attach() completes.
+      self.editorSubscription = editorWorker.$editor
+        .compactMap { $0 }
+        .first()
+        .sink { [weak self, weak canvas] editor in
+          canvas?.editor = editor
+          
+          // Set view size immediately after editor becomes available.
+          // This prevents the renderer from invalidating empty rectangles.
+          if let size = self?.renderView?.bounds.size, size.width > 0, size.height > 0 {
+            do {
+              try editor.set(viewSize: size)
+              self?.renderView?.setNeedsDisplay()
+            } catch {
+              print("❌ EditorViewController: Failed to set view size: \(error.localizedDescription)")
+            }
+          }
+        }
     }
   }
 }

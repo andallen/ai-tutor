@@ -134,7 +134,9 @@ class RenderView: UIView, IINKIRenderTarget {
             let force = touch.maximumPossibleForce > 0 ? Float(touch.force / touch.maximumPossibleForce) : 1.0
             let timestamp = Int64(touch.timestamp * 1000)
             let pointerType: IINKPointerType = (touch.type == .stylus) ? .pen : .touch
-            let pointerId = Int32(truncatingIfNeeded: touch.hash)
+            // Use a stable id per UITouch instance. touch.hash is not guaranteed to remain stable
+            // across events for the same touch. iink expects the same pointer id for down/move/up.
+            let pointerId = Int32(truncatingIfNeeded: ObjectIdentifier(touch).hashValue)
 
             return IINKPointerEventMake(type, location, timestamp, force, pointerType, pointerId)
         }
