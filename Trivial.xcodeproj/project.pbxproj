@@ -21,6 +21,11 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		AEA6BC452EF8643800D18138 /* recognition-assets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "recognition-assets";
+			sourceTree = "<group>";
+		};
 		AEAFC23B2EF4B85B00811728 /* Trivial */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Trivial;
@@ -29,11 +34,6 @@
 		AED5AD602EF747D900F4FA67 /* .cursor */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = .cursor;
-			sourceTree = "<group>";
-		};
-		AED92C132EF7AE2600A06118 /* recognition-assets */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "recognition-assets";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -84,8 +84,8 @@
 				AEAFC23A2EF4B85B00811728 /* Products */,
 				AED5AD602EF747D900F4FA67 /* .cursor */,
 				7D21902157F5C13C106A1960 /* Pods */,
-				AED92C132EF7AE2600A06118 /* recognition-assets */,
 				1CD3FB676B945362DF406464 /* Frameworks */,
+				AEA6BC452EF8643800D18138 /* recognition-assets */,
 			);
 			sourceTree = "<group>";
 		};
@@ -106,6 +106,7 @@
 			buildPhases = (
 				AEAFC2352EF4B85B00811728 /* Sources */,
 				AEAFC2362EF4B85B00811728 /* Frameworks */,
+				AEA6BC5A2EF8654800D18138 /* Copy Recognition Assets */,
 				AEAFC2372EF4B85B00811728 /* Resources */,
 			);
 			buildRules = (
@@ -113,9 +114,9 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				AEA6BC452EF8643800D18138 /* recognition-assets */,
 				AEAFC23B2EF4B85B00811728 /* Trivial */,
 				AED5AD602EF747D900F4FA67 /* .cursor */,
-				AED92C132EF7AE2600A06118 /* recognition-assets */,
 			);
 			name = Trivial;
 			productName = Trivial;
@@ -165,6 +166,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		AEA6BC5A2EF8654800D18138 /* Copy Recognition Assets */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Copy Recognition Assets";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "SOURCE_DIR=\"${SRCROOT}/recognition-assets\"\nDEST_DIR=\"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/recognition-assets\"\n\nif [ -d \"$SOURCE_DIR\" ]; then\n    echo \"Copying recognition-assets to bundle...\"\n    rm -rf \"$DEST_DIR\"\n    cp -R \"$SOURCE_DIR\" \"$DEST_DIR\"\n    echo \"Done copying recognition-assets\"\nelse\n    echo \"Warning: recognition-assets not found at $SOURCE_DIR\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		AEAFC2352EF4B85B00811728 /* Sources */ = {
@@ -308,6 +331,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
@@ -349,6 +373,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",

@@ -40,14 +40,20 @@ final class EngineProvider {
   private var hasInitialized = false
 
   // Private initializer to enforce singleton pattern.
-  private init() {}
+  private init() {
+    print("🔷 EngineProvider singleton instance created")
+  }
 
   // Initializes the engine asynchronously to avoid blocking the main thread.
   // The MyScript SDK performs license validation over the network during initialization.
   // This method should be called once at app startup.
   func initializeEngine() async {
     // Only initialize once.
-    guard !hasInitialized else { return }
+    guard !hasInitialized else {
+      print("⚠️ initializeEngine() called again - skipping (already initialized)")
+      return
+    }
+    print("🚀 Starting engine initialization...")
     hasInitialized = true
 
     // Check if certificate data is present.
@@ -80,8 +86,10 @@ final class EngineProvider {
     do {
       try configure(engine: createdEngine)
       self.engine = createdEngine
+      print("✅ Engine initialization completed successfully")
     } catch {
       self.engineErrorMessage = error.localizedDescription
+      print("❌ Engine initialization failed: \(error.localizedDescription)")
     }
   }
 
@@ -94,6 +102,22 @@ final class EngineProvider {
     // The conf folder contains .conf files that tell the engine where to find .res files.
     let configurationPath = Bundle.main.bundlePath.appending("/recognition-assets/conf")
 
+    // Log the path and verify files exist for debugging.
+    print("📁 Recognition assets path: \(configurationPath)")
+
+    let fileManager = FileManager.default
+    if fileManager.fileExists(atPath: configurationPath) {
+      print("✅ Recognition assets folder exists")
+
+      // List the .conf files found.
+      if let files = try? fileManager.contentsOfDirectory(atPath: configurationPath) {
+        let confFiles = files.filter { $0.hasSuffix(".conf") }
+        print("📄 Found \(confFiles.count) .conf files: \(confFiles.sorted())")
+      }
+    } else {
+      print("❌ Recognition assets folder NOT found at path")
+    }
+
     // Set the search path for recognition asset configuration files.
     // The engine will look for .conf files in this directory.
     do {
@@ -101,7 +125,9 @@ final class EngineProvider {
         stringArray: [configurationPath],
         forKey: "configuration-manager.search-path"
       )
+      print("✅ configuration-manager.search-path set successfully")
     } catch {
+      print("❌ Failed to set configuration-manager.search-path: \(error.localizedDescription)")
       throw EngineProviderError.configurationFailed(
         "Failed to set recognition assets search path: \(error.localizedDescription)"
       )
@@ -110,12 +136,17 @@ final class EngineProvider {
     // Set the temporary directory for the engine.
     // The engine requires read/write access to store intermediate work data.
     // This is mandatory for handling large packages and images efficiently.
+    let tempFolder = NSTemporaryDirectory()
+    print("📁 Temporary folder path: \(tempFolder)")
+
     do {
       try configuration.set(
-        string: NSTemporaryDirectory(),
+        string: tempFolder,
         forKey: "content-package.temp-folder"
       )
+      print("✅ content-package.temp-folder set successfully")
     } catch {
+      print("❌ Failed to set content-package.temp-folder: \(error.localizedDescription)")
       throw EngineProviderError.configurationFailed(
         "Failed to set temporary folder: \(error.localizedDescription)"
       )
