@@ -54,57 +54,28 @@ class CanvasView: UIView, IINKIRenderTarget {
     guard let editor = editor else { return }
     guard let touch = touches.first else { return }
     
-    // Use coalesced touches to batch multiple touch points together.
-    // This prevents the "too many points" error by sending points in batches.
+    // Collect coalesced touches to capture all hardware samples (120Hz/240Hz).
+    // This ensures we capture every point the hardware provides for smooth ink.
     let coalescedTouches = event?.coalescedTouches(for: touch) ?? [touch]
     
-    if coalescedTouches.count > 1 {
-      // Batch multiple touch points together for better performance.
-      var events = coalescedTouches.map { coalescedTouch in
-        createPointerEvent(from: coalescedTouch, eventType: .move)
-      }
-      
-      // Use pointerEvents batch API to send all points at once.
-      // Allocate memory for the pointer events array.
-      let pointerEvents = UnsafeMutablePointer<IINKPointerEvent>.allocate(capacity: events.count)
-      pointerEvents.initialize(from: &events, count: events.count)
-      
+    // Map coalesced touches to MyScript Pointer Events.
+    // Always use the batch API for consistent stroke quality, even for single points.
+    var events = coalescedTouches.map { coalescedTouch in
+      createPointerEvent(from: coalescedTouch, eventType: .move)
+    }
+    
+    // Capture count before accessing mutable buffer to avoid exclusivity violation.
+    let eventCount = events.count
+    
+    // Use the batch API to process all points in one engine cycle.
+    // This reduces latency and maintains consistent stroke rendering.
+    // Convert Swift array to unsafe mutable pointer using withUnsafeMutableBufferPointer.
+    events.withUnsafeMutableBufferPointer { buffer in
+      guard let baseAddress = buffer.baseAddress else { return }
       do {
-        try editor.pointerEvents(pointerEvents, count: events.count, doProcessGestures: true)
+        try editor.pointerEvents(baseAddress, count: eventCount, doProcessGestures: true)
       } catch {
-        // Batch pointer events failed, fall back to single events.
-        // This can happen if the batch is too large.
-        for event in events {
-          do {
-            try editor.pointerMove(
-              point: CGPoint(x: CGFloat(event.x), y: CGFloat(event.y)),
-              timestamp: event.t,
-              force: event.f,
-              type: event.pointerType,
-              pointerId: Int(event.pointerId)
-            )
-          } catch {
-            // Individual pointer move failed.
-          }
-        }
-      }
-      
-      // Deallocate the memory.
-      pointerEvents.deinitialize(count: events.count)
-      pointerEvents.deallocate()
-    } else {
-      // Single touch point, use regular pointerMove.
-      let pointerEvent = createPointerEvent(from: touch, eventType: .move)
-      do {
-        try editor.pointerMove(
-          point: CGPoint(x: CGFloat(pointerEvent.x), y: CGFloat(pointerEvent.y)),
-          timestamp: pointerEvent.t,
-          force: pointerEvent.f,
-          type: pointerEvent.pointerType,
-          pointerId: Int(pointerEvent.pointerId)
-        )
-      } catch {
-        // Pointer move failed.
+        // Batch pointer events failed. This should be rare.
       }
     }
   }
@@ -176,22 +147,49 @@ class CanvasView: UIView, IINKIRenderTarget {
   // Invalidates the given set of layers.
   func invalidate(_ renderer: IINKRenderer, layers: IINKLayerType) {
     // Mark the view as needing display for the specified layers.
-    self.setNeedsDisplay()
+    // Ensure this runs on the main thread since setNeedsDisplay requires it.
+    DispatchQueue.main.async { [weak self] in
+      self?.setNeedsDisplay()
+    }
   }
 
   // Invalidates a specified rectangle area on the given set of layers.
   func invalidate(_ renderer: IINKRenderer, area: CGRect, layers: IINKLayerType) {
     // Mark the specific area as needing display.
-    self.setNeedsDisplay(area)
+    // Ensure this runs on the main thread since setNeedsDisplay requires it.
+    // Capture the area parameter before the async block.
+    let invalidateArea = area
+    DispatchQueue.main.async { [weak self] in
+      self?.setNeedsDisplay(invalidateArea)
+    }
   }
 
   // The device Pixel Density.
   var pixelDensity: Float {
-    return Float(self.contentScaleFactor)
+    // Ensure this runs on the main thread since contentScaleFactor is a UIKit property.
+    if Thread.isMainThread {
+      return Float(self.contentScaleFactor)
+    } else {
+      return DispatchQueue.main.sync {
+        return Float(self.contentScaleFactor)
+      }
+    }
   }
 
   // Creates an offscreen render surface and returns a unique identifier.
   func createOffscreenRenderSurface(width: Int32, height: Int32, alphaMask: Bool) -> UInt32 {
+    // Ensure this runs on the main thread since it accesses UIKit properties and dictionaries.
+    if Thread.isMainThread {
+      return createOffscreenRenderSurfaceSync(width: width, height: height, alphaMask: alphaMask)
+    } else {
+      return DispatchQueue.main.sync {
+        return createOffscreenRenderSurfaceSync(width: width, height: height, alphaMask: alphaMask)
+      }
+    }
+  }
+
+  // Synchronous implementation of createOffscreenRenderSurface.
+  private func createOffscreenRenderSurfaceSync(width: Int32, height: Int32, alphaMask: Bool) -> UInt32 {
     let surfaceId = nextSurfaceId
     nextSurfaceId += 1
 
@@ -206,12 +204,32 @@ class CanvasView: UIView, IINKIRenderTarget {
 
   // Releases the offscreen render surface associated with the given identifier.
   func releaseOffscreenRenderSurface(_ surfaceId: UInt32) {
-    offscreenSurfaces.removeValue(forKey: surfaceId)
-    offscreenCanvases.removeValue(forKey: surfaceId)
+    // Ensure this runs on the main thread since it accesses dictionaries.
+    if Thread.isMainThread {
+      offscreenSurfaces.removeValue(forKey: surfaceId)
+      offscreenCanvases.removeValue(forKey: surfaceId)
+    } else {
+      DispatchQueue.main.async { [weak self] in
+        self?.offscreenSurfaces.removeValue(forKey: surfaceId)
+        self?.offscreenCanvases.removeValue(forKey: surfaceId)
+      }
+    }
   }
 
   // Creates a Canvas that draws onto the offscreen render surface.
   func createOffscreenRenderCanvas(_ surfaceId: UInt32) -> IINKICanvas {
+    // Ensure this runs on the main thread since it accesses dictionaries.
+    if Thread.isMainThread {
+      return createOffscreenRenderCanvasSync(surfaceId: surfaceId)
+    } else {
+      return DispatchQueue.main.sync {
+        return createOffscreenRenderCanvasSync(surfaceId: surfaceId)
+      }
+    }
+  }
+
+  // Synchronous implementation of createOffscreenRenderCanvas.
+  private func createOffscreenRenderCanvasSync(surfaceId: UInt32) -> IINKICanvas {
     // Create a canvas that draws to the offscreen surface layer.
     guard let layer = offscreenSurfaces[surfaceId] else {
       // Return a basic canvas if surface not found.
@@ -224,9 +242,27 @@ class CanvasView: UIView, IINKIRenderTarget {
 
   // Releases the offscreen render canvas.
   func releaseOffscreenRenderCanvas(_ canvas: IINKICanvas) {
+    // Ensure this runs on the main thread since it accesses dictionaries.
+    // Use async to avoid blocking the caller, as this is a cleanup operation.
+    if Thread.isMainThread {
+      releaseOffscreenRenderCanvasSync(canvas: canvas)
+    } else {
+      DispatchQueue.main.async { [weak self] in
+        self?.releaseOffscreenRenderCanvasSync(canvas: canvas)
+      }
+    }
+  }
+
+  // Synchronous implementation of releaseOffscreenRenderCanvas.
+  private func releaseOffscreenRenderCanvasSync(canvas: IINKICanvas) {
     // Find and remove the canvas from storage.
-    if let key = offscreenCanvases.first(where: { $0.value === canvas })?.key {
-      offscreenCanvases.removeValue(forKey: key)
+    // Use identity comparison to find the matching canvas instance.
+    // The MyScript SDK should pass the exact same object instance that was returned.
+    for (key, storedCanvas) in offscreenCanvases {
+      if (storedCanvas as AnyObject) === (canvas as AnyObject) {
+        offscreenCanvases.removeValue(forKey: key)
+        break
+      }
     }
   }
 }
@@ -355,6 +391,18 @@ class OffscreenCanvas: NSObject, IINKICanvas {
   func drawText(_ label: String, anchor: CGPoint, region: CGRect) {
     // Draw text to the layer.
     // This is a simplified implementation.
+  }
+
+  // MARK: - Blending Operations
+
+  func blendOffscreen(_ offscreenId: UInt32, src: CGRect, dest: CGRect, color: UInt32) {
+    // Blend an offscreen surface onto this canvas.
+    // This is a simplified implementation that does nothing.
+    // For a full implementation, we would need to:
+    // 1. Retrieve the offscreen surface by ID
+    // 2. Create a graphics context from the layer
+    // 3. Perform the blending operation using Core Graphics
+    // For now, this stub prevents crashes when MyScript calls this method.
   }
 }
 

@@ -66,10 +66,18 @@ class EditorViewController: UIViewController {
       return
     }
 
-    // Calculate DPI based on screen scale. Approximation for retina displays.
-    let scale = self.view.traitCollection.displayScale
-    let dpiX = Float(scale * 160)
-    let dpiY = Float(scale * 160)
+    // Calculate physical DPI using nativeScale for accurate coordinate mapping.
+    // iPad Pro standard is ~264 DPI, but we derive it from nativeScale.
+    // Use the view's window scene screen if available, otherwise fall back to trait collection.
+    let nativeScale: CGFloat
+    if let windowScene = self.view.window?.windowScene {
+      nativeScale = windowScene.screen.nativeScale
+    } else {
+      // Fallback: nativeScale is typically 2x displayScale for retina displays.
+      nativeScale = self.view.traitCollection.displayScale * 2
+    }
+    let dpiX = Float(nativeScale * 132)
+    let dpiY = Float(nativeScale * 132)
 
     // Create renderer targeting the canvas view.
     if let renderer = try? engine.createRenderer(dpiX: dpiX, dpiY: dpiY, target: canvas) {
@@ -80,6 +88,19 @@ class EditorViewController: UIViewController {
 
       // Connect the editor to the canvas for input routing.
       canvas.editor = editorWorker.editor
+
+      // Set the view size immediately after creation for coordinate calibration.
+      // This ensures the editor knows the pixel dimensions of the rendering surface.
+      if let editor = editorWorker.editor {
+        let size = self.view.bounds.size
+        if size.width > 0 && size.height > 0 {
+          do {
+            try editor.set(viewSize: size)
+          } catch {
+            // Setting view size failed.
+          }
+        }
+      }
     }
   }
 

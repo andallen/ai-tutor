@@ -13,9 +13,6 @@ struct NotebookView: View {
   // Worker that manages the MyScript editor logic.
   @StateObject private var editorWorker = EditorWorker()
 
-  // Trigger for the clear action.
-  @State private var clearTrigger: Bool = false
-
   init(model: NotebookModel, documentHandle: DocumentHandle) {
     self.model = model
     self.documentHandle = documentHandle
@@ -37,7 +34,7 @@ struct NotebookView: View {
 
           // Clear button for testing purposes.
           Button("Clear") {
-            clearTrigger = true
+            editorWorker.clear()
           }
           .padding(.trailing)
         }
@@ -46,8 +43,7 @@ struct NotebookView: View {
 
         // The MyScript editor canvas.
         EditorViewControllerRepresentable(
-          editorWorker: editorWorker,
-          clearTrigger: $clearTrigger
+          editorWorker: editorWorker
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
       }
