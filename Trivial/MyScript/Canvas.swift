@@ -26,6 +26,9 @@ class Canvas: NSObject, IINKICanvas {
     
     func setStrokeColor(_ color: UInt32) {
         style.strokeColor = color
+        // Add this log to see the raw hex value the engine is sending.
+        print("🎨 Canvas: setStrokeColor called with hex: \(String(format: "0x%08X", color))")
+        
         // Correct bit shifting for 0xAARRGGBB format.
         let a = CGFloat((color >> 24) & 0xFF) / 255.0
         let r = CGFloat((color >> 16) & 0xFF) / 255.0
@@ -145,7 +148,17 @@ class Canvas: NSObject, IINKICanvas {
     }
     
     func draw(_ path: IINKIPath) {
-        guard let path = path as? Path, let context = self.context else { return }
+        guard let path = path as? Path else {
+            print("⚠️ Canvas: Draw failed - path cast failed")
+            return
+        }
+        guard let context = self.context else {
+            print("⚠️ Canvas: Draw failed - context is NIL")
+            return
+        }
+        
+        // Add this log to see if the engine is actually triggering a draw command.
+        print("✒️ Canvas: draw(path) called. Bounds: \(path.bezierPath.bounds)")
         
         context.saveGState()
         
@@ -211,6 +224,8 @@ class Canvas: NSObject, IINKICanvas {
         // Check the Alpha channel (highest 8 bits) instead of the Blue channel.
         if (style.strokeColor >> 24) > 0 {
             context.strokePath()
+        } else {
+            print("🛑 Canvas: strokePath skipped! Alpha channel (0x\(String(format: "%02X", (style.strokeColor >> 24) & 0xFF))) is 0.")
         }
         
         context.restoreGState()

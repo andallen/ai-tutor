@@ -66,16 +66,16 @@ class EditorViewController: UIViewController {
 
   override func viewDidLayoutSubviews() {
     super.viewDidLayoutSubviews()
-
-    if let editor = editorWorker.editor {
-      let size = self.view.bounds.size
-      if size.width > 0 && size.height > 0 {
-        do {
-          // Inform the editor of size changes for coordinate calibration.
-          try editor.set(viewSize: size)
-        } catch {
-          // Setting view size failed.
-        }
+    
+    // Use the renderView bounds to ensure accurate coordinate mapping.
+    let size = renderView?.bounds.size ?? .zero
+    if size.width > 0 && size.height > 0 {
+      do {
+        // Inform the editor of size changes for coordinate calibration.
+        try editorWorker.editor?.set(viewSize: size)
+      } catch {
+        // Setting view size failed.
+        print("⚠️ EditorViewController: Failed to set view size: \(error.localizedDescription)")
       }
     }
   }

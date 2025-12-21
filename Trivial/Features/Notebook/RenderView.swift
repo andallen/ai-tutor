@@ -26,6 +26,9 @@ class RenderView: UIView, IINKIRenderTarget {
     }
 
     func invalidate(_ renderer: IINKRenderer, area: CGRect, layers: IINKLayerType) {
+        // Check if the engine is actually signaling a redraw.
+        print("🔄 RenderView: invalidate called for area: \(area), layers: \(layers.rawValue)")
+        
         // MyScript calls this on a background thread whenever the ink model changes.
         // MyScript provides the area in millimeters, but UIKit expects points.
         // While debugging, invalidate the entire view to ensure the ink is visible
@@ -62,7 +65,19 @@ class RenderView: UIView, IINKIRenderTarget {
     // MARK: - Drawing
 
     override func draw(_ rect: CGRect) {
-        guard let context = UIGraphicsGetCurrentContext(), let renderer = renderer, let canvas = canvas else { return }
+        // Verify all drawing dependencies are present.
+        guard let context = UIGraphicsGetCurrentContext() else {
+            print("⚠️ RenderView: CGContext is NIL")
+            return
+        }
+        guard let renderer = renderer else {
+            print("⚠️ RenderView: Renderer is NIL")
+            return
+        }
+        guard let canvas = canvas else {
+            print("⚠️ RenderView: Canvas object is NIL")
+            return
+        }
         
         // Set up the canvas with the current graphics context.
         canvas.context = context

@@ -10,11 +10,28 @@ class EditorWorker: NSObject, ObservableObject {
         // Create the editor synchronously.
         // Defer the @Published update to avoid publishing during view updates.
         let newEditor = engine.createEditor(renderer: renderer, toolController: nil)
-        newEditor?.set(fontMetricsProvider: FontMetricsProvider())
         
-        // Assign the delegate to this instance of EditorWorker.
-        // This allows the engine to notify of background errors.
-        newEditor?.delegate = self
+        // Define a default CSS theme.
+        // Without this, colors default to 0x00000000 (fully transparent).
+        let theme = """
+        .ink {
+            color: #000000;
+            -myscript-pen-width: 1.5;
+            -myscript-pen-fill-color: #000000;
+        }
+        """
+        
+        do {
+            // Set the theme globally for this editor instance.
+            try newEditor?.configuration.set(string: theme, forKey: "theme")
+            newEditor?.set(fontMetricsProvider: FontMetricsProvider())
+            
+            // Assign the delegate to this instance of EditorWorker.
+            // This allows the engine to notify of background errors.
+            newEditor?.delegate = self
+        } catch {
+            print("❌ EditorWorker: Failed to set theme: \(error.localizedDescription)")
+        }
         
         // Update @Published asynchronously to avoid publishing during view updates.
         DispatchQueue.main.async { [weak self] in
@@ -62,7 +79,7 @@ extension EditorWorker: IINKEditorDelegate {
     }
     
     func contentChanged(_ editor: IINKEditor, blockIds: [String]) {
-        // Called when content in the specified blocks changes.
-        // This is a required protocol method.
+        // If this prints, it means the engine successfully processed your strokes into the model.
+        print("📈 EditorWorker: Content changed. Blocks updated: \(blockIds)")
     }
 }
