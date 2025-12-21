@@ -6,6 +6,7 @@ final class EditorWorker: NSObject, ObservableObject {
     @Published private(set) var editor: IINKEditor?
     private var documentHandle: DocumentHandle?
     private var pendingPart: IINKContentPart?
+    private var pendingViewSize: CGSize?
     private var toolController: IINKToolController?
 
     func attach(engine: IINKEngine, renderer: IINKRenderer) {
@@ -57,10 +58,48 @@ final class EditorWorker: NSObject, ObservableObject {
         // This ensures loadPart can immediately set the part if it arrives first.
         editor = e
         
+        // Apply pending view size if it was set before the editor was ready.
+        // The SDK requires viewSize to be set before attaching a part.
+        if let size = pendingViewSize, size.width > 0 && size.height > 0 {
+            do {
+                try e.set(viewSize: size)
+                pendingViewSize = nil
+            } catch {
+                print("❌ EditorWorker: Failed to set pending view size: \(error)")
+            }
+        }
+        
         // If a part was loaded before the editor was ready, apply it now.
+        // But only if view size has been set (either just now or previously).
         if let part = pendingPart {
-            e.part = part
-            pendingPart = nil
+            // Verify view size is set before attaching part.
+            // If not set yet, keep part pending until view size is available.
+            if e.viewSize.width > 0 && e.viewSize.height > 0 {
+                e.part = part
+                pendingPart = nil
+            }
+        }
+    }
+    
+    // Set the view size. Must be called before attaching a part.
+    func setViewSize(_ size: CGSize) {
+        if let e = editor {
+            // Editor exists, set size immediately.
+            do {
+                try e.set(viewSize: size)
+                // If we have a pending part and view size is now valid, apply it.
+                if let part = pendingPart, size.width > 0 && size.height > 0 {
+                    e.part = part
+                    pendingPart = nil
+                }
+            } catch {
+                print("❌ EditorWorker: Failed to set view size: \(error)")
+            }
+        } else {
+            // Editor doesn't exist yet, store size for later.
+            if size.width > 0 && size.height > 0 {
+                pendingViewSize = size
+            }
         }
     }
 

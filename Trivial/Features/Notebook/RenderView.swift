@@ -5,6 +5,7 @@ class RenderView: UIView, IINKIRenderTarget {
     weak var renderer: IINKRenderer?
     weak var editor: IINKEditor?
     private var canvas: Canvas?
+    private let offscreenSurfaces = OffscreenRenderSurfaces()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -12,7 +13,9 @@ class RenderView: UIView, IINKIRenderTarget {
         // Disable multiple touch while drawing ink to prevent gesture conflicts.
         // Two simultaneous touches will be treated as a gesture and can prevent stroke creation.
         self.isMultipleTouchEnabled = false
-        self.canvas = Canvas()
+        let canvas = Canvas()
+        canvas.offscreenRenderSurfaces = offscreenSurfaces
+        self.canvas = canvas
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -45,23 +48,59 @@ class RenderView: UIView, IINKIRenderTarget {
     }
     
     func createOffscreenRenderSurface(width: Int32, height: Int32, alphaMask: Bool) -> UInt32 {
-        // Basic implementation - returns 0 for now
-        // Can be extended to create actual offscreen surfaces if needed
-        return 0
+        // Get the current graphics context to create a CGLayer.
+        // CGLayer must be created from a context that will be used for drawing.
+        // If we're not in a drawing context, we need to get the context from the main canvas.
+        let context: CGContext
+        if let currentContext = UIGraphicsGetCurrentContext() {
+            context = currentContext
+        } else if let canvasContext = canvas?.context {
+            context = canvasContext
+        } else {
+            // Fallback: create a temporary context for layer creation.
+            // This should rarely happen, but ensures we can create surfaces.
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            guard let tempContext = CGContext(
+                data: nil,
+                width: Int(width),
+                height: Int(height),
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ) else {
+                return 0
+            }
+            return offscreenSurfaces.createSurface(width: width, height: height, context: tempContext, alphaMask: alphaMask)
+        }
+        
+        return offscreenSurfaces.createSurface(width: width, height: height, context: context, alphaMask: alphaMask)
     }
     
     func releaseOffscreenRenderSurface(_ surfaceId: UInt32) {
-        // Basic implementation - no-op for now
+        offscreenSurfaces.releaseSurface(surfaceId)
     }
     
     func createOffscreenRenderCanvas(_ surfaceId: UInt32) -> IINKICanvas {
         let canvas = Canvas()
-        // Set up canvas for offscreen rendering if needed
+        
+        // Set up the canvas with the offscreen surface's context.
+        if let context = offscreenSurfaces.getContext(surfaceId) {
+            canvas.context = context
+        }
+        
+        // Link the canvas to the offscreen surfaces manager for blending.
+        canvas.offscreenRenderSurfaces = offscreenSurfaces
+        
         return canvas
     }
     
     func releaseOffscreenRenderCanvas(_ canvas: IINKICanvas) {
-        // Basic implementation - no-op for now
+        // Restore graphics state if needed.
+        // The canvas may have modified the context state during drawing.
+        if let canvas = canvas as? Canvas {
+            canvas.context?.restoreGState()
+        }
     }
 
     // MARK: - Drawing

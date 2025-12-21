@@ -71,13 +71,8 @@ class EditorViewController: UIViewController {
     // Use the renderView bounds to ensure accurate coordinate mapping.
     let size = renderView?.bounds.size ?? .zero
     if size.width > 0 && size.height > 0 {
-      do {
-        // Inform the editor of size changes for coordinate calibration.
-        try editorWorker.editor?.set(viewSize: size)
-      } catch {
-        // Setting view size failed.
-        print("⚠️ EditorViewController: Failed to set view size: \(error.localizedDescription)")
-      }
+      // Use EditorWorker's setViewSize to ensure proper ordering with part attachment.
+      editorWorker.setViewSize(size)
     }
   }
 
@@ -106,24 +101,14 @@ class EditorViewController: UIViewController {
       canvas.renderer = renderer
       editorWorker.attach(engine: engine, renderer: renderer)
       
-      // Observe the @Published editor property to set it on the canvas and configure view size.
+      // Observe the @Published editor property to set it on the canvas.
       // This ensures the editor is set deterministically after attach() completes.
+      // Note: view size is set via viewDidLayoutSubviews to ensure proper ordering.
       self.editorSubscription = editorWorker.$editor
         .compactMap { $0 }
         .first()
-        .sink { [weak self, weak canvas] editor in
+        .sink { [weak canvas] editor in
           canvas?.editor = editor
-          
-          // Set view size immediately after editor becomes available.
-          // This prevents the renderer from invalidating empty rectangles.
-          if let size = self?.renderView?.bounds.size, size.width > 0, size.height > 0 {
-            do {
-              try editor.set(viewSize: size)
-              self?.renderView?.setNeedsDisplay()
-            } catch {
-              print("❌ EditorViewController: Failed to set view size: \(error.localizedDescription)")
-            }
-          }
         }
     }
   }

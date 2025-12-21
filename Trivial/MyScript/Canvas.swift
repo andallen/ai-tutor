@@ -3,10 +3,12 @@ import CoreGraphics
 
 // Canvas implementation that bridges Core Graphics to MyScript's IINKICanvas protocol.
 // This is a simplified version based on the MyScript reference implementation.
+@objcMembers
 class Canvas: NSObject, IINKICanvas {
     var context: CGContext?
     var size: CGSize = .zero
     var clearAtStartDraw: Bool = true
+    var offscreenRenderSurfaces: OffscreenRenderSurfaces?
     
     private var transform: CGAffineTransform = .identity
     private var style: IINKStyle = IINKStyle()
@@ -286,6 +288,46 @@ class Canvas: NSObject, IINKICanvas {
     
     func endDraw() {
         context?.restoreGState()
+    }
+    
+    // MARK: - Offscreen Blending
+    
+    // Blend an offscreen surface back into the main context.
+    // This is called by the MyScript renderer when compositing cached tiles.
+    @objc func blendOffscreen(_ surfaceId: UInt32, src: CGRect, dest: CGRect, color: UInt32) {
+        guard let context = self.context else { return }
+        guard let surfaces = offscreenRenderSurfaces else { return }
+        guard let layer = surfaces.getSurface(surfaceId) else { return }
+        
+        // Save graphics state.
+        context.saveGState()
+        
+        // Clip to destination rectangle.
+        context.clip(to: dest)
+        
+        // Extract alpha from color (RRGGBBAA format, alpha in low byte).
+        let alpha = CGFloat(color & 0xFF) / 255.0
+        
+        // Apply alpha if not fully opaque.
+        if alpha < 1.0 {
+            context.setAlpha(alpha)
+        }
+        
+        // Calculate the scale factor between source and destination.
+        let scaleX = dest.width / src.width
+        let scaleY = dest.height / src.height
+        
+        // Create transform to map from source rect in layer to dest rect in context.
+        var transform = CGAffineTransform.identity
+        transform = transform.translatedBy(x: dest.origin.x - src.origin.x * scaleX, y: dest.origin.y - src.origin.y * scaleY)
+        transform = transform.scaledBy(x: scaleX, y: scaleY)
+        
+        // Apply transform and draw the layer.
+        context.concatenate(transform)
+        context.draw(layer, in: src)
+        
+        // Restore graphics state.
+        context.restoreGState()
     }
 }
 
