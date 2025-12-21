@@ -6,7 +6,17 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		AEAB2C862EF7BD3300424068 /* Trivial.c in Sources */ = {isa = PBXBuildFile; fileRef = AEAB2C842EF7BD3300424068 /* Trivial.c */; };
+		C4B8257FA31BED22370271D6 /* libPods-Trivial.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C6004BA06274FD2310574B0 /* libPods-Trivial.a */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		0FA740AD3C1724826C80E68D /* Pods-Trivial.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Trivial.debug.xcconfig"; path = "Target Support Files/Pods-Trivial/Pods-Trivial.debug.xcconfig"; sourceTree = "<group>"; };
+		7AEECD521EFF89C6373D9C02 /* Pods-Trivial.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Trivial.release.xcconfig"; path = "Target Support Files/Pods-Trivial/Pods-Trivial.release.xcconfig"; sourceTree = "<group>"; };
+		8C6004BA06274FD2310574B0 /* libPods-Trivial.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Trivial.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AEAB2C832EF7BD3300424068 /* MyCertificate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MyCertificate.h; sourceTree = "<group>"; };
+		AEAB2C842EF7BD3300424068 /* Trivial.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Trivial.c; sourceTree = "<group>"; };
 		AEAFC2392EF4B85B00811728 /* Trivial.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Trivial.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -21,6 +31,11 @@
 			path = .cursor;
 			sourceTree = "<group>";
 		};
+		AED92C132EF7AE2600A06118 /* recognition-assets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "recognition-assets";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -28,18 +43,49 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C4B8257FA31BED22370271D6 /* libPods-Trivial.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1CD3FB676B945362DF406464 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				8C6004BA06274FD2310574B0 /* libPods-Trivial.a */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		7D21902157F5C13C106A1960 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				0FA740AD3C1724826C80E68D /* Pods-Trivial.debug.xcconfig */,
+				7AEECD521EFF89C6373D9C02 /* Pods-Trivial.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		AEAB2C852EF7BD3300424068 /* MyScriptCertificate */ = {
+			isa = PBXGroup;
+			children = (
+				AEAB2C832EF7BD3300424068 /* MyCertificate.h */,
+				AEAB2C842EF7BD3300424068 /* Trivial.c */,
+			);
+			path = MyScriptCertificate;
+			sourceTree = "<group>";
+		};
 		AEAFC2302EF4B85B00811728 = {
 			isa = PBXGroup;
 			children = (
+				AEAB2C852EF7BD3300424068 /* MyScriptCertificate */,
 				AEAFC23B2EF4B85B00811728 /* Trivial */,
 				AEAFC23A2EF4B85B00811728 /* Products */,
 				AED5AD602EF747D900F4FA67 /* .cursor */,
+				7D21902157F5C13C106A1960 /* Pods */,
+				AED92C132EF7AE2600A06118 /* recognition-assets */,
+				1CD3FB676B945362DF406464 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -69,10 +115,9 @@
 			fileSystemSynchronizedGroups = (
 				AEAFC23B2EF4B85B00811728 /* Trivial */,
 				AED5AD602EF747D900F4FA67 /* .cursor */,
+				AED92C132EF7AE2600A06118 /* recognition-assets */,
 			);
 			name = Trivial;
-			packageProductDependencies = (
-			);
 			productName = Trivial;
 			productReference = AEAFC2392EF4B85B00811728 /* Trivial.app */;
 			productType = "com.apple.product-type.application";
@@ -126,6 +171,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AEAB2C862EF7BD3300424068 /* Trivial.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -190,6 +236,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -246,6 +293,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -253,6 +301,7 @@
 		};
 		AEAFC2452EF4B85D00811728 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0FA740AD3C1724826C80E68D /* Pods-Trivial.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -260,6 +309,13 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/MyScriptInteractiveInk-Runtime/MyScriptInteractiveInk_Runtime.framework/Headers\"",
+					"\"${PODS_XCFRAMEWORKS_BUILD_DIR}/MyScriptInteractiveInk-Runtime/Headers\"",
+					"\"${PODS_ROOT}/MyScriptInteractiveInk-Runtime/Frameworks/iink.framework/Headers\"",
+					"$(inherited)",
+				);
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -276,14 +332,17 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				"SWIFT_OBJC_BRIDGING_HEADER[arch=*]" = "Trivial/Trivial-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				"USER_HEADER_SEARCH_PATHS[arch=*]" = "\"${PODS_ROOT}/MyScriptInteractiveInk-Runtime/Frameworks/iink.framework/Headers\"/**";
 			};
 			name = Debug;
 		};
 		AEAFC2462EF4B85D00811728 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7AEECD521EFF89C6373D9C02 /* Pods-Trivial.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -291,6 +350,13 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/MyScriptInteractiveInk-Runtime/MyScriptInteractiveInk_Runtime.framework/Headers\"",
+					"\"${PODS_XCFRAMEWORKS_BUILD_DIR}/MyScriptInteractiveInk-Runtime/Headers\"",
+					"\"${PODS_ROOT}/MyScriptInteractiveInk-Runtime/Frameworks/iink.framework/Headers\"",
+					"$(inherited)",
+				);
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -307,9 +373,11 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				"SWIFT_OBJC_BRIDGING_HEADER[arch=*]" = "Trivial/Trivial-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				"USER_HEADER_SEARCH_PATHS[arch=*]" = "\"${PODS_ROOT}/MyScriptInteractiveInk-Runtime/Frameworks/iink.framework/Headers\"/**";
 			};
 			name = Release;
 		};
