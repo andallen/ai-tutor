@@ -164,6 +164,7 @@ struct DashboardView: View {
       ) {
         ForEach(library.notebooks) { notebook in
           NotebookCard(notebook: notebook)
+            .contentShape(Rectangle())
             .onTapGesture {
               openNotebook(notebook)
             }
