@@ -27,13 +27,11 @@ class RenderView: UIView, IINKIRenderTarget {
 
     func invalidate(_ renderer: IINKRenderer, area: CGRect, layers: IINKLayerType) {
         // MyScript calls this on a background thread whenever the ink model changes.
+        // MyScript provides the area in millimeters, but UIKit expects points.
+        // While debugging, invalidate the entire view to ensure the ink is visible
+        // regardless of mm-to-point coordinate mismatches.
         DispatchQueue.main.async { [weak self] in
-            // Passing the specific 'area' is more efficient for the GPU.
-            if area.isEmpty || area.isInfinite {
-                self?.setNeedsDisplay()
-            } else {
-                self?.setNeedsDisplay(area)
-            }
+            self?.setNeedsDisplay()
         }
     }
 

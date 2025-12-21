@@ -35,6 +35,12 @@ class EditorViewController: UIViewController {
     // Explicitly enable interaction to ensure touch events are received.
     canvas.isUserInteractionEnabled = true
     
+    // Prevent parent gestures from hijacking the ink strokes.
+    canvas.gestureRecognizers?.forEach {
+        $0.cancelsTouchesInView = false
+        $0.delaysTouchesBegan = false
+    }
+    
     // Prevent the system from stealing touches for navigation gestures.
     // If this is in a navigation controller, it prevents the "swipe to go back"
     // gesture from canceling your ink strokes.
@@ -44,6 +50,18 @@ class EditorViewController: UIViewController {
     self.renderView = canvas
 
     setupMyScript()
+  }
+
+  override func viewDidAppear(_ animated: Bool) {
+    super.viewDidAppear(animated)
+    // Disabling this prevents the side-swipe gesture from canceling ink strokes.
+    self.navigationController?.interactivePopGestureRecognizer?.isEnabled = false
+  }
+
+  override func viewWillDisappear(_ animated: Bool) {
+    super.viewWillDisappear(animated)
+    // Re-enable when leaving the notebook view.
+    self.navigationController?.interactivePopGestureRecognizer?.isEnabled = true
   }
 
   override func viewDidLayoutSubviews() {

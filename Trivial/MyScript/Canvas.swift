@@ -18,18 +18,19 @@ class Canvas: NSObject, IINKICanvas {
     }
     
     func setTransform(_ transform: CGAffineTransform) {
-        let inverted = self.transform.inverted()
-        let result = transform.concatenating(inverted)
+        guard let context = self.context else { return }
+        // Concatenation ensures internal engine coordinates map to the UI coordinates.
         self.transform = transform
-        context?.concatenate(result)
+        context.concatenate(transform)
     }
     
     func setStrokeColor(_ color: UInt32) {
         style.strokeColor = color
-        let r = CGFloat((color >> 24) & 0xFF) / 255.0
-        let g = CGFloat((color >> 16) & 0xFF) / 255.0
-        let b = CGFloat((color >> 8) & 0xFF) / 255.0
-        let a = CGFloat(color & 0xFF) / 255.0
+        // Correct bit shifting for 0xAARRGGBB format.
+        let a = CGFloat((color >> 24) & 0xFF) / 255.0
+        let r = CGFloat((color >> 16) & 0xFF) / 255.0
+        let g = CGFloat((color >> 8) & 0xFF) / 255.0
+        let b = CGFloat(color & 0xFF) / 255.0
         context?.setStrokeColor(red: r, green: g, blue: b, alpha: a)
     }
     
@@ -88,10 +89,11 @@ class Canvas: NSObject, IINKICanvas {
     
     func setFillColor(_ color: UInt32) {
         style.fillColor = color
-        let r = CGFloat((color >> 24) & 0xFF) / 255.0
-        let g = CGFloat((color >> 16) & 0xFF) / 255.0
-        let b = CGFloat((color >> 8) & 0xFF) / 255.0
-        let a = CGFloat(color & 0xFF) / 255.0
+        // Correct bit shifting for 0xAARRGGBB format.
+        let a = CGFloat((color >> 24) & 0xFF) / 255.0
+        let r = CGFloat((color >> 16) & 0xFF) / 255.0
+        let g = CGFloat((color >> 8) & 0xFF) / 255.0
+        let b = CGFloat(color & 0xFF) / 255.0
         context?.setFillColor(red: r, green: g, blue: b, alpha: a)
     }
     
@@ -143,17 +145,75 @@ class Canvas: NSObject, IINKICanvas {
     }
     
     func draw(_ path: IINKIPath) {
-        guard let path = path as? Path else { return }
-        context?.addPath(path.bezierPath.cgPath)
+        guard let path = path as? Path, let context = self.context else { return }
         
-        if (style.fillColor & 0xFF) > 0 {
+        context.saveGState()
+        
+        // Configure stroke properties from the MyScript style object.
+        // Check the Alpha channel (highest 8 bits) instead of the Blue channel.
+        if (style.strokeColor >> 24) > 0 {
+            let strokeColor = style.strokeColor
+            // Correct bit shifting for 0xAARRGGBB format.
+            let a = CGFloat((strokeColor >> 24) & 0xFF) / 255.0
+            let r = CGFloat((strokeColor >> 16) & 0xFF) / 255.0
+            let g = CGFloat((strokeColor >> 8) & 0xFF) / 255.0
+            let b = CGFloat(strokeColor & 0xFF) / 255.0
+            context.setStrokeColor(red: r, green: g, blue: b, alpha: a)
+            context.setLineWidth(CGFloat(style.strokeWidth))
+            
+            // Set line cap.
+            switch style.strokeLineCap {
+            case .butt:
+                context.setLineCap(.butt)
+            case .round:
+                context.setLineCap(.round)
+            case .square:
+                context.setLineCap(.square)
+            @unknown default:
+                context.setLineCap(.round)
+            }
+            
+            // Set line join.
+            switch style.strokeLineJoin {
+            case .miter:
+                context.setLineJoin(.miter)
+            case .round:
+                context.setLineJoin(.round)
+            case .bevel:
+                context.setLineJoin(.bevel)
+            @unknown default:
+                context.setLineJoin(.round)
+            }
+        }
+        
+        // Add and draw the path.
+        context.addPath(path.bezierPath.cgPath)
+        
+        // Fill if fill color has alpha.
+        // Check the Alpha channel (highest 8 bits) instead of the Blue channel.
+        if (style.fillColor >> 24) > 0 {
+            let fillColor = style.fillColor
+            // Correct bit shifting for 0xAARRGGBB format.
+            let a = CGFloat((fillColor >> 24) & 0xFF) / 255.0
+            let r = CGFloat((fillColor >> 16) & 0xFF) / 255.0
+            let g = CGFloat((fillColor >> 8) & 0xFF) / 255.0
+            let b = CGFloat(fillColor & 0xFF) / 255.0
+            context.setFillColor(red: r, green: g, blue: b, alpha: a)
             let fillRule: CGPathFillRule = style.fillRule == .evenOdd ? .evenOdd : .winding
-            context?.fillPath(using: fillRule)
+            context.fillPath(using: fillRule)
+            // Re-add path for stroke if needed, since fillPath consumes the path.
+            if (style.strokeColor >> 24) > 0 {
+                context.addPath(path.bezierPath.cgPath)
+            }
         }
         
-        if (style.strokeColor & 0xFF) > 0 {
-            context?.strokePath()
+        // Stroke if stroke color has alpha.
+        // Check the Alpha channel (highest 8 bits) instead of the Blue channel.
+        if (style.strokeColor >> 24) > 0 {
+            context.strokePath()
         }
+        
+        context.restoreGState()
     }
     
     func drawRectangle(_ rect: CGRect) {
