@@ -22,6 +22,9 @@ actor BundleManager {
   // The name of the Manifest file inside each Bundle.
   private static let manifestFileName = "manifest.json"
 
+  // The name of the MyScript iink package file inside each Bundle.
+  private static let iinkFileName = "content.iink"
+
   // Lists all existing Bundles in the Notebooks directory.
   // Returns an array of NotebookMetadata for each Bundle that has a valid Manifest.
   // Skips Bundles that don't have a Manifest or have invalid Manifests.
@@ -56,7 +59,9 @@ actor BundleManager {
       // Read and decode the Manifest.
       do {
         let data = try Data(contentsOf: manifestURL)
-        let manifest = try JSONDecoder().decode(Manifest.self, from: data)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let manifest = try decoder.decode(Manifest.self, from: data)
         notebooks.append(
           NotebookMetadata(id: manifest.notebookID, displayName: manifest.displayName))
       } catch {
@@ -68,7 +73,7 @@ actor BundleManager {
     return notebooks
   }
 
-  // Creates a new Bundle folder with an initial Manifest.
+  // Creates a new Bundle folder with an initial Manifest and iink package.
   // Generates a new UUID for the Notebook ID.
   // Returns the NotebookMetadata for the newly created Bundle.
   func createBundle(displayName: String) async throws -> NotebookMetadata {
@@ -93,10 +98,39 @@ actor BundleManager {
     let manifestURL = bundleURL.appendingPathComponent(Self.manifestFileName)
     try writeManifest(manifest, to: manifestURL)
 
+    // Create the MyScript iink package.
+    let iinkPath = bundleURL
+      .appendingPathComponent(Self.iinkFileName)
+      .path
+      .decomposedStringWithCanonicalMapping
+
+    // Access the engine on the main actor to create the package.
+    let packageCreated = await MainActor.run {
+      guard let engine = EngineProvider.shared.engine else {
+        return false
+      }
+      do {
+        // Create the package file.
+        let package = try engine.createPackage(iinkPath)
+        // Create an initial "Text Document" part in the package.
+        _ = try package.createPart(with: "Text Document")
+        // Save the package to persist it to disk.
+        try package.save()
+        return true
+      } catch {
+        return false
+      }
+    }
+
+    guard packageCreated else {
+      throw BundleError.packageCreationFailed(notebookID: notebookID)
+    }
+
     return NotebookMetadata(id: notebookID, displayName: displayName)
   }
 
   // Renames a Notebook by updating the display name in its Manifest.
+  // Also updates the modifiedAt timestamp.
   // Throws if the Bundle doesn't exist or the Manifest cannot be read or written.
   func renameBundle(notebookID: String, newDisplayName: String) async throws {
     // Get the directory where Bundles are stored.
@@ -121,14 +155,17 @@ actor BundleManager {
     }
 
     let data = try Data(contentsOf: manifestURL)
-    var manifest = try JSONDecoder().decode(Manifest.self, from: data)
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    var manifest = try decoder.decode(Manifest.self, from: data)
     manifest.displayName = newDisplayName
+    manifest.modifiedAt = Date()
 
     // Write the updated Manifest back to disk using atomic write.
     try writeManifest(manifest, to: manifestURL)
   }
 
-  // Deletes a Bundle folder and all its contents.
+  // Deletes a Bundle folder and all its contents including the iink package.
   // Throws if the Bundle doesn't exist or cannot be deleted.
   func deleteBundle(notebookID: String) async throws {
     // Get the directory where Bundles are stored.
@@ -144,6 +181,26 @@ actor BundleManager {
       isDirectory.boolValue
     else {
       throw BundleError.bundleNotFound(notebookID: notebookID)
+    }
+
+    // Delete the iink package using the engine if it exists.
+    let iinkPath = bundleURL
+      .appendingPathComponent(Self.iinkFileName)
+      .path
+      .decomposedStringWithCanonicalMapping
+
+    if fileManager.fileExists(atPath: iinkPath) {
+      // Access the engine on the main actor to delete the package.
+      await MainActor.run {
+        guard let engine = EngineProvider.shared.engine else {
+          return
+        }
+        do {
+          try engine.deletePackage(iinkPath)
+        } catch {
+          // Package deletion failed, will delete folder directly instead.
+        }
+      }
     }
 
     // Delete the entire Bundle folder.
@@ -182,7 +239,9 @@ actor BundleManager {
     // Decode the Manifest.
     let manifest: Manifest
     do {
-      manifest = try JSONDecoder().decode(Manifest.self, from: data)
+      let decoder = JSONDecoder()
+      decoder.dateDecodingStrategy = .iso8601
+      manifest = try decoder.decode(Manifest.self, from: data)
     } catch {
       throw BundleError.manifestDecodingFailed(notebookID: notebookID, underlyingError: error)
     }
@@ -201,8 +260,31 @@ actor BundleManager {
       throw BundleError.invalidManifest(notebookID: notebookID, reason: "displayName is empty")
     }
 
+    // Construct the path to the iink package.
+    let packagePath = bundleURL
+      .appendingPathComponent(Self.iinkFileName)
+      .path
+      .decomposedStringWithCanonicalMapping
+
     // All checks passed. Create and return the DocumentHandle.
-    return DocumentHandle(notebookID: notebookID, bundleURL: bundleURL, manifest: manifest)
+    // The DocumentHandle will open the package internally.
+    return await DocumentHandle(
+      notebookID: notebookID,
+      bundleURL: bundleURL,
+      manifest: manifest,
+      packagePath: packagePath
+    )
+  }
+
+  // Returns the file path to the iink package for a given notebook ID.
+  // This is a helper method for constructing package paths.
+  func iinkPackagePath(forNotebookID notebookID: String) async throws -> String {
+    let bundlesDirectory = try await BundleStorage.bundlesDirectory()
+    let bundleURL = bundlesDirectory.appendingPathComponent(notebookID, isDirectory: true)
+    return bundleURL
+      .appendingPathComponent(Self.iinkFileName)
+      .path
+      .decomposedStringWithCanonicalMapping
   }
 
   // Writes a Manifest to disk using atomic write.
@@ -212,6 +294,7 @@ actor BundleManager {
     // Encode the Manifest to JSON data.
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    encoder.dateEncodingStrategy = .iso8601
     let data = try encoder.encode(manifest)
 
     // Write to a temporary file in the same directory as the target.
@@ -236,6 +319,7 @@ enum BundleError: LocalizedError {
   case manifestDecodingFailed(notebookID: String, underlyingError: Error)
   case unsupportedManifestVersion(notebookID: String, version: Int)
   case invalidManifest(notebookID: String, reason: String)
+  case packageCreationFailed(notebookID: String)
 
   var errorDescription: String? {
     switch self {
@@ -250,6 +334,8 @@ enum BundleError: LocalizedError {
       return "Unsupported Manifest version \(version) in Bundle: \(notebookID)"
     case let .invalidManifest(notebookID, reason):
       return "Invalid Manifest in Bundle \(notebookID): \(reason)"
+    case let .packageCreationFailed(notebookID):
+      return "Failed to create MyScript package for Bundle: \(notebookID)"
     }
   }
 }

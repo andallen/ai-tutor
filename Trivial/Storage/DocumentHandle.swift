@@ -1,43 +1,9 @@
 import Foundation
 
-// Data required to save an ink item. Passed by the editor when saving.
-// Sendable so it can be passed across actor boundaries.
-struct InkItemSaveRequest: Sendable {
-  // Unique identifier for this Ink Item.
-  let id: String
-
-  // The rectangular region this Ink Item occupies on the canvas.
-  let rectangle: InkRectangle
-
-  // The raw ink data to save (e.g., serialized PKDrawing).
-  let payload: Data
-
-  init(id: String, rectangle: InkRectangle, payload: Data) {
-    self.id = id
-    self.rectangle = rectangle
-    self.payload = payload
-  }
-}
-
-// Result of loading an ink item's payload.
-// Sendable so it can be passed across actor boundaries.
-struct LoadedInkPayload: Sendable {
-  // The Ink Item's identifier.
-  let id: String
-
-  // The raw ink data loaded from disk.
-  let payload: Data
-
-  init(id: String, payload: Data) {
-    self.id = id
-    self.payload = payload
-  }
-}
-
 // A DocumentHandle represents an open Notebook and provides safe operations
-// for the editor to load and save data without exposing file paths.
+// for working with the MyScript iink package without exposing file paths.
 // The editor never sees file paths; it only uses the handle.
-// Being an actor ensures only one save operation happens at a time.
+// Being an actor ensures only one operation happens at a time.
 actor DocumentHandle {
   // The unique identifier of the Notebook this handle represents.
   let notebookID: String
@@ -49,154 +15,141 @@ actor DocumentHandle {
   // The URL of the Bundle folder. Private to hide file paths from the editor.
   private let bundleURL: URL
 
+  // The file path to the MyScript iink package for this notebook.
+  let packagePath: String
+
+  // Reference to the opened MyScript package.
+  // This must be accessed on the main actor since IINKContentPackage is not thread-safe.
+  private var package: IINKContentPackage?
+
   // The name of the Manifest file inside the Bundle.
   private static let manifestFileName = "manifest.json"
 
-  // The name of the folder where ink payload files are stored.
-  private static let inkFolderName = "ink"
-
   // Creates a new DocumentHandle for the given Bundle.
+  // Opens the MyScript package at the specified path.
   // This initializer is internal so only the BundleManager can create handles.
-  init(notebookID: String, bundleURL: URL, manifest: Manifest) {
+  init(notebookID: String, bundleURL: URL, manifest: Manifest, packagePath: String) async {
     self.notebookID = notebookID
     self.bundleURL = bundleURL
     self.initialManifest = manifest
+    self.packagePath = packagePath
+
+    // Open the package on the main actor since the engine is @MainActor.
+    self.package = await MainActor.run {
+      guard let engine = EngineProvider.shared.engine else {
+        return nil
+      }
+      do {
+        let openedPackage = try engine.openPackage(packagePath)
+        return openedPackage
+      } catch {
+        return nil
+      }
+    }
   }
 
-  // MARK: - Load API
+  // MARK: - Manifest API
 
   // Loads the current Manifest from disk.
-  // Use this to get the latest state of the Notebook.
+  // Use this to get the latest state of the Notebook metadata.
   func loadManifest() throws -> Manifest {
     let manifestURL = bundleURL.appendingPathComponent(Self.manifestFileName)
     let data = try Data(contentsOf: manifestURL)
-    return try JSONDecoder().decode(Manifest.self, from: data)
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    return try decoder.decode(Manifest.self, from: data)
   }
 
-  // Loads ink payloads for the specified item IDs.
-  // Returns an array of loaded payloads. Items that cannot be loaded are skipped.
-  // This allows the viewport controller to request only visible items.
-  func loadInkPayloads(for itemIDs: [String]) -> [LoadedInkPayload] {
-    let inkFolderURL = bundleURL.appendingPathComponent(Self.inkFolderName, isDirectory: true)
-    var results: [LoadedInkPayload] = []
+  // MARK: - Package API
 
-    for id in itemIDs {
-      let inkFileURL = inkFolderURL.appendingPathComponent("\(id).ink")
+  // Returns the MyScript package if it was successfully opened.
+  // The package must be accessed on the main actor.
+  func getPackage() async -> IINKContentPackage? {
+    // Capture the package reference before entering MainActor context.
+    let capturedPackage = self.package
+    return await MainActor.run {
+      return capturedPackage
+    }
+  }
+
+  // Returns the number of parts (pages) in the package.
+  func getPartCount() async -> Int {
+    // Capture the package reference before entering MainActor context.
+    guard let capturedPackage = self.package else { return 0 }
+    return await MainActor.run {
+      return capturedPackage.partCount()
+    }
+  }
+
+  // Retrieves a specific part (page) from the package by index.
+  // Returns nil if the index is out of bounds or the package is not available.
+  func getPart(at index: Int) async -> IINKContentPart? {
+    // Capture the package reference before entering MainActor context.
+    guard let capturedPackage = self.package else { return nil }
+    guard index >= 0 else { return nil }
+    return await MainActor.run {
+      guard index < capturedPackage.partCount() else { return nil }
       do {
-        let data = try Data(contentsOf: inkFileURL)
-        results.append(LoadedInkPayload(id: id, payload: data))
+        return try capturedPackage.part(at: index)
       } catch {
-        // Skip items that cannot be loaded. The caller can handle missing items.
-        continue
-      }
-    }
-
-    return results
-  }
-
-  // MARK: - Save API
-
-  // Saves ink items and updates the manifest atomically.
-  // Writes payload files first, then updates the manifest.
-  // This ensures the manifest never references missing payload files.
-  // The actor isolation guarantees only one save runs at a time.
-  func saveInkItems(_ requests: [InkItemSaveRequest]) throws {
-    guard !requests.isEmpty else { return }
-
-    let fileManager = FileManager.default
-    let inkFolderURL = bundleURL.appendingPathComponent(Self.inkFolderName, isDirectory: true)
-
-    // Create the ink folder if it does not exist.
-    if !fileManager.fileExists(atPath: inkFolderURL.path) {
-      try fileManager.createDirectory(at: inkFolderURL, withIntermediateDirectories: true)
-    }
-
-    // Step 1: Write all payload files first.
-    var savedItems: [InkItem] = []
-    for request in requests {
-      let inkFileName = "\(request.id).ink"
-      let inkFileURL = inkFolderURL.appendingPathComponent(inkFileName)
-      let tempURL = inkFolderURL.appendingPathComponent(".\(request.id).ink.tmp")
-
-      // Write to temp file first.
-      try request.payload.write(to: tempURL, options: [.atomic])
-
-      // Replace target file with temp file.
-      if fileManager.fileExists(atPath: inkFileURL.path) {
-        try fileManager.removeItem(at: inkFileURL)
-      }
-      try fileManager.moveItem(at: tempURL, to: inkFileURL)
-
-      // Build the InkItem for the manifest.
-      let payloadPath = "\(Self.inkFolderName)/\(inkFileName)"
-      let inkItem = InkItem(id: request.id, rectangle: request.rectangle, payloadPath: payloadPath)
-      savedItems.append(inkItem)
-    }
-
-    // Step 2: Read the current manifest, update it, and write it back.
-    let manifestURL = bundleURL.appendingPathComponent(Self.manifestFileName)
-    let manifestData = try Data(contentsOf: manifestURL)
-    var manifest = try JSONDecoder().decode(Manifest.self, from: manifestData)
-
-    // Update the manifest's inkItems array.
-    // For each saved item, replace existing item with same ID or append new.
-    for savedItem in savedItems {
-      if let index = manifest.inkItems.firstIndex(where: { $0.id == savedItem.id }) {
-        manifest.inkItems[index] = savedItem
-      } else {
-        manifest.inkItems.append(savedItem)
-      }
-    }
-
-    // Write manifest atomically.
-    try writeManifest(manifest)
-  }
-
-  // Deletes ink items from disk and updates the manifest.
-  // Removes from manifest first, then deletes the payload files.
-  func deleteInkItems(_ itemIDs: [String]) throws {
-    guard !itemIDs.isEmpty else { return }
-
-    let fileManager = FileManager.default
-    let inkFolderURL = bundleURL.appendingPathComponent(Self.inkFolderName, isDirectory: true)
-    let manifestURL = bundleURL.appendingPathComponent(Self.manifestFileName)
-
-    // Step 1: Update manifest to remove the items.
-    let manifestData = try Data(contentsOf: manifestURL)
-    var manifest = try JSONDecoder().decode(Manifest.self, from: manifestData)
-
-    let idsToRemove = Set(itemIDs)
-    manifest.inkItems.removeAll { idsToRemove.contains($0.id) }
-
-    try writeManifest(manifest)
-
-    // Step 2: Delete the payload files.
-    for id in itemIDs {
-      let inkFileURL = inkFolderURL.appendingPathComponent("\(id).ink")
-      if fileManager.fileExists(atPath: inkFileURL.path) {
-        try fileManager.removeItem(at: inkFileURL)
+        return nil
       }
     }
   }
 
-  // MARK: - Private Helpers
-
-  // Writes the manifest to disk using atomic write.
-  private func writeManifest(_ manifest: Manifest) throws {
-    let manifestURL = bundleURL.appendingPathComponent(Self.manifestFileName)
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    let data = try encoder.encode(manifest)
-
-    // Write to a temporary file first for safe atomic write.
-    let tempURL = bundleURL.appendingPathComponent(".\(Self.manifestFileName).tmp")
-    try data.write(to: tempURL, options: [.atomic])
-
-    // Replace the target file with the temporary file.
-    let fileManager = FileManager.default
-    if fileManager.fileExists(atPath: manifestURL.path) {
-      try fileManager.removeItem(at: manifestURL)
+  // Saves the package to disk as a compressed zip archive.
+  // This is a slow operation due to compression, but creates a self-contained file.
+  // Use this when closing the notebook or when the app backgrounds.
+  func savePackage() async throws {
+    // Capture the package reference before entering MainActor context.
+    guard let capturedPackage = self.package else {
+      throw DocumentHandleError.packageNotAvailable
     }
-    try fileManager.moveItem(at: tempURL, to: manifestURL)
+    let capturedPath = self.packagePath
+    try await MainActor.run {
+      try capturedPackage.save()
+    }
+  }
+
+  // Saves the package content from memory to the temporary folder.
+  // This is much faster than save() and is suitable for frequent auto-saves.
+  // MyScript can recover this data if the app is force-quit.
+  func savePackageToTemp() async throws {
+    // Capture the package reference before entering MainActor context.
+    guard let capturedPackage = self.package else {
+      throw DocumentHandleError.packageNotAvailable
+    }
+    try await MainActor.run {
+      try capturedPackage.saveToTemp()
+    }
+  }
+
+  // MARK: - Cleanup
+
+  // Closes the package and releases resources.
+  // Call this when the notebook is closed.
+  func close() async {
+    // Save the package before closing.
+    do {
+      try await savePackage()
+    } catch {
+      // Save failed, continue with close.
+    }
+
+    // Release the package reference.
+    // We can set it directly since we're already in the actor context.
+    self.package = nil
+  }
+}
+
+// Errors that can occur when working with DocumentHandles.
+enum DocumentHandleError: LocalizedError {
+  case packageNotAvailable
+
+  var errorDescription: String? {
+    switch self {
+    case .packageNotAvailable:
+      return "MyScript package is not available. The package may not have been opened successfully."
+    }
   }
 }

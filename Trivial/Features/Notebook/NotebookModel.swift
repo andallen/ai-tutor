@@ -1,8 +1,8 @@
 import Foundation
 
-// The Notebook Model is the in-memory representation of what is inside the Notebook.
+// The Notebook Model is the in-memory representation of the Notebook metadata.
 // It is built by reading the Manifest when the Notebook is opened.
-// It contains a list of ink "chunks" that exist and the basic information needed to render them.
+// Ink content is stored in the MyScript iink package, not in this model.
 struct NotebookModel {
   // Unique identifier for this Notebook.
   let notebookID: String
@@ -13,10 +13,11 @@ struct NotebookModel {
   // Version number of the Manifest format this Notebook uses.
   let version: Int
 
-  // List of Ink Items in this Notebook.
-  // Each Ink Item represents one chunk of ink content.
-  // Empty initially, will be populated as ink is added.
-  var inkItems: [InkItem]
+  // Timestamp when the notebook was created.
+  let createdAt: Date
+
+  // Timestamp when the notebook was last modified.
+  var modifiedAt: Date
 
   // Creates a new Notebook Model from a Manifest.
   // This is how the editor builds the in-memory representation when opening a Notebook.
@@ -24,12 +25,7 @@ struct NotebookModel {
     self.notebookID = manifest.notebookID
     self.displayName = manifest.displayName
     self.version = manifest.version
-    self.inkItems = manifest.inkItems
-  }
-
-
-  // Returns true if this Notebook has any ink content.
-  var hasInkContent: Bool {
-    !inkItems.isEmpty
+    self.createdAt = manifest.createdAt
+    self.modifiedAt = manifest.modifiedAt
   }
 }

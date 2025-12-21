@@ -3,7 +3,6 @@ build/
 DerivedData/
 *.xcuserdata/
 *.xcuserstate
-architecture.md
 *.xccheckout
 *.xcscmblueprint
 *.swp
@@ -12,5 +11,5 @@ architecture.md
 *.moved-aside
 MyScriptCertificate/
 Resources/recognition-assets/
-myscript_examples.txt
 Pods/
+Docs/
