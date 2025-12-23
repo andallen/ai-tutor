@@ -1,7 +1,7 @@
 import UIKit
 
 // Owns the MyScript editor, renderer, display, and input plumbing.
-final class NotebookEditorViewController: UIViewController {
+final class NotebookEditorViewController: UIViewController, UIGestureRecognizerDelegate {
     // Identifies which notebook package should be opened.
     private let documentHandle: DocumentHandle
 
@@ -19,6 +19,10 @@ final class NotebookEditorViewController: UIViewController {
 
     // Tracks whether the package and part have been loaded.
     private var didLoadDocument = false
+
+    // Restores the previous navigation controller swipe-back behavior on exit.
+    private var previousInteractivePopEnabled: Bool?
+    private weak var previousInteractivePopDelegate: UIGestureRecognizerDelegate?
 
     private final class EditorDelegateProxy: NSObject, IINKEditorDelegate {
         private let onContentChanged: @MainActor () -> Void
@@ -40,13 +44,36 @@ final class NotebookEditorViewController: UIViewController {
         }
     }
 
+    private var pendingSaveTask: Task<Void, Never>?
+
     private lazy var editorDelegateProxy = EditorDelegateProxy { [weak self] in
         guard let self else { return }
-        Task {
+        pendingSaveTask?.cancel()
+        pendingSaveTask = Task { [documentHandle] in
+            // Save quickly to the temp folder for crash resilience.
             do {
-                try await self.documentHandle.savePackageToTemp()
+                try await documentHandle.savePackageToTemp()
             } catch {
                 print("❌ NotebookEditorViewController: Failed to save package to temp: \(error)")
+            }
+
+            // Debounce archive saves to avoid writing on every small change.
+            do {
+                try await Task.sleep(nanoseconds: 600_000_000)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+
+            // Ensure pending editor work is complete before persisting.
+            await MainActor.run { [weak self] in
+                self?.displayViewModel.editor?.waitForIdle()
+            }
+
+            do {
+                try await documentHandle.savePackage()
+            } catch {
+                print("❌ NotebookEditorViewController: Failed to save package: \(error)")
             }
         }
     }
@@ -108,8 +135,18 @@ final class NotebookEditorViewController: UIViewController {
         }
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        // Prevent interactive swipe-back from stealing/cancelling input on the canvas.
+        if let popGesture = navigationController?.interactivePopGestureRecognizer {
+            if previousInteractivePopEnabled == nil {
+                previousInteractivePopEnabled = popGesture.isEnabled
+                previousInteractivePopDelegate = popGesture.delegate
+            }
+            popGesture.delegate = self
+            popGesture.isEnabled = false
+        }
 
         // Loads the package and part once when the screen becomes visible.
         guard !didLoadDocument else { return }
@@ -120,9 +157,28 @@ final class NotebookEditorViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
+        // Restore swipe-back for other screens.
+        if let popGesture = navigationController?.interactivePopGestureRecognizer,
+           let previousInteractivePopEnabled
+        {
+            popGesture.delegate = previousInteractivePopDelegate
+            popGesture.isEnabled = previousInteractivePopEnabled
+        }
+
         // Attempts to persist the package on exit.
         // Ignores errors here to keep navigation responsive.
-        Task {
+        Task { [weak self, documentHandle] in
+            // Ensure there is no active pointer sequence and wait for pending edits to complete.
+            await MainActor.run {
+                guard let editor = self?.displayViewModel.editor else { return }
+                do {
+                    try editor.pointerCancel(-1)
+                } catch {
+                    // Ignore cancel errors; still try to persist.
+                }
+                editor.waitForIdle()
+            }
+
             do {
                 try await documentHandle.savePackage()
             } catch {
@@ -136,6 +192,14 @@ final class NotebookEditorViewController: UIViewController {
         // This prevents iOS from holding touches at the gesture gate, which causes invisible ink
         // when the initial touchesBegan events arrive too late for stroke construction.
         return .all
+    }
+
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        // Block the interactive pop gesture while editing.
+        if gestureRecognizer == navigationController?.interactivePopGestureRecognizer {
+            return false
+        }
+        return true
     }
 
     private func setupMyScript() {

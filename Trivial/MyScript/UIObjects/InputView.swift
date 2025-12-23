@@ -18,6 +18,9 @@ final class InputView: UIView {
     // Controls the pointer type mapping.
     var inputMode: InputMode = .auto
 
+    // Offset to convert UITouch.timestamp (system uptime) into Unix epoch time.
+    private var eventTimeOffset: TimeInterval = 0
+
     override init(frame: CGRect) {
         super.init(frame: frame)
 
@@ -25,8 +28,13 @@ final class InputView: UIView {
         isOpaque = false
         backgroundColor = .clear
 
-        // Allows multi-touch pointer streams.
-        isMultipleTouchEnabled = true
+        // Keep single-pointer input (matches MyScript reference implementation).
+        isMultipleTouchEnabled = false
+
+        // Convert UITouch.timestamp (relative) into the epoch-based timestamps expected by the SDK.
+        let relativeTime = ProcessInfo.processInfo.systemUptime
+        let absoluteTime = Date().timeIntervalSince1970
+        eventTimeOffset = absoluteTime - relativeTime
     }
 
     required init?(coder: NSCoder) {
@@ -34,88 +42,119 @@ final class InputView: UIView {
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        // Sends pointer down events for new touches.
-        forward(touches: touches, with: event, eventType: .down)
+        super.touchesBegan(touches, with: event)
+        guard let touch = touches.randomElement() else { return }
+        sendPointerDown(for: touch)
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        // Intentionally quiet; detailed logging is in forward(...).
-        // Sends pointer move events for touch updates.
-        forward(touches: touches, with: event, eventType: .move)
+        super.touchesMoved(touches, with: event)
+        guard let touch = touches.randomElement() else { return }
+        sendPointerMoves(for: touch, event: event)
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        // Sends pointer up events when touches end.
-        forward(touches: touches, with: event, eventType: .up)
+        super.touchesEnded(touches, with: event)
+        guard let touch = touches.randomElement() else { return }
+        sendPointerUp(for: touch)
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        // Cancels the current pointer sequence in the editor.
-        do { 
-            try editor?.pointerCancel(0)
+        super.touchesCancelled(touches, with: event)
+        guard let editor else { return }
+        do {
+            // Cancel all active pointer traces.
+            try editor.pointerCancel(-1)
         } catch {
             print("❌ InputView: pointerCancel failed: \(error)")
         }
     }
 
-    private func forward(touches: Set<UITouch>, with event: UIEvent?, eventType: IINKPointerEventType) {
-        // Requires a live editor instance.
-        guard let editor else { 
-            return 
-        }
+    private func normalizeForce(from touch: UITouch) -> Float {
+        guard touch.type == .pencil else { return 0.0 }
+        guard touch.maximumPossibleForce > 0 else { return 0.0 }
+        let normalized = touch.force / touch.maximumPossibleForce
+        return Float(min(1.0, max(0.0, normalized)))
+    }
 
+    private func pointerEvent(from touch: UITouch, eventType: IINKPointerEventType) -> IINKPointerEvent {
         let scale = window?.screen.scale ?? UIScreen.main.scale
         if contentScaleFactor != scale {
             contentScaleFactor = scale
         }
 
-        // Prefers coalesced touches for smoother ink.
-        let allTouches: [UITouch]
-        if let event, let first = touches.first, let coalesced = event.coalescedTouches(for: first) {
-            allTouches = coalesced
-        } else {
-            allTouches = Array(touches)
-        }
+        let pointPt = (touch.type == .pencil) ? touch.preciseLocation(in: self) : touch.location(in: self)
+        let pointPx = CGPoint(x: pointPt.x * scale, y: pointPt.y * scale)
 
-        // Builds a contiguous pointer event buffer for the editor call.
-        var events = [IINKPointerEvent]()
-        events.reserveCapacity(allTouches.count)
+        let pointerType = mapPointerType(touch)
+        let force = normalizeForce(from: touch)
 
-        for t in allTouches {
-            // Converts a touch location into view coordinates.
-            let pPt = t.location(in: self)
-            // MyScript expects view coordinates in pixels.
-            let pPx = CGPoint(x: pPt.x * scale, y: pPt.y * scale)
+        // Convert seconds (system uptime) to milliseconds since Unix epoch.
+        let timestampMs = Int64(1000.0 * (touch.timestamp + eventTimeOffset))
 
-            // Maps the UIKit touch into a MyScript pointer type.
-            let type = mapPointerType(t)
+        // Reference implementation uses a constant pointer id when multi-touch is disabled.
+        return IINKPointerEventMake(eventType, pointPx, timestampMs, force, pointerType, 0)
+    }
 
-            // Uses a stable id derived from the touch object identity.
-            // Truncates the 64-bit hash to 32 bits to fit in Int32.
-            let pointerId = Int32(bitPattern: UInt32(truncatingIfNeeded: t.hash))
-
-            // Converts seconds into milliseconds.
-            let timestampMs = Int64(t.timestamp * 1000.0)
-
-            // Sets pressure only for pencil touches.
-            let pressure = Float(t.type == .pencil ? max(0.001, t.force) : 0.0)
-
-            // Creates the pointer event struct expected by the SDK.
-            let pe = IINKPointerEventMake(eventType, pPx, timestampMs, pressure, type, pointerId)
-            events.append(pe)
-        }
-
-        // Sends the pointer event batch into the editor.
+    private func sendPointerDown(for touch: UITouch) {
+        guard let editor else { return }
+        let e = pointerEvent(from: touch, eventType: .down)
         do {
-            try events.withUnsafeMutableBufferPointer { buf in
-                guard let base = buf.baseAddress else { 
-                    return 
-                }
-                let result = try editor.pointerEvents(base, count: Int(buf.count), doProcessGestures: true)
-                _ = result
-            }
+            try editor.pointerDown(
+                point: CGPoint(x: CGFloat(e.x), y: CGFloat(e.y)),
+                timestamp: e.t,
+                force: e.f,
+                type: e.pointerType,
+                pointerId: Int(e.pointerId)
+            )
         } catch {
-            print("❌ InputView: pointerEvents failed: \(error)")
+            print("❌ InputView: pointerDown failed: \(error)")
+        }
+    }
+
+    private func sendPointerMoves(for touch: UITouch, event: UIEvent?) {
+        guard let editor else { return }
+
+        if let event, let coalesced = event.coalescedTouches(for: touch), !coalesced.isEmpty {
+            var events = coalesced.map { pointerEvent(from: $0, eventType: .move) }
+            do {
+                try events.withUnsafeMutableBufferPointer { buf in
+                    guard let base = buf.baseAddress else { return }
+                    _ = try editor.pointerEvents(base, count: buf.count, doProcessGestures: true)
+                }
+            } catch {
+                print("❌ InputView: pointerEvents(move) failed: \(error)")
+            }
+            return
+        }
+
+        let e = pointerEvent(from: touch, eventType: .move)
+        do {
+            try editor.pointerMove(
+                point: CGPoint(x: CGFloat(e.x), y: CGFloat(e.y)),
+                timestamp: e.t,
+                force: e.f,
+                type: e.pointerType,
+                pointerId: Int(e.pointerId)
+            )
+        } catch {
+            print("❌ InputView: pointerMove failed: \(error)")
+        }
+    }
+
+    private func sendPointerUp(for touch: UITouch) {
+        guard let editor else { return }
+        let e = pointerEvent(from: touch, eventType: .up)
+        do {
+            try editor.pointerUp(
+                point: CGPoint(x: CGFloat(e.x), y: CGFloat(e.y)),
+                timestamp: e.t,
+                force: e.f,
+                type: e.pointerType,
+                pointerId: Int(e.pointerId)
+            )
+        } catch {
+            print("❌ InputView: pointerUp failed: \(error)")
         }
     }
 
