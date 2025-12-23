@@ -11,11 +11,22 @@
 		C4B8257FA31BED22370271D6 /* libPods-Trivial.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C6004BA06274FD2310574B0 /* libPods-Trivial.a */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		AE70E8BC2EFB317C000ECCF1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AEAFC2312EF4B85B00811728 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AEAFC2382EF4B85B00811728;
+			remoteInfo = Trivial;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		0FA740AD3C1724826C80E68D /* Pods-Trivial.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Trivial.debug.xcconfig"; path = "Target Support Files/Pods-Trivial/Pods-Trivial.debug.xcconfig"; sourceTree = "<group>"; };
 		7AEECD521EFF89C6373D9C02 /* Pods-Trivial.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Trivial.release.xcconfig"; path = "Target Support Files/Pods-Trivial/Pods-Trivial.release.xcconfig"; sourceTree = "<group>"; };
 		8C6004BA06274FD2310574B0 /* libPods-Trivial.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Trivial.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AE4C26BE2EF84C9A0089CC3C /* me.andy.allen.Trivial.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = me.andy.allen.Trivial.c; path = /Users/andrewallen/Downloads/me.andy.allen.Trivial.c; sourceTree = "<absolute>"; };
+		AE70E8B62EFB317C000ECCF1 /* InkOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = InkOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AEAB2C832EF7BD3300424068 /* MyCertificate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MyCertificate.h; sourceTree = "<group>"; };
 		AEAFC2392EF4B85B00811728 /* Trivial.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Trivial.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -34,6 +45,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		AE70E8B32EFB317C000ECCF1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AEAFC2362EF4B85B00811728 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -87,6 +105,7 @@
 			isa = PBXGroup;
 			children = (
 				AEAFC2392EF4B85B00811728 /* Trivial.app */,
+				AE70E8B62EFB317C000ECCF1 /* InkOSUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -94,6 +113,26 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		AE70E8B52EFB317C000ECCF1 /* InkOSUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AE70E8C02EFB317C000ECCF1 /* Build configuration list for PBXNativeTarget "InkOSUITests" */;
+			buildPhases = (
+				AE70E8B22EFB317C000ECCF1 /* Sources */,
+				AE70E8B32EFB317C000ECCF1 /* Frameworks */,
+				AE70E8B42EFB317C000ECCF1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AE70E8BD2EFB317C000ECCF1 /* PBXTargetDependency */,
+			);
+			name = InkOSUITests;
+			packageProductDependencies = (
+			);
+			productName = InkOSUITests;
+			productReference = AE70E8B62EFB317C000ECCF1 /* InkOSUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		AEAFC2382EF4B85B00811728 /* Trivial */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = AEAFC2442EF4B85D00811728 /* Build configuration list for PBXNativeTarget "Trivial" */;
@@ -125,12 +164,16 @@
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
+					AE70E8B52EFB317C000ECCF1 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = AEAFC2382EF4B85B00811728;
+					};
 					AEAFC2382EF4B85B00811728 = {
 						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
-			buildConfigurationList = AEAFC2342EF4B85B00811728 /* Build configuration list for PBXProject "Trivial" */;
+			buildConfigurationList = AEAFC2342EF4B85B00811728 /* Build configuration list for PBXProject "InkOS" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -145,11 +188,19 @@
 			projectRoot = "";
 			targets = (
 				AEAFC2382EF4B85B00811728 /* Trivial */,
+				AE70E8B52EFB317C000ECCF1 /* InkOSUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		AE70E8B42EFB317C000ECCF1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AEAFC2372EF4B85B00811728 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -182,6 +233,13 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		AE70E8B22EFB317C000ECCF1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AEAFC2352EF4B85B00811728 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -192,7 +250,53 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		AE70E8BD2EFB317C000ECCF1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AEAFC2382EF4B85B00811728 /* Trivial */;
+			targetProxy = AE70E8BC2EFB317C000ECCF1 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		AE70E8BE2EFB317C000ECCF1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = me.andy.allen.InkOSUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Trivial;
+			};
+			name = Debug;
+		};
+		AE70E8BF2EFB317C000ECCF1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = me.andy.allen.InkOSUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Trivial;
+			};
+			name = Release;
+		};
 		AEAFC2422EF4B85D00811728 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -403,7 +507,16 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AEAFC2342EF4B85B00811728 /* Build configuration list for PBXProject "Trivial" */ = {
+		AE70E8C02EFB317C000ECCF1 /* Build configuration list for PBXNativeTarget "InkOSUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AE70E8BE2EFB317C000ECCF1 /* Debug */,
+				AE70E8BF2EFB317C000ECCF1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AEAFC2342EF4B85B00811728 /* Build configuration list for PBXProject "InkOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AEAFC2422EF4B85D00811728 /* Debug */,

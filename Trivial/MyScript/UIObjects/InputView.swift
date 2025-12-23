@@ -73,7 +73,7 @@ final class InputView: UIView {
     }
 
     private func normalizeForce(from touch: UITouch) -> Float {
-        guard touch.type == .pencil else { return 0.0 }
+        guard touch.type == .pencil else { return 1.0 }
         guard touch.maximumPossibleForce > 0 else { return 0.0 }
         let normalized = touch.force / touch.maximumPossibleForce
         return Float(min(1.0, max(0.0, normalized)))

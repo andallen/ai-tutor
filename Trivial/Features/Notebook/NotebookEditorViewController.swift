@@ -142,6 +142,13 @@ final class NotebookEditorViewController: UIViewController {
         print("🧭 NotebookEditorViewController.viewDidLayoutSubviews sizePx=\(sizePx)")
         do {
             try displayViewModel.editor?.set(viewSize: sizePx)
+            if let renderer = displayViewModel.renderer {
+                let beforeScale = renderer.viewScale
+                let beforeOffset = renderer.viewOffset
+                renderer.viewScale = 1
+                renderer.viewOffset = .zero
+                print("🧭 NotebookEditorViewController.viewDidLayoutSubviews renderer viewScale \(beforeScale)→\(renderer.viewScale) viewOffset \(beforeOffset)→\(renderer.viewOffset)")
+            }
         } catch {
             print("❌ NotebookEditorViewController: Failed to set view size: \(error)")
         }
@@ -258,6 +265,11 @@ final class NotebookEditorViewController: UIViewController {
                     if sizePx.width > 0 && sizePx.height > 0 {
                         do {
                             try editor.set(viewSize: sizePx)
+                            let beforeScale = renderer.viewScale
+                            let beforeOffset = renderer.viewOffset
+                            renderer.viewScale = 1
+                            renderer.viewOffset = .zero
+                            print("🧭 NotebookEditorViewController.setupMyScript renderer viewScale \(beforeScale)→\(renderer.viewScale) viewOffset \(beforeOffset)→\(renderer.viewOffset)")
                         } catch {
                             print("❌ NotebookEditorViewController: Failed to set view size: \(error)")
                         }
@@ -271,6 +283,8 @@ final class NotebookEditorViewController: UIViewController {
 
                 // Connects touch input to the editor.
                 inputViewOverlay.editor = editor
+                // Treat finger input as pen to avoid transparent touch strokes.
+                inputViewOverlay.inputMode = .forcePen
                 print("🧭 NotebookEditorViewController.setupMyScript inputViewOverlay connected")
 
                 // Forces an initial redraw after wiring core objects.

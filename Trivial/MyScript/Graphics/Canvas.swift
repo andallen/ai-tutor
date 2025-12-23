@@ -44,6 +44,7 @@ final class Canvas: NSObject, IINKICanvas {
     private var loggedModelBlend = false
     private var loggedCaptureStyle = false
     private var loggedCaptureNonZeroStyle = false
+    private var loggedForcedOpaque = false
 
     // MyScript iOS reference implementation treats packed colors as RGBA (0xRRGGBBAA).
     // `blendOffscreen(..., color:)` alpha is documented/implemented as `color & 0xFF`.
@@ -128,27 +129,35 @@ final class Canvas: NSObject, IINKICanvas {
     }
 
     func setStrokeColor(_ color: UInt32) {
-        style.strokeColor = color
-        if debugLayer == "model" {
-            let alpha = self.alpha(from: color)
-            if color != 0, !loggedModelNonZeroStyle {
-                loggedModelNonZeroStyle = true
-                print("🧭 Canvas.setStrokeColor model nonzero color=0x\(String(format: "%08X", color)) alpha=\(alpha)")
-            } else if !loggedModelStyle {
-                loggedModelStyle = true
-                print("🧭 Canvas.setStrokeColor model color=0x\(String(format: "%08X", color)) alpha=\(alpha)")
-            }
-        } else if debugLayer == "capture" {
-            let alpha = self.alpha(from: color)
-            if color != 0, !loggedCaptureNonZeroStyle {
-                loggedCaptureNonZeroStyle = true
-                print("🧭 Canvas.setStrokeColor capture nonzero color=0x\(String(format: "%08X", color)) alpha=\(alpha)")
-            } else if !loggedCaptureStyle {
-                loggedCaptureStyle = true
-                print("🧭 Canvas.setStrokeColor capture color=0x\(String(format: "%08X", color)) alpha=\(alpha)")
+        var resolvedColor = color
+        if color == 0, (debugLayer == "model" || debugLayer == "capture") {
+            resolvedColor = 0x000000FF
+            if !loggedForcedOpaque {
+                loggedForcedOpaque = true
+                print("⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=\(debugLayer ?? \"unknown\")")
             }
         }
-        context?.setStrokeColor(cgColor(from: color))
+        style.strokeColor = resolvedColor
+        if debugLayer == "model" {
+            let alpha = self.alpha(from: resolvedColor)
+            if resolvedColor != 0, !loggedModelNonZeroStyle {
+                loggedModelNonZeroStyle = true
+                print("🧭 Canvas.setStrokeColor model nonzero color=0x\(String(format: "%08X", resolvedColor)) alpha=\(alpha)")
+            } else if !loggedModelStyle {
+                loggedModelStyle = true
+                print("🧭 Canvas.setStrokeColor model color=0x\(String(format: "%08X", resolvedColor)) alpha=\(alpha)")
+            }
+        } else if debugLayer == "capture" {
+            let alpha = self.alpha(from: resolvedColor)
+            if resolvedColor != 0, !loggedCaptureNonZeroStyle {
+                loggedCaptureNonZeroStyle = true
+                print("🧭 Canvas.setStrokeColor capture nonzero color=0x\(String(format: "%08X", resolvedColor)) alpha=\(alpha)")
+            } else if !loggedCaptureStyle {
+                loggedCaptureStyle = true
+                print("🧭 Canvas.setStrokeColor capture color=0x\(String(format: "%08X", resolvedColor)) alpha=\(alpha)")
+            }
+        }
+        context?.setStrokeColor(cgColor(from: resolvedColor))
     }
 
     func setStrokeWidth(_ width: Float) {
