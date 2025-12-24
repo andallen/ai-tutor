@@ -134,14 +134,11 @@ final class NotebookEditorViewController: UIViewController {
   override func viewDidLayoutSubviews() {
     super.viewDidLayoutSubviews()
 
-    // Sets the editor view size in pixels.
-    // Treats invalidation rectangles as pixel rectangles.
-    let scale = view.window?.screen.scale ?? UIScreen.main.scale
-    view.contentScaleFactor = scale
-    let sizePx = CGSize(width: view.bounds.width * scale, height: view.bounds.height * scale)
-    appLog("🧭 NotebookEditorViewController.viewDidLayoutSubviews sizePx=\(sizePx)")
+    // Sets the editor view size in points to match input coordinates.
+    let viewSize = view.bounds.size
+    appLog("🧭 NotebookEditorViewController.viewDidLayoutSubviews viewSize=\(viewSize)")
     do {
-      try displayViewModel.editor?.set(viewSize: sizePx)
+      try displayViewModel.editor?.set(viewSize: viewSize)
       if let renderer = displayViewModel.renderer {
         let beforeScale = renderer.viewScale
         let beforeOffset = renderer.viewOffset
@@ -263,12 +260,11 @@ final class NotebookEditorViewController: UIViewController {
 
         // Sets the editor view size if the view has valid bounds.
         await MainActor.run {
-          let scale = view.window?.screen.scale ?? UIScreen.main.scale
-          view.contentScaleFactor = scale
-          let sizePx = CGSize(width: view.bounds.width * scale, height: view.bounds.height * scale)
-          if sizePx.width > 0 && sizePx.height > 0 {
+          let viewSize = view.bounds.size
+          if viewSize.width > 0 && viewSize.height > 0 {
             do {
-              try editor.set(viewSize: sizePx)
+              // Use points so pointer events and renderer stay aligned.
+              try editor.set(viewSize: viewSize)
               let beforeScale = renderer.viewScale
               let beforeOffset = renderer.viewOffset
               renderer.viewScale = 1

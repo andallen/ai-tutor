@@ -18,7 +18,10 @@ final class DisplayViewModel: NSObject, ObservableObject {
   // Prevents repeated model creation.
   private var didSetup = false
 
-  // Limits noisy sizing logs from offscreen surface creation.
+  // Limits invalidation logs to avoid noisy output.
+  private var didLogInvalidate = false
+
+  // Limits offscreen sizing logs to a single entry.
   private var didLogOffscreenSizing = false
 
   func setupModel() {
@@ -85,23 +88,28 @@ extension DisplayViewModel: IINKIRenderTarget {
 
   func invalidate(_ renderer: IINKRenderer, area: CGRect, layers: IINKLayerType) {
     // Schedules invalidation on the main thread for UIKit.
-    // Uses pixel coordinates as specified by the SDK headers.
+    // Treats invalidation rectangles as view coordinates in points.
     DispatchQueue.main.async { [weak self] in
       guard let self, let model = self.model else { return }
-      // Invalidates only the touched pixel area.
+      if !self.didLogInvalidate {
+        self.didLogInvalidate = true
+        appLog("🧭 DisplayViewModel.invalidate area=\(area) layers=\(layers)")
+      }
+      // Invalidates only the touched area.
       if layers.contains(.model) {
-        model.modelRenderView.setNeedsDisplay(areaPx: area)
+        model.modelRenderView.setNeedsDisplay(areaInView: area)
       }
       if layers.contains(.capture) {
-        model.captureRenderView.setNeedsDisplay(areaPx: area)
+        model.captureRenderView.setNeedsDisplay(areaInView: area)
       }
     }
   }
 
   func createOffscreenRenderSurface(width: Int32, height: Int32, alphaMask: Bool) -> UInt32 {
-    // The SDK provides sizes in pixels; build a 1:1 pixel context.
-    let sizePx = CGSize(width: CGFloat(width), height: CGFloat(height))
-    UIGraphicsBeginImageContextWithOptions(sizePx, false, 1)
+    // Build the offscreen surface at device scale.
+    let scale = offscreenRenderSurfaces.scale
+    let size = CGSize(width: CGFloat(width) * scale, height: CGFloat(height) * scale)
+    UIGraphicsBeginImageContextWithOptions(size, false, 1)
     defer { UIGraphicsEndImageContext() }
 
     guard let context = UIGraphicsGetCurrentContext() else {
@@ -110,12 +118,14 @@ extension DisplayViewModel: IINKIRenderTarget {
     if !didLogOffscreenSizing {
       didLogOffscreenSizing = true
       appLog(
-        "🧭 DisplayViewModel.createOffscreenRenderSurface sizePx=\(sizePx) scale=\(offscreenRenderSurfaces.scale)"
+        "🧭 DisplayViewModel.createOffscreenRenderSurface size=\(size) width=\(width) height=\(height) scale=\(scale)"
       )
     }
+    // Scale points into pixels for offscreen rendering.
+    context.scaleBy(x: scale, y: scale)
 
-    let scaledWidth = Int32(sizePx.width.rounded())
-    let scaledHeight = Int32(sizePx.height.rounded())
+    let scaledWidth = Int32(size.width.rounded())
+    let scaledHeight = Int32(size.height.rounded())
     let surfaceId = offscreenRenderSurfaces.createSurface(
       width: scaledWidth,
       height: scaledHeight,
@@ -139,10 +149,10 @@ extension DisplayViewModel: IINKIRenderTarget {
       canvas.context?.saveGState()
     }
 
-    // Sets the canvas size in pixels.
+    // Sets the canvas size in points.
     if let layer = offscreenRenderSurfaces.getSurface(surfaceId) {
-      // Keep canvas size in pixels to match renderer coordinates.
-      canvas.size = layer.size
+      let scale = offscreenRenderSurfaces.scale
+      canvas.size = CGSize(width: layer.size.width / scale, height: layer.size.height / scale)
     } else {
       canvas.size = .zero
     }

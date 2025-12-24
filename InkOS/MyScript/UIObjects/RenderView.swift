@@ -38,21 +38,12 @@ final class RenderView: UIView {
       return
     }
 
-    let scale = contentScaleFactor
-    let pixelSize = CGSize(width: bounds.width * scale, height: bounds.height * scale)
     if layerType == .model {
-      appLog("🧭 RenderView.draw layer=\(layerType) rectPt=\(rect) scale=\(scale)")
+      appLog("🧭 RenderView.draw layer=\(layerType) rect=\(rect) scale=\(contentScaleFactor)")
     }
 
     let originalCTM = ctx.ctm
     let originalClip = ctx.boundingBoxOfClipPath
-
-    ctx.saveGState()
-    // Normalize into pixel space with a y-down coordinate system.
-    let currentCTM = ctx.ctm
-    ctx.concatenate(currentCTM.inverted())
-    ctx.translateBy(x: 0, y: pixelSize.height)
-    ctx.scaleBy(x: 1, y: -1)
 
     // Creates a canvas that wraps the current Core Graphics context.
     let canvas = Canvas()
@@ -64,34 +55,24 @@ final class RenderView: UIView {
     } else {
       canvas.debugLayer = String(describing: layerType)
     }
-    // Sets canvas size in pixels to match renderer coordinate system.
-    canvas.size = pixelSize
+    // Use view coordinates in points to match input events.
+    canvas.size = bounds.size
     canvas.offscreenRenderSurfaces = offscreenRenderSurfaces
     // Prevents clearing the main view when renderer calls startDraw.
     canvas.clearAtStartDraw = false
 
-    // Converts the UIKit redraw rect from points to pixels.
-    let regionPx = CGRect(
-      x: rect.origin.x * scale,
-      y: rect.origin.y * scale,
-      width: rect.size.width * scale,
-      height: rect.size.height * scale
-    )
-
     // Draws the selected renderer layer for the invalidated region.
     if layerType == .model {
-      let result = renderer.drawModel(regionPx, canvas: canvas)
+      let result = renderer.drawModel(rect, canvas: canvas)
       if !result {
         appLog("❌ RenderView.draw: drawModel returned false")
       }
     } else if layerType == .capture {
-      let result = renderer.drawCaptureStrokes(regionPx, canvas: canvas)
+      let result = renderer.drawCaptureStrokes(rect, canvas: canvas)
       if !result {
         appLog("❌ RenderView.draw: drawCaptureStrokes returned false")
       }
     }
-
-    ctx.restoreGState()
 
     if ctx.ctm != originalCTM || ctx.boundingBoxOfClipPath != originalClip {
       appLog("⚠️ RenderView.draw: CGContext state leaked across draw")
@@ -102,15 +83,8 @@ final class RenderView: UIView {
     }
   }
 
-  func setNeedsDisplay(areaPx: CGRect) {
-    // Converts pixel rectangles back to points for UIKit invalidation.
-    let scale = contentScaleFactor
-    let areaPt = CGRect(
-      x: areaPx.origin.x / scale,
-      y: areaPx.origin.y / scale,
-      width: areaPx.size.width / scale,
-      height: areaPx.size.height / scale
-    )
-    setNeedsDisplay(areaPt)
+  func setNeedsDisplay(areaInView area: CGRect) {
+    // Use view coordinates for invalidation to match draw rects.
+    setNeedsDisplay(area)
   }
 }
