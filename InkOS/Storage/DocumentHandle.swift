@@ -87,7 +87,8 @@ actor DocumentHandle {
         let part = try capturedPackage.part(at: index)
         return part
       } catch {
-        appLog("❌ DocumentHandle.getPart failed notebookID=\(notebookID) index=\(index) error=\(error)")
+        appLog(
+          "❌ DocumentHandle.getPart failed notebookID=\(notebookID) index=\(index) error=\(error)")
         return nil
       }
     }

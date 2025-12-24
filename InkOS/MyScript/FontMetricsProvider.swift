@@ -1,5 +1,5 @@
-import Foundation
 import CoreText
+import Foundation
 import UIKit
 
 // Provides font metrics for text rendering in MyScript.
@@ -70,7 +70,7 @@ class FontMetricsProvider: NSObject, IINKIFontMetricsProvider {
       if let font = fontFromStyle(style: span.style, string: text.label) {
         let dict: [NSAttributedString.Key: Any] = [
           .font: font,
-          .ligature: NSNumber(value: 0)
+          .ligature: NSNumber(value: 0),
         ]
         completeAttributedString.setAttributes(dict, range: range)
       }
@@ -124,7 +124,8 @@ extension CTRun {
     for i in 0..<count {
       let position = positions[i]
       let advance = advances[i]
-      rects[i] = CGRect(x: position.x, y: position.y - bounds.height, width: advance.width, height: bounds.height)
+      rects[i] = CGRect(
+        x: position.x, y: position.y - bounds.height, width: advance.width, height: bounds.height)
     }
     return rects
   }
@@ -143,4 +144,3 @@ extension CTRun {
     return positions
   }
 }
-

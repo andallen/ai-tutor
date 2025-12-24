@@ -48,16 +48,20 @@ struct DashboardView: View {
     .task {
       await library.loadBundles()
     }
-    .alert("Rename Notebook", isPresented: .init(
-      get: { renamingNotebook != nil },
-      set: { if !$0 { renamingNotebook = nil } }
-    )) {
+    .alert(
+      "Rename Notebook",
+      isPresented: .init(
+        get: { renamingNotebook != nil },
+        set: { if !$0 { renamingNotebook = nil } }
+      )
+    ) {
       TextField("Notebook name", text: $renameText)
       Button("Cancel", role: .cancel) {
         renamingNotebook = nil
       }
       Button("Rename") {
-        if let notebook = renamingNotebook, !renameText.trimmingCharacters(in: .whitespaces).isEmpty {
+        if let notebook = renamingNotebook, !renameText.trimmingCharacters(in: .whitespaces).isEmpty
+        {
           Task {
             await library.renameNotebook(notebookID: notebook.id, newDisplayName: renameText)
           }
@@ -67,10 +71,13 @@ struct DashboardView: View {
     } message: {
       Text("Enter a new name for this notebook.")
     }
-    .alert("Delete Notebook?", isPresented: .init(
-      get: { deletingNotebook != nil },
-      set: { if !$0 { deletingNotebook = nil } }
-    )) {
+    .alert(
+      "Delete Notebook?",
+      isPresented: .init(
+        get: { deletingNotebook != nil },
+        set: { if !$0 { deletingNotebook = nil } }
+      )
+    ) {
       Button("Cancel", role: .cancel) {
         deletingNotebook = nil
       }
@@ -219,7 +226,7 @@ private struct NotebookCard: View {
             LinearGradient(
               colors: [
                 Color(hue: 0.08, saturation: 0.06, brightness: 0.98),
-                Color(hue: 0.08, saturation: 0.04, brightness: 0.94)
+                Color(hue: 0.08, saturation: 0.04, brightness: 0.94),
               ],
               startPoint: .topLeading,
               endPoint: .bottomTrailing
@@ -263,11 +270,11 @@ private struct OpenedNotebook: Identifiable, Hashable {
 }
 
 #if DEBUG
-struct DashboardView_Previews: PreviewProvider {
-  static var previews: some View {
-    NavigationStack {
-      DashboardView()
+  struct DashboardView_Previews: PreviewProvider {
+    static var previews: some View {
+      NavigationStack {
+        DashboardView()
+      }
     }
   }
-}
 #endif

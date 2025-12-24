@@ -102,7 +102,8 @@ actor BundleManager {
     try writeManifest(manifest, to: manifestURL)
 
     // Create the MyScript iink package.
-    let iinkPath = bundleURL
+    let iinkPath =
+      bundleURL
       .appendingPathComponent(Self.iinkFileName)
       .path
       .decomposedStringWithCanonicalMapping
@@ -139,7 +140,9 @@ actor BundleManager {
   // Also updates the modifiedAt timestamp.
   // Throws if the Bundle doesn't exist or the Manifest cannot be read or written.
   func renameBundle(notebookID: String, newDisplayName: String) async throws {
-    appLog("🧭 BundleManager.renameBundle start notebookID=\(notebookID) newDisplayName=\(newDisplayName)")
+    appLog(
+      "🧭 BundleManager.renameBundle start notebookID=\(notebookID) newDisplayName=\(newDisplayName)"
+    )
     // Get the directory where Bundles are stored.
     let bundlesDirectory = try await BundleStorage.bundlesDirectory()
 
@@ -193,7 +196,8 @@ actor BundleManager {
     }
 
     // Delete the iink package using the engine if it exists.
-    let iinkPath = bundleURL
+    let iinkPath =
+      bundleURL
       .appendingPathComponent(Self.iinkFileName)
       .path
       .decomposedStringWithCanonicalMapping
@@ -272,7 +276,8 @@ actor BundleManager {
     }
 
     // Construct the path to the iink package.
-    let packagePath = bundleURL
+    let packagePath =
+      bundleURL
       .appendingPathComponent(Self.iinkFileName)
       .path
       .decomposedStringWithCanonicalMapping
@@ -295,7 +300,8 @@ actor BundleManager {
     appLog("🧭 BundleManager.iinkPackagePath notebookID=\(notebookID)")
     let bundlesDirectory = try await BundleStorage.bundlesDirectory()
     let bundleURL = bundlesDirectory.appendingPathComponent(notebookID, isDirectory: true)
-    return bundleURL
+    return
+      bundleURL
       .appendingPathComponent(Self.iinkFileName)
       .path
       .decomposedStringWithCanonicalMapping
@@ -339,18 +345,18 @@ enum BundleError: LocalizedError {
 
   var errorDescription: String? {
     switch self {
-    case let .bundleNotFound(notebookID):
+    case .bundleNotFound(let notebookID):
       return "Bundle not found: \(notebookID)"
-    case let .manifestNotFound(notebookID):
+    case .manifestNotFound(let notebookID):
       return "Manifest not found in Bundle: \(notebookID)"
-    case let .manifestDecodingFailed(notebookID, underlyingError):
+    case .manifestDecodingFailed(let notebookID, let underlyingError):
       return
         "Failed to decode Manifest in Bundle \(notebookID): \(underlyingError.localizedDescription)"
-    case let .unsupportedManifestVersion(notebookID, version):
+    case .unsupportedManifestVersion(let notebookID, let version):
       return "Unsupported Manifest version \(version) in Bundle: \(notebookID)"
-    case let .invalidManifest(notebookID, reason):
+    case .invalidManifest(let notebookID, let reason):
       return "Invalid Manifest in Bundle \(notebookID): \(reason)"
-    case let .packageCreationFailed(notebookID):
+    case .packageCreationFailed(let notebookID):
       return "Failed to create MyScript package for Bundle: \(notebookID)"
     }
   }
