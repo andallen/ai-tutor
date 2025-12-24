@@ -15,9 +15,6 @@ struct DashboardView: View {
   // Tracks which notebook is being confirmed for deletion.
   @State private var deletingNotebook: NotebookMetadata?
 
-  // Navigation destination for opening a notebook.
-  @State private var openedNotebook: OpenedNotebook?
-
   // Animation namespace for matched geometry transitions.
   @Namespace private var animation
 
@@ -94,9 +91,6 @@ struct DashboardView: View {
         Text("\"\(notebook.displayName)\" will be permanently deleted. This cannot be undone.")
       }
     }
-    .navigationDestination(item: $openedNotebook) { opened in
-      NotebookView(model: opened.model, documentHandle: opened.handle)
-    }
   }
 
   // MARK: - Header
@@ -171,10 +165,6 @@ struct DashboardView: View {
       ) {
         ForEach(library.notebooks) { notebook in
           NotebookCard(notebook: notebook)
-            .contentShape(Rectangle())
-            .onTapGesture {
-              openNotebook(notebook)
-            }
             .contextMenu {
               Button {
                 renameText = notebook.displayName
@@ -197,19 +187,6 @@ struct DashboardView: View {
   }
 
   // MARK: - Actions
-
-  private func openNotebook(_ notebook: NotebookMetadata) {
-    Task {
-      do {
-        let handle = try await library.openNotebook(notebookID: notebook.id)
-        let manifest = handle.initialManifest
-        let model = NotebookModel(from: manifest)
-        openedNotebook = OpenedNotebook(model: model, handle: handle)
-      } catch {
-        // Silently fail for now. Could show an alert in the future.
-      }
-    }
-  }
 }
 
 // MARK: - Notebook Card
@@ -249,23 +226,6 @@ private struct NotebookCard: View {
     }
     .padding(12)
     .glassBackground(cornerRadius: 16)
-  }
-}
-
-// MARK: - Supporting Types
-
-// Represents an opened notebook ready for navigation.
-private struct OpenedNotebook: Identifiable, Hashable {
-  let id = UUID()
-  let model: NotebookModel
-  let handle: DocumentHandle
-
-  static func == (lhs: OpenedNotebook, rhs: OpenedNotebook) -> Bool {
-    lhs.id == rhs.id
-  }
-
-  func hash(into hasher: inout Hasher) {
-    hasher.combine(id)
   }
 }
 
