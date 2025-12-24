@@ -1,162 +1,208 @@
-Dec 23 20:12:39.269589 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 NotebookLibrary.loadBundles start
-Dec 23 20:12:39.269689 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 BundleManager.listBundles start
-Dec 23 20:12:39.271514 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 BundleManager.listBundles end count=2
-Dec 23 20:12:39.278724 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 NotebookLibrary.loadBundles end count=2
-Dec 23 20:12:44.812623 InkOS(Foundation)[16763] <Notice>: APP_LOG: ✅ BundleManager.openNotebook success notebookID=E4DD8F72-CEF8-4D06-9C5B-6B4DC1701CB4
-Dec 23 20:12:44.839682 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 DisplayViewModel.setupModel completed modelReady=true
-Dec 23 20:12:44.848020 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 NotebookEditorViewController.loadDocument editor not ready, retrying
-Dec 23 20:12:44.852039 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 NotebookEditorViewController.viewDidLayoutSubviews viewSize=(320.0, 563.3333333333333)
-Dec 23 20:12:44.862805 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ RenderView.draw: renderer not set
-Dec 23 20:12:44.862837 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ RenderView.draw: renderer not set
-Dec 23 20:12:44.864692 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 NotebookEditorViewController.setupMyScript engine ready
-Dec 23 20:12:44.865259 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 DisplayViewModel.updateRenderer applied renderer
-Dec 23 20:12:44.865433 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 NotebookEditorViewController.setupMyScript editor ready
-Dec 23 20:12:44.865525 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 EditorStyle setupMyScript themeLen=50 themePreview=".ink { color: #000000; -myscript-pen-width: 1.5; }"
-Dec 23 20:12:44.865543 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 EditorStyle setupMyScript penStyle=color:#000000;-myscript-pen-width:1.5
-Dec 23 20:12:44.867012 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 NotebookEditorViewController.setupMyScript renderer viewScale 1.0→1.0 viewOffset (0.0, 0.0)→(0.0, 0.0)
-Dec 23 20:12:44.867051 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 NotebookEditorViewController.setupMyScript viewSize set
-Dec 23 20:12:44.867067 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 NotebookEditorViewController.setupMyScript inputViewOverlay connected
-Dec 23 20:12:44.884651 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rect=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
-Dec 23 20:12:44.971767 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 NotebookEditorViewController.loadDocument partCount=1 partReady=true partType=Drawing partId=spwmaoxo
-Dec 23 20:12:44.977147 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 EditorStyle afterPart themeLen=50 themePreview=".ink { color: #000000; -myscript-pen-width: 1.5; }"
-Dec 23 20:12:44.977253 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 EditorStyle afterPart penStyle=color:#000000;-myscript-pen-width:1.5
-Dec 23 20:12:44.977283 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 NotebookEditorViewController.loadDocument assigned part and refreshed
-Dec 23 20:12:44.977293 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 DisplayViewModel.invalidate area=(0.0, 0.0, 320.0, 563.0) layers=IINKLayerType(rawValue: 2)
-Dec 23 20:12:44.978826 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 DisplayViewModel.createOffscreenRenderSurface size=(2880.0, 5067.0) width=960 height=1689 scale=3.0
-Dec 23 20:12:44.982614 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:44.982663 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:44.982961 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:44.983046 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rect=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
-Dec 23 20:12:44.983072 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
-Dec 23 20:12:44.983087 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:44.983160 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
-Dec 23 20:12:44.983201 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:44.983216 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
-Dec 23 20:12:44.998935 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rect=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
-Dec 23 20:12:44.999015 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
-Dec 23 20:12:44.999034 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:44.999044 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
-Dec 23 20:12:44.999056 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:44.999068 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
-Dec 23 20:12:45.037193 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rect=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
-Dec 23 20:12:45.038070 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
-Dec 23 20:12:45.038958 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:45.039267 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
-Dec 23 20:12:45.039281 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:45.039728 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
-Dec 23 20:12:45.962440 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 InputView.toolState touchTool=IINKPointerTool(rawValue: 0) penTool=IINKPointerTool(rawValue: 0) penStyle=color:#000000;-myscript-pen-width:1.5
-Dec 23 20:12:45.962490 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 InputView.pointerDown point=(117.66666412353516, 310.0) bounds=(320.0, 563.3333333333334)
-Dec 23 20:12:45.995389 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:45.995477 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:45.995963 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:46.037808 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:46.038049 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:46.038600 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:46.701018 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 InputView.pointerUp point=(95.0, 235.3333282470703) bounds=(320.0, 563.3333333333334)
-Dec 23 20:12:46.701036 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:46.701545 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:46.701602 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:46.702409 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:46.702435 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:46.702448 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:46.756403 InkOS(Foundation)[16763] <Notice>: APP_LOG: 📈 NotebookEditorViewController.contentChanged blockIds=["MainBlock"]
-Dec 23 20:12:46.756656 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 EditorContent contentChanged empty=false rootId=MainBlock children=0
-Dec 23 20:12:46.811663 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rect=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
-Dec 23 20:12:46.811719 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
-Dec 23 20:12:46.811746 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:46.811761 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
-Dec 23 20:12:46.811775 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:46.811821 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
-Dec 23 20:12:46.827713 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:46.827780 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:46.827798 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:47.673047 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 InputView.pointerDown point=(135.3333282470703, 348.6666564941406) bounds=(320.0, 563.3333333333334)
-Dec 23 20:12:47.717472 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:47.717490 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:47.717524 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:47.729743 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:47.729784 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:47.730311 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:47.748722 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:47.749080 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:47.749097 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:47.763714 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:47.763766 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:47.763791 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:48.611024 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 InputView.pointerUp point=(224.3333282470703, 312.0) bounds=(320.0, 563.3333333333334)
-Dec 23 20:12:48.611855 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:48.612049 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:48.612081 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:48.618634 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:48.618661 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:48.618687 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:48.809104 InkOS(Foundation)[16763] <Notice>: APP_LOG: 📈 NotebookEditorViewController.contentChanged blockIds=["MainBlock"]
-Dec 23 20:12:48.829309 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rect=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
-Dec 23 20:12:48.829466 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
-Dec 23 20:12:48.829492 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:48.829511 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
-Dec 23 20:12:48.829549 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:48.829581 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
-Dec 23 20:12:48.851544 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:48.851610 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:48.851784 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:49.799652 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 InputView.pointerDown point=(235.0, 207.3333282470703) bounds=(320.0, 563.3333333333334)
-Dec 23 20:12:49.862594 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:49.862971 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:49.862985 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:49.878045 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:49.878085 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:49.878559 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:49.894451 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:49.894471 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:49.894758 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:49.909764 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:49.909876 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:49.909890 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:50.485697 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 InputView.pointerUp point=(131.0, 283.0) bounds=(320.0, 563.3333333333334)
-Dec 23 20:12:50.486265 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:50.486279 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:50.486343 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:50.490684 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:50.490787 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:50.490828 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:50.697617 InkOS(Foundation)[16763] <Notice>: APP_LOG: 📈 NotebookEditorViewController.contentChanged blockIds=["MainBlock"]
-Dec 23 20:12:50.715574 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rect=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
-Dec 23 20:12:50.715601 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
-Dec 23 20:12:50.715654 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:50.715666 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
-Dec 23 20:12:50.715673 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:50.715684 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
-Dec 23 20:12:50.736366 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:50.736416 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:50.736666 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:52.049554 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 InputView.pointerDown point=(88.66666412353516, 467.6666564941406) bounds=(320.0, 563.3333333333334)
-Dec 23 20:12:52.104114 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:52.104173 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:52.104186 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:52.115556 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:52.115569 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:52.115686 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:52.127821 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:52.127847 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:52.127921 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:52.140108 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:52.140136 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:52.140188 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:52.565969 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 InputView.pointerUp point=(138.6666717529297, 179.0) bounds=(320.0, 563.3333333333334)
-Dec 23 20:12:52.566147 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:52.566196 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:52.566346 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:52.571287 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:52.571355 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:52.571419 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
-Dec 23 20:12:52.773884 InkOS(Foundation)[16763] <Notice>: APP_LOG: 📈 NotebookEditorViewController.contentChanged blockIds=["MainBlock"]
-Dec 23 20:12:52.797148 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rect=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
-Dec 23 20:12:52.797472 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
-Dec 23 20:12:52.797553 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:52.798524 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
-Dec 23 20:12:52.798597 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:52.798904 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
-Dec 23 20:12:52.838008 InkOS(Foundation)[16763] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
-Dec 23 20:12:52.838038 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
-Dec 23 20:12:52.838346 InkOS(Foundation)[16763] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:13.701261 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 NotebookLibrary.loadBundles start
+Dec 23 20:30:13.701281 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 BundleManager.listBundles start
+Dec 23 20:30:13.702684 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 BundleManager.listBundles end count=2
+Dec 23 20:30:13.704881 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 NotebookLibrary.loadBundles end count=2
+Dec 23 20:30:15.009175 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 NotebookLibrary.openNotebook start notebookID=E4DD8F72-CEF8-4D06-9C5B-6B4DC1701CB4
+Dec 23 20:30:15.009198 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 BundleManager.openNotebook start notebookID=E4DD8F72-CEF8-4D06-9C5B-6B4DC1701CB4
+Dec 23 20:30:15.013899 InkOS(Foundation)[17010] <Notice>: APP_LOG: ✅ BundleManager.openNotebook success notebookID=E4DD8F72-CEF8-4D06-9C5B-6B4DC1701CB4
+Dec 23 20:30:15.014853 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 DisplayViewModel.setupModel completed modelReady=true
+Dec 23 20:30:15.055724 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 NotebookEditorViewController.loadDocument editor not ready, retrying
+Dec 23 20:30:15.069444 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 NotebookEditorViewController.viewDidLayoutSubviews sizePx=(960.0, 1689.9999999999998)
+Dec 23 20:30:15.076219 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ RenderView.draw: renderer not set
+Dec 23 20:30:15.077864 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ RenderView.draw: renderer not set
+Dec 23 20:30:15.083363 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rectPt=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
+Dec 23 20:30:15.168601 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 NotebookEditorViewController.loadDocument partCount=1 partReady=true partType=Drawing partId=spwmaoxo
+Dec 23 20:30:15.170031 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 EditorStyle afterPart themeLen=50 themePreview=".ink { color: #000000; -myscript-pen-width: 1.5; }"
+Dec 23 20:30:15.170096 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 EditorStyle afterPart penStyle=color:#000000;-myscript-pen-width:1.5
+Dec 23 20:30:15.170123 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 NotebookEditorViewController.loadDocument assigned part and refreshed
+Dec 23 20:30:15.170875 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 DisplayViewModel.invalidate area=(0.0, 0.0, 960.0, 1689.0) layers=IINKLayerType(rawValue: 2)
+Dec 23 20:30:15.174612 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:15.174662 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.174812 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:15.174918 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rectPt=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
+Dec 23 20:30:15.174936 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
+Dec 23 20:30:15.174962 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.174982 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:15.175023 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.175043 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:15.244671 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:15.244731 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.244951 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:15.273799 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rectPt=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
+Dec 23 20:30:15.273854 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
+Dec 23 20:30:15.273870 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.273890 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:15.273911 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.273938 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:15.307061 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rectPt=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
+Dec 23 20:30:15.307117 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
+Dec 23 20:30:15.307132 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.307146 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:15.307153 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.307162 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:15.340232 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rectPt=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
+Dec 23 20:30:15.340253 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
+Dec 23 20:30:15.340275 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.340324 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:15.340360 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.340377 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:15.373189 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rectPt=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
+Dec 23 20:30:15.373219 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
+Dec 23 20:30:15.373269 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.373289 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:15.373340 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.373381 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:15.396098 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rectPt=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
+Dec 23 20:30:15.396145 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
+Dec 23 20:30:15.396162 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.396172 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:15.396231 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.396252 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:15.439759 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rectPt=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
+Dec 23 20:30:15.439798 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
+Dec 23 20:30:15.439806 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.439811 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:15.439919 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.439940 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:15.689618 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 InputView.toolState touchTool=IINKPointerTool(rawValue: 0) penTool=IINKPointerTool(rawValue: 0) penStyle=color:#000000;-myscript-pen-width:1.5
+Dec 23 20:30:15.748762 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:15.749109 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.749124 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:15.766793 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:15.766815 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.766977 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:15.779567 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:15.790011 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:15.790051 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:15.790257 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:16.355484 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:16.355569 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:16.355587 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:16.355852 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:16.355882 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:16.355906 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:16.562203 InkOS(Foundation)[17010] <Notice>: APP_LOG: 📈 NotebookEditorViewController.contentChanged blockIds=["MainBlock"]
+Dec 23 20:30:16.562531 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 EditorContent contentChanged empty=false rootId=MainBlock children=0
+Dec 23 20:30:16.562831 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:16.562896 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:16.563040 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:16.566188 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rectPt=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
+Dec 23 20:30:16.566366 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
+Dec 23 20:30:16.566401 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:16.566424 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:16.566434 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:16.566450 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:16.681926 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rectPt=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
+Dec 23 20:30:16.681985 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
+Dec 23 20:30:16.681997 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:16.682009 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:16.682028 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:16.682050 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:16.713891 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:16.713969 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:16.714007 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:17.206369 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:17.206393 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:17.206472 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:17.223655 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:17.223676 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:17.224284 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:17.238437 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:17.238691 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:17.238728 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:17.254569 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:17.254605 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:17.254823 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:17.556121 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:17.556512 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:17.556537 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:17.569807 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:17.569866 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:17.570073 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:17.763330 InkOS(Foundation)[17010] <Notice>: APP_LOG: 📈 NotebookEditorViewController.contentChanged blockIds=["MainBlock"]
+Dec 23 20:30:17.763670 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:17.763749 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:17.764178 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:17.765294 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rectPt=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
+Dec 23 20:30:17.765699 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
+Dec 23 20:30:17.765733 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:17.765744 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:17.765775 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:17.765786 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:17.846484 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rectPt=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
+Dec 23 20:30:17.846531 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
+Dec 23 20:30:17.846542 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:17.846551 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:17.846590 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:17.846624 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:17.887556 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:17.887583 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:17.887634 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:18.416597 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:18.416621 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:18.416652 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:18.448440 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:18.448454 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:18.448792 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:18.467506 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:18.467520 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:18.467642 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:18.672160 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:18.672285 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:18.672330 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:18.684797 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:18.684847 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:18.684999 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:18.878268 InkOS(Foundation)[17010] <Notice>: APP_LOG: 📈 NotebookEditorViewController.contentChanged blockIds=["MainBlock"]
+Dec 23 20:30:18.878531 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:18.878568 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:18.878712 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:18.879914 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rectPt=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
+Dec 23 20:30:18.879984 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
+Dec 23 20:30:18.880006 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:18.880017 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:18.880040 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:18.880060 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:18.956610 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rectPt=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
+Dec 23 20:30:18.956703 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
+Dec 23 20:30:18.956793 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:18.956811 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:18.956823 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:18.956839 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:19.007939 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:19.007964 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:19.008010 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:22.471268 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:22.472173 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:22.472210 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:22.504563 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:22.504634 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:22.504655 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:22.516120 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:22.516136 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:22.516224 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:22.527534 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:22.527549 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:22.527627 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:22.714971 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:22.714977 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:22.714983 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:22.715058 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:22.715095 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:22.715113 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:22.919912 InkOS(Foundation)[17010] <Notice>: APP_LOG: 📈 NotebookEditorViewController.contentChanged blockIds=["MainBlock"]
+Dec 23 20:30:22.920241 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=capture
+Dec 23 20:30:22.920275 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:22.920441 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor capture color=0x000000FF alpha=1.0
+Dec 23 20:30:22.921928 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rectPt=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
+Dec 23 20:30:22.922206 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
+Dec 23 20:30:22.922249 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:22.922261 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:22.922270 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:22.922282 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:22.996607 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 RenderView.draw layer=IINKLayerType(rawValue: 1) rectPt=(0.0, 0.0, 320.0, 563.3333333333333) scale=3.0
+Dec 23 20:30:22.996675 InkOS(Foundation)[17010] <Notice>: APP_LOG: ⚠️ Canvas.setStrokeColor forced opaque color=0x000000FF for layer=model
+Dec 23 20:30:22.996693 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:22.996722 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0
+Dec 23 20:30:22.996731 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeColor model nonzero color=0x000000FF alpha=1.0
+Dec 23 20:30:22.996744 InkOS(Foundation)[17010] <Notice>: APP_LOG: 🧭 Canvas.setStrokeWidth model width=1.0

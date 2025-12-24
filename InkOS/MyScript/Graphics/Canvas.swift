@@ -429,45 +429,27 @@ final class Canvas: NSObject, IINKICanvas {
       return
     }
 
-    // Keep blend logging minimal; only emit diagnostics when alpha/clipping look suspicious.
-    let destInBounds =
-      dest.minX >= 0 && dest.minY >= 0 && dest.maxX <= size.width && dest.maxY <= size.height
+    // Blend the offscreen surface using the reference mapping.
+    let scale = surfaces.scale
+    let srcScaled = CGRect(
+      x: src.origin.x * scale,
+      y: src.origin.y * scale,
+      width: src.width * scale,
+      height: src.height * scale
+    )
+    let alpha = CGFloat(color & 0xFF) / 255.0
 
     context.saveGState()
-    // Clip in main canvas coordinate space where dest is defined
-    // Save current CTM, reset to identity, clip, then restore CTM
-    let savedCTM = context.ctm
-    context.concatenate(savedCTM.inverted())  // Reset to identity
-    context.clip(to: dest)  // Clip in main canvas space (dest is in pixel coordinates)
-    context.concatenate(savedCTM)  // Restore original CTM
-    let alpha = CGFloat(color & 0xFF) / 255.0
-    if debugLayer == "model", !loggedModelBlend, alpha < 1.0 || color != 0xFFFF_FFFF {
-      loggedModelBlend = true
-      appLog(
-        "🧭 Canvas.blendOffscreen model surfaceId=\(surfaceId) color=0x\(String(format: "%08X", color)) alpha=\(alpha) src=\(src) dest=\(dest)"
-      )
-    }
-    if alpha < 1.0 {
-      context.setAlpha(alpha)
-    }
+    context.clip(to: dest)
+    context.setAlpha(alpha)
 
-    let scaleX = dest.width / src.width
-    let scaleY = dest.height / src.height
+    let x = dest.origin.x - srcScaled.origin.x / srcScaled.size.width * dest.size.width
+    let y = dest.origin.y - srcScaled.origin.y / srcScaled.size.height * dest.size.height
+    let width = layer.size.width / srcScaled.size.width * dest.size.width
+    let height = layer.size.height / srcScaled.size.height * dest.size.height
 
-    var t = CGAffineTransform.identity
-    t = t.translatedBy(
-      x: dest.origin.x - src.origin.x * scaleX, y: dest.origin.y - src.origin.y * scaleY)
-    t = t.scaledBy(x: scaleX, y: scaleY)
-
-    context.concatenate(t)
-
-    context.draw(layer, in: src)
+    context.draw(layer, in: CGRect(x: x, y: y, width: width, height: height))
     context.restoreGState()
-    if !destInBounds {
-      appLog(
-        "⚠️ Canvas.blendOffscreen: dest out of bounds. surfaceId=\(surfaceId) dest=\(dest) canvas.size=\(size)"
-      )
-    }
   }
 
 }
