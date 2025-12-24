@@ -85,38 +85,38 @@ extension DisplayViewModel: IINKIRenderTarget {
 
   func invalidate(_ renderer: IINKRenderer, area: CGRect, layers: IINKLayerType) {
     // Schedules invalidation on the main thread for UIKit.
-    // Uses pixel coordinates as specified by the SDK headers.
+    // Treats invalidation rectangles as view coordinates in points.
     DispatchQueue.main.async { [weak self] in
       guard let self, let model = self.model else { return }
       if !self.didLogInvalidate {
         self.didLogInvalidate = true
         appLog("🧭 DisplayViewModel.invalidate area=\(area) layers=\(layers)")
       }
-      // Invalidates only the touched pixel area.
+      // Invalidates only the touched area.
       if layers.contains(.model) {
-        model.modelRenderView.setNeedsDisplay(areaPx: area)
+        model.modelRenderView.setNeedsDisplay(areaInView: area)
       }
       if layers.contains(.capture) {
-        model.captureRenderView.setNeedsDisplay(areaPx: area)
+        model.captureRenderView.setNeedsDisplay(areaInView: area)
       }
     }
   }
 
   func createOffscreenRenderSurface(width: Int32, height: Int32, alphaMask: Bool) -> UInt32 {
-    // The SDK provides sizes in pixels; build the CGLayer at pixel density.
+    // Build the offscreen surface at device scale.
     let scale = offscreenRenderSurfaces.scale
-    let sizePx = CGSize(width: CGFloat(width) * scale, height: CGFloat(height) * scale)
-    UIGraphicsBeginImageContextWithOptions(sizePx, false, 1)
+    let size = CGSize(width: CGFloat(width) * scale, height: CGFloat(height) * scale)
+    UIGraphicsBeginImageContextWithOptions(size, false, 1)
     defer { UIGraphicsEndImageContext() }
 
     guard let context = UIGraphicsGetCurrentContext() else {
       return 0
     }
-    // Scale the context into pixel space for the layer.
-    context.scaleBy(x: sizePx.width, y: sizePx.height)
+    // Scale points into pixels for offscreen rendering.
+    context.scaleBy(x: size.width, y: size.height)
 
-    let scaledWidth = Int32(sizePx.width.rounded())
-    let scaledHeight = Int32(sizePx.height.rounded())
+    let scaledWidth = Int32(size.width.rounded())
+    let scaledHeight = Int32(size.height.rounded())
     let surfaceId = offscreenRenderSurfaces.createSurface(
       width: scaledWidth,
       height: scaledHeight,

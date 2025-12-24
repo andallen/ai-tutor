@@ -21,6 +21,7 @@ final class InputView: UIView {
   // Offset to convert UITouch.timestamp (system uptime) into Unix epoch time.
   private var eventTimeOffset: TimeInterval = 0
   private var loggedToolState = false
+  private var didLogPointerSample = false
 
   override init(frame: CGRect) {
     super.init(frame: frame)
@@ -82,14 +83,9 @@ final class InputView: UIView {
   private func pointerEvent(from touch: UITouch, eventType: IINKPointerEventType)
     -> IINKPointerEvent
   {
-    let scale = window?.screen.scale ?? UIScreen.main.scale
-    if contentScaleFactor != scale {
-      contentScaleFactor = scale
-    }
-
-    let pointPt =
+    // Use view points for input coordinates to match the SDK reference implementation.
+    let point =
       (touch.type == .pencil) ? touch.preciseLocation(in: self) : touch.location(in: self)
-    let pointPx = CGPoint(x: pointPt.x * scale, y: pointPt.y * scale)
 
     let pointerType = mapPointerType(touch)
     let force = normalizeForce(from: touch)
@@ -98,7 +94,7 @@ final class InputView: UIView {
     let timestampMs = Int64(1000.0 * (touch.timestamp + eventTimeOffset))
 
     // Reference implementation uses a constant pointer id when multi-touch is disabled.
-    return IINKPointerEventMake(eventType, pointPx, timestampMs, force, pointerType, 0)
+    return IINKPointerEventMake(eventType, point, timestampMs, force, pointerType, 0)
   }
 
   private func sendPointerDown(for touch: UITouch) {
@@ -116,6 +112,13 @@ final class InputView: UIView {
       }
     }
     let e = pointerEvent(from: touch, eventType: .down)
+    if !didLogPointerSample {
+      didLogPointerSample = true
+      let scale = window?.screen.scale ?? UIScreen.main.scale
+      appLog(
+        "🧭 InputView.pointerSample point=\(CGPoint(x: CGFloat(e.x), y: CGFloat(e.y))) bounds=\(bounds.size) scale=\(scale)"
+      )
+    }
     do {
       try editor.pointerDown(
         point: CGPoint(x: CGFloat(e.x), y: CGFloat(e.y)),
