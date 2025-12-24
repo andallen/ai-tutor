@@ -56,6 +56,8 @@ final class NotebookEditorViewController: UIViewController {
   private lazy var editorDelegateProxy = EditorDelegateProxy(
     onContentChanged: { [weak self] in
       guard let self else { return }
+      // Force a redraw so model ink persists after capture strokes clear.
+      displayViewModel.refreshDisplay()
       pendingSaveTask?.cancel()
       pendingSaveTask = Task { [documentHandle, weak self] in
         guard let self else { return }
@@ -134,11 +136,14 @@ final class NotebookEditorViewController: UIViewController {
   override func viewDidLayoutSubviews() {
     super.viewDidLayoutSubviews()
 
-    // Sets the editor view size in points to match input coordinates.
-    let viewSize = view.bounds.size
-    appLog("🧭 NotebookEditorViewController.viewDidLayoutSubviews viewSize=\(viewSize)")
+    // Sets the editor view size in pixels.
+    // Treats invalidation rectangles as pixel rectangles.
+    let scale = view.window?.screen.scale ?? UIScreen.main.scale
+    view.contentScaleFactor = scale
+    let sizePx = CGSize(width: view.bounds.width * scale, height: view.bounds.height * scale)
+    appLog("🧭 NotebookEditorViewController.viewDidLayoutSubviews sizePx=\(sizePx)")
     do {
-      try displayViewModel.editor?.set(viewSize: viewSize)
+      try displayViewModel.editor?.set(viewSize: sizePx)
       if let renderer = displayViewModel.renderer {
         let beforeScale = renderer.viewScale
         let beforeOffset = renderer.viewOffset
@@ -260,11 +265,12 @@ final class NotebookEditorViewController: UIViewController {
 
         // Sets the editor view size if the view has valid bounds.
         await MainActor.run {
-          let viewSize = view.bounds.size
-          if viewSize.width > 0 && viewSize.height > 0 {
+          let scale = view.window?.screen.scale ?? UIScreen.main.scale
+          view.contentScaleFactor = scale
+          let sizePx = CGSize(width: view.bounds.width * scale, height: view.bounds.height * scale)
+          if sizePx.width > 0 && sizePx.height > 0 {
             do {
-              // Use points so pointer events and renderer stay aligned.
-              try editor.set(viewSize: viewSize)
+              try editor.set(viewSize: sizePx)
               let beforeScale = renderer.viewScale
               let beforeOffset = renderer.viewOffset
               renderer.viewScale = 1
