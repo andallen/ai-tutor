@@ -15,9 +15,6 @@ final class DisplayViewModel: NSObject, ObservableObject {
   // Stores offscreen surfaces used internally by the renderer.
   private(set) var offscreenRenderSurfaces = OffscreenRenderSurfaces()
 
-  // Stores the device scale for pixel density reporting.
-  private var deviceScale: CGFloat = UIScreen.main.scale
-
   // Prevents repeated model creation.
   private var didSetup = false
 
@@ -44,9 +41,7 @@ final class DisplayViewModel: NSObject, ObservableObject {
   }
 
   func setOffScreenRendererSurfacesScale(scale: CGFloat) {
-    deviceScale = scale
-    // Offscreen surfaces operate in pixel coordinates.
-    offscreenRenderSurfaces.scale = 1
+    offscreenRenderSurfaces.scale = scale
   }
 
   func refreshDisplay() {
@@ -71,7 +66,7 @@ final class DisplayViewModel: NSObject, ObservableObject {
 extension DisplayViewModel: IINKIRenderTarget {
   var pixelDensity: Float {
     // Returns pixels per point for the current screen scale.
-    Float(deviceScale)
+    Float(offscreenRenderSurfaces.scale)
   }
 
   func invalidate(_ renderer: IINKRenderer, layers: IINKLayerType) {
@@ -90,34 +85,37 @@ extension DisplayViewModel: IINKIRenderTarget {
 
   func invalidate(_ renderer: IINKRenderer, area: CGRect, layers: IINKLayerType) {
     // Schedules invalidation on the main thread for UIKit.
-    // Uses pixel coordinates as specified by the SDK headers.
+    // Treats invalidation rectangles as view coordinates in points.
     DispatchQueue.main.async { [weak self] in
       guard let self, let model = self.model else { return }
       if !self.didLogInvalidate {
         self.didLogInvalidate = true
         appLog("🧭 DisplayViewModel.invalidate area=\(area) layers=\(layers)")
       }
-      // Invalidates only the touched pixel area.
+      // Invalidates only the touched area.
       if layers.contains(.model) {
-        model.modelRenderView.setNeedsDisplay(areaPx: area)
+        model.modelRenderView.setNeedsDisplay(areaInView: area)
       }
       if layers.contains(.capture) {
-        model.captureRenderView.setNeedsDisplay(areaPx: area)
+        model.captureRenderView.setNeedsDisplay(areaInView: area)
       }
     }
   }
 
   func createOffscreenRenderSurface(width: Int32, height: Int32, alphaMask: Bool) -> UInt32 {
-    // The SDK provides sizes in pixels; build a 1:1 pixel context.
-    let sizePx = CGSize(width: CGFloat(width), height: CGFloat(height))
-    UIGraphicsBeginImageContextWithOptions(sizePx, false, 1)
+    // Build the offscreen surface at device scale.
+    let scale = offscreenRenderSurfaces.scale
+    let size = CGSize(width: CGFloat(width) * scale, height: CGFloat(height) * scale)
+    UIGraphicsBeginImageContextWithOptions(size, false, 1)
     defer { UIGraphicsEndImageContext() }
 
     guard let context = UIGraphicsGetCurrentContext() else {
       return 0
     }
-    let scaledWidth = Int32(sizePx.width.rounded())
-    let scaledHeight = Int32(sizePx.height.rounded())
+    context.scaleBy(x: size.width, y: size.height)
+
+    let scaledWidth = Int32(size.width.rounded())
+    let scaledHeight = Int32(size.height.rounded())
     let surfaceId = offscreenRenderSurfaces.createSurface(
       width: scaledWidth,
       height: scaledHeight,
@@ -141,9 +139,10 @@ extension DisplayViewModel: IINKIRenderTarget {
       canvas.context?.saveGState()
     }
 
-    // Sets the canvas size in pixels.
+    // Sets the canvas size in points.
     if let layer = offscreenRenderSurfaces.getSurface(surfaceId) {
-      canvas.size = layer.size
+      let scale = offscreenRenderSurfaces.scale
+      canvas.size = CGSize(width: layer.size.width / scale, height: layer.size.height / scale)
     } else {
       canvas.size = .zero
     }

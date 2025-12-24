@@ -429,23 +429,26 @@ final class Canvas: NSObject, IINKICanvas {
       return
     }
 
-    // Blend the offscreen surface in pixel coordinates.
+    // Blend the offscreen surface using the reference mapping.
+    let scale = surfaces.scale
+    let srcScaled = CGRect(
+      x: src.origin.x * scale,
+      y: src.origin.y * scale,
+      width: src.width * scale,
+      height: src.height * scale
+    )
     let alpha = CGFloat(color & 0xFF) / 255.0
 
     context.saveGState()
     context.clip(to: dest)
     context.setAlpha(alpha)
 
-    let scaleX = dest.width / src.width
-    let scaleY = dest.height / src.height
+    let x = dest.origin.x - srcScaled.origin.x / srcScaled.size.width * dest.size.width
+    let y = dest.origin.y - srcScaled.origin.y / srcScaled.size.height * dest.size.height
+    let width = layer.size.width / srcScaled.size.width * dest.size.width
+    let height = layer.size.height / srcScaled.size.height * dest.size.height
 
-    var t = CGAffineTransform.identity
-    t = t.translatedBy(
-      x: dest.origin.x - src.origin.x * scaleX, y: dest.origin.y - src.origin.y * scaleY)
-    t = t.scaledBy(x: scaleX, y: scaleY)
-
-    context.concatenate(t)
-    context.draw(layer, in: src)
+    context.draw(layer, in: CGRect(x: x, y: y, width: width, height: height))
     context.restoreGState()
   }
 
