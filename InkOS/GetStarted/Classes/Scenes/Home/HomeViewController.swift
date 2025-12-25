@@ -174,6 +174,10 @@ class HomeViewController: UIViewController {
     paletteView.expansionChanged = { [weak self] isExpanded in
       self?.editingToolbarView?.setCollapsed(isExpanded, animated: true)
     }
+    // Forwards tool changes to the view model so the editor switches tools.
+    paletteView.selectionChanged = { [weak self] selection in
+      self?.viewModel.selectTool(selection)
+    }
     view.addSubview(paletteView)
 
     paletteView.leadingAnchor.constraint(
