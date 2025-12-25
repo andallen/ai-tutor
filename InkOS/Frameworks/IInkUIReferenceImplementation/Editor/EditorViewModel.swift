@@ -171,17 +171,17 @@ class EditorViewModel {
 
   // Switches the pointer tool to pen mode.
   func selectPenTool() {
-    setPointerTool(.ToolPen)
+    setPointerTool(.toolPen)
   }
 
   // Switches the pointer tool to eraser mode.
   func selectEraserTool() {
-    setPointerTool(.ToolEraser)
+    setPointerTool(.toolEraser)
   }
 
   // Switches the pointer tool to highlighter mode.
   func selectHighlighterTool() {
-    setPointerTool(.ToolHighlighter)
+    setPointerTool(.toolHighlighter)
   }
 
   // Applies the requested tool to pen and touch pointer types so switching input mode keeps tools aligned.
