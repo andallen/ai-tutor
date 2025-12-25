@@ -15,8 +15,11 @@ struct DashboardView: View {
   // Tracks which notebook is being confirmed for deletion.
   @State private var deletingNotebook: NotebookMetadata?
 
-  // Presents the GetStarted editor when a notebook is tapped.
-  @State private var isPresentingGetStarted = false
+  // Opens a notebook session when a notebook is tapped.
+  @State private var activeSession: NotebookSession?
+
+  // Tracks an error message when opening a notebook fails.
+  @State private var openErrorMessage: String?
 
   // Animation namespace for matched geometry transitions.
   @Namespace private var animation
@@ -94,9 +97,28 @@ struct DashboardView: View {
         Text("\"\(notebook.displayName)\" will be permanently deleted. This cannot be undone.")
       }
     }
-    .fullScreenCover(isPresented: $isPresentingGetStarted) {
-      GetStartedHostView()
+    .alert(
+      "Unable to Open Notebook",
+      isPresented: .init(
+        get: { openErrorMessage != nil },
+        set: { if !$0 { openErrorMessage = nil } }
+      )
+    ) {
+      Button("OK", role: .cancel) {
+        openErrorMessage = nil
+      }
+    } message: {
+      Text(openErrorMessage ?? "Unknown error.")
     }
+    .fullScreenCover(
+      item: $activeSession,
+      onDismiss: {
+        activeSession = nil
+      },
+      content: { session in
+        GetStartedHostView(documentHandle: session.handle)
+      }
+    )
   }
 
   // MARK: - Header
@@ -173,7 +195,17 @@ struct DashboardView: View {
           NotebookCard(notebook: notebook)
             .contentShape(Rectangle())
             .onTapGesture {
-              isPresentingGetStarted = true
+              Task {
+                do {
+                  let handle = try await library.openNotebook(notebookID: notebook.id)
+                  activeSession = NotebookSession(
+                    id: notebook.id,
+                    handle: handle
+                  )
+                } catch {
+                  openErrorMessage = error.localizedDescription
+                }
+              }
             }
             .contextMenu {
               Button {
@@ -197,6 +229,13 @@ struct DashboardView: View {
   }
 
   // MARK: - Actions
+}
+
+// MARK: - Notebook Session
+
+private struct NotebookSession: Identifiable {
+  let id: String
+  let handle: DocumentHandle
 }
 
 // MARK: - Notebook Card

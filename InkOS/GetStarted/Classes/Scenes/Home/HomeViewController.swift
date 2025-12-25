@@ -19,6 +19,7 @@ class HomeViewController: UIViewController {
   private var viewModel: HomeViewModel = HomeViewModel()
   private var editorViewController: EditorViewController?
   private var cancellables: Set<AnyCancellable> = []
+  private var documentHandle: DocumentHandle?
 
   // MARK: - Life cycle
 
@@ -26,7 +27,20 @@ class HomeViewController: UIViewController {
     super.viewDidLoad()
     self.configureNavigationItems()
     self.bindViewModel()
-    self.viewModel.setupModel(engineProvider: EngineProvider.sharedInstance)
+    guard let documentHandle = documentHandle else {
+      self.viewModel.presentMissingNotebookError()
+      return
+    }
+    self.viewModel.setupModel(
+      engineProvider: EngineProvider.sharedInstance,
+      documentHandle: documentHandle
+    )
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(handleWillResignActive),
+      name: UIApplication.willResignActiveNotification,
+      object: nil
+    )
   }
 
   override func viewWillDisappear(_ animated: Bool) {
@@ -34,6 +48,14 @@ class HomeViewController: UIViewController {
     if self.isBeingDismissed || self.isMovingFromParent {
       self.viewModel.releaseEditor()
     }
+  }
+
+  deinit {
+    NotificationCenter.default.removeObserver(
+      self,
+      name: UIApplication.willResignActiveNotification,
+      object: nil
+    )
   }
 
   // MARK: - Data Binding
@@ -81,10 +103,6 @@ class HomeViewController: UIViewController {
     self.viewModel.redo()
   }
 
-  @IBAction func convertButtonWasTouchedUpInside(_ sender: Any) {
-    self.viewModel.convert()
-  }
-
   @IBAction func inputTypeSegmentedControlValueChanged(_ sender: UISegmentedControl) {
     guard let inputMode = InputMode(rawValue: sender.selectedSegmentIndex) else { return }
     self.viewModel.updateInputMode(newInputMode: inputMode)
@@ -105,5 +123,13 @@ class HomeViewController: UIViewController {
   @objc private func backButtonTapped() {
     self.viewModel.releaseEditor()
     self.dismiss(animated: true)
+  }
+
+  @objc private func handleWillResignActive() {
+    self.viewModel.handleAppBackground()
+  }
+
+  func configure(documentHandle: DocumentHandle) {
+    self.documentHandle = documentHandle
   }
 }

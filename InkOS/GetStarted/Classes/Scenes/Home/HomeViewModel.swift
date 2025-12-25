@@ -3,34 +3,9 @@
 import Combine
 import Foundation
 
-enum PackagePartType {
-  case textDocument
-  case diagram
-  case drawing
-  case math
-  case rawContent
-  case text
-
-  func getName() -> String {
-    switch self {
-    case .textDocument:
-      return "Text Document"
-    case .diagram:
-      return "Diagram"
-    case .drawing:
-      return "Drawing"
-    case .math:
-      return "Math"
-    case .text:
-      return "Text"
-    case .rawContent:
-      return "Raw Content"
-    }
-  }
-}
-
 /// This class is the ViewModel of the HomeViewController. It handles all its business logic.
 
+@MainActor
 class HomeViewModel {
 
   // MARK: Published Properties
@@ -40,12 +15,18 @@ class HomeViewModel {
 
   // MARK: Properties
 
-  var defaultPackageName: String = "New"
-  var defaultpackageType: String = PackagePartType.textDocument
-    .getName() /* Options are : "Diagram", "Drawing", "Math", "Raw Content", "Text Document", "Text" */
+  private let defaultPartType: String = "Drawing"
   weak var editor: IINKEditor?
+  private var documentHandle: DocumentHandle?
+  private var autoSaveTask: Task<Void, Never>?
+  private var fullSaveTask: Task<Void, Never>?
+  private var hasPendingFullSave = false
+  private var isLoadingPart = false
+  private var hasPresentedSaveError = false
+  private let autoSaveDelayNanoseconds: UInt64 = 2_000_000_000
+  private let fullSaveDelayNanoseconds: UInt64 = 20_000_000_000
 
-  func setupModel(engineProvider: EngineProvider) {
+  func setupModel(engineProvider: EngineProvider, documentHandle: DocumentHandle) {
     let model = HomeModel()
     // We want the Pen mode for this GetStarted sample code. It lets the user use either its mouse or fingers to draw.
     // If you have got an iPad Pro with an Apple Pencil, please set this value to InputModeAuto for a better experience.
@@ -53,24 +34,23 @@ class HomeViewModel {
       engine: engineProvider.engine, inputMode: .forcePen, editorDelegate: self,
       smartGuideDelegate: nil)
     model.editorViewController = EditorViewController(viewModel: editorViewModel)
-    // create default Package for our GetStarted content
-    model.title = "Type: " + self.defaultpackageType
+    model.title = documentHandle.initialManifest.displayName
+    self.documentHandle = documentHandle
     self.model = model
-    self.createDefaultPackage(
-      packageName: self.defaultPackageName, packageType: self.defaultpackageType,
-      engineProvider: engineProvider)
+    self.loadNotebookPartIfReady()
   }
 
   // MARK: UI Logic
 
   private func createAlert(title: String, message: String) {
     let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-    alert.addAction(
-      UIAlertAction(
-        title: "OK", style: .default,
-        handler: { action in
-          exit(1)
-        }))
+    alert.addAction(UIAlertAction(title: "OK", style: .default))
+    self.alert = alert
+  }
+
+  private func createNonFatalAlert(title: String, message: String) {
+    let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+    alert.addAction(UIAlertAction(title: "OK", style: .default))
     self.alert = alert
   }
 
@@ -80,35 +60,29 @@ class HomeViewModel {
 
   // MARK: Editor Business Logic
 
-  private func createDefaultPackage(
-    packageName: String, packageType: String, engineProvider: EngineProvider
-  ) {
-    guard let engine = engineProvider.engine else {
-      createAlert(title: "Certificate error", message: engineProvider.engineErrorMessage)
+  private func loadNotebookPartIfReady() {
+    guard isLoadingPart == false, documentHandle != nil, editor != nil else {
+      return
+    }
+    isLoadingPart = true
+    Task { [weak self] in
+      await self?.loadNotebookPart()
+    }
+  }
+
+  private func loadNotebookPart() async {
+    guard let documentHandle = documentHandle, let editor = editor else {
+      isLoadingPart = false
       return
     }
     do {
-      var resultPackage: IINKContentPackage?
-      let fileManager = FileManager.default
-      let fullPath = fileManager.pathForFileInDocumentDirectory(fileName: packageName) + ".iink"
-      let canonicalPath = fullPath.decomposedStringWithCanonicalMapping
-      do {
-        // Open the package if it already exists or is already opened.
-        resultPackage = try engine.openPackage(canonicalPath)
-      } catch {
-        resultPackage = try engine.createPackage(canonicalPath)
-        try resultPackage?.createPart(with: packageType)
-      }
-      if let package = resultPackage {
-        if package.partCount() == 0 {
-          try package.createPart(with: packageType)
-        }
-        try self.editor?.part = package.part(at: 0)
-      }
+      let part = try await documentHandle.ensureInitialPart(type: defaultPartType)
+      try editor.set(part: part)
     } catch {
-      createAlert(title: "Error", message: "An error occurred during the page creation")
-      print("Error while creating package : " + error.localizedDescription)
+      createNonFatalAlert(title: "Error", message: error.localizedDescription)
+      appLog("❌ HomeViewModel.loadNotebookPart failed error=\(error)")
     }
+    isLoadingPart = false
   }
 
   // MARK: Actions
@@ -130,31 +104,101 @@ class HomeViewModel {
     self.editor?.redo()
   }
 
-  func convert() {
-    do {
-      if let supportedTargetStates = self.editor?.supportedTargetConversionState(forSelection: nil)
-      {
-        if !supportedTargetStates.isEmpty {
-          try self.editor?.convert(selection: nil, targetState: supportedTargetStates[0].value)
-        }
-      }
-    } catch {
-      createAlert(title: "Error", message: "An error occurred during the convertion")
-      print("Error while converting : " + error.localizedDescription)
-    }
-  }
-
   func updateInputMode(newInputMode: InputMode) {
     self.model?.editorViewController?.updateInputMode(newInputMode: newInputMode)
   }
 
   // Releases the editor binding to avoid keeping the part locked.
   func releaseEditor() {
+    autoSaveTask?.cancel()
+    fullSaveTask?.cancel()
     do {
       try self.editor?.set(part: nil)
     } catch {
       appLog("❌ HomeViewModel.releaseEditor failed error=\(error.localizedDescription)")
     }
+    let handle = documentHandle
+    documentHandle = nil
+    Task { [weak self] in
+      guard let handle = handle else {
+        return
+      }
+      do {
+        try await handle.savePackage()
+      } catch {
+        self?.presentSaveError(message: error.localizedDescription)
+      }
+      await handle.close(saveBeforeClose: false)
+    }
+  }
+
+  func handleAppBackground() {
+    Task { [weak self] in
+      await self?.performFullSave(reason: "background")
+    }
+  }
+
+  func presentMissingNotebookError() {
+    createNonFatalAlert(title: "Error", message: "Notebook details are missing.")
+  }
+
+  private func scheduleAutoSave() {
+    autoSaveTask?.cancel()
+    autoSaveTask = Task { [weak self] in
+      guard let self = self else {
+        return
+      }
+      try? await Task.sleep(nanoseconds: self.autoSaveDelayNanoseconds)
+      await self.performAutoSave()
+    }
+  }
+
+  private func scheduleFullSave() {
+    fullSaveTask?.cancel()
+    fullSaveTask = Task { [weak self] in
+      guard let self = self else {
+        return
+      }
+      try? await Task.sleep(nanoseconds: self.fullSaveDelayNanoseconds)
+      await self.performFullSave(reason: "idle")
+    }
+  }
+
+  private func performAutoSave() async {
+    guard let documentHandle = documentHandle else {
+      return
+    }
+    do {
+      try await documentHandle.savePackageToTemp()
+      appLog("✅ HomeViewModel.performAutoSave saved temp")
+    } catch {
+      presentSaveError(message: error.localizedDescription)
+    }
+  }
+
+  private func performFullSave(reason: String) async {
+    guard let documentHandle = documentHandle else {
+      return
+    }
+    guard hasPendingFullSave || reason == "background" else {
+      return
+    }
+    do {
+      try await documentHandle.savePackage()
+      hasPendingFullSave = false
+      hasPresentedSaveError = false
+      appLog("✅ HomeViewModel.performFullSave saved full reason=\(reason)")
+    } catch {
+      presentSaveError(message: error.localizedDescription)
+    }
+  }
+
+  private func presentSaveError(message: String) {
+    guard hasPresentedSaveError == false else {
+      return
+    }
+    hasPresentedSaveError = true
+    createNonFatalAlert(title: "Save Failed", message: message)
   }
 
 }
@@ -163,6 +207,7 @@ extension HomeViewModel: EditorDelegate {
 
   func didCreateEditor(editor: IINKEditor) {
     self.editor = editor
+    self.loadNotebookPartIfReady()
   }
 
   func partChanged(editor: IINKEditor) {
@@ -170,7 +215,9 @@ extension HomeViewModel: EditorDelegate {
   }
 
   func contentChanged(editor: IINKEditor, blockIds: [String]) {
-
+    hasPendingFullSave = true
+    scheduleAutoSave()
+    scheduleFullSave()
   }
 
   func onError(editor: IINKEditor, blockId: String, message: String) {

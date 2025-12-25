@@ -279,11 +279,12 @@ actor BundleManager {
 
     // All checks passed. Create and return the DocumentHandle.
     // The DocumentHandle will open the package internally.
-    let handle = await DocumentHandle(
+    let handle = try await DocumentHandle(
       notebookID: notebookID,
       bundleURL: bundleURL,
       manifest: manifest,
-      packagePath: packagePath
+      packagePath: packagePath,
+      openOption: .existing
     )
     appLog("✅ BundleManager.openNotebook success notebookID=\(notebookID)")
     return handle

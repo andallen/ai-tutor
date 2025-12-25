@@ -4,6 +4,7 @@ import Foundation
 
 /// The EngineProvider is used to manage the creation and the exposition of the Engine to the rest of the classes. It's important to use the same instance during all the application life cycle (hence the Singleton).
 
+@MainActor
 class EngineProvider {
 
   static var sharedInstance = EngineProvider()

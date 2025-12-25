@@ -106,13 +106,7 @@
                         </constraints>
                     </view>
                     <toolbarItems/>
-                    <navigationItem key="navigationItem" title="File - Type" id="Hp3-D6-KMA">
-                        <barButtonItem key="rightBarButtonItem" title="Convert" id="Pbo-zf-H5w">
-                            <connections>
-                                <action selector="convertButtonWasTouchedUpInside:" destination="qiq-bc-tqE" id="qlP-jH-yr0"/>
-                            </connections>
-                        </barButtonItem>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" title="File - Type" id="Hp3-D6-KMA"/>
                     <connections>
                         <outlet property="editorContainerView" destination="HCI-3q-Wfv" id="dnW-sI-6av"/>
                         <outlet property="inputTypeSegmentedControl" destination="aIl-gf-GOi" id="0ne-qa-brJ"/>
