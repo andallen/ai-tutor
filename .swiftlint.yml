@@ -1,8 +1,0 @@
-# Exclude vendor and reference sources to keep the upstream code untouched.
-excluded:
-  - Pods
-  - DerivedData
-  - .derivedData
-  - Reference
-  - InkOS/Frameworks/IInkUIReferenceImplementation
-  - InkOS/GetStarted

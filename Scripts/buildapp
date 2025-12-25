@@ -1,0 +1,16 @@
+#!/bin/bash
+# Navigate to the project root
+cd "$(dirname "$0")/.."
+
+mkdir -p ./Logs
+rm -f ./Logs/build_logs.txt
+
+echo "🔨 Compiling InkOS (No Tests)..."
+
+xcodebuild build \
+  -workspace InkOS.xcworkspace \
+  -scheme InkOS \
+  -destination 'platform=iOS,id=00008140-000A789E1EA1801C' \
+  -allowProvisioningUpdates \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  | xcbeautify --disable-colored-output | tee ./Logs/build_logs.txt

@@ -1,0 +1,13 @@
+#!/bin/bash
+# Navigate to the project root
+cd "$(dirname "$0")/.."
+
+mkdir -p ./Logs
+
+# Clear on STARTUP only
+rm -f ./Logs/test_logs.txt
+
+echo "Waiting for ONLY your custom print statements (APP_LOG)..."
+
+# Use -a (append) so that testapp can wipe the file without breaking this pipe
+idevicesyslog -u 00008140-000A789E1EA1801C | grep --line-buffered "APP_LOG" | tee -a ./Logs/test_logs.txt
