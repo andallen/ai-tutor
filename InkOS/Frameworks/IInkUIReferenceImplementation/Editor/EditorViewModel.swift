@@ -184,11 +184,10 @@ class EditorViewModel {
     setPointerTool(.toolHighlighter)
   }
 
-  // Apply tool to pen and touch pointer types to keep tools aligned.
+  // Apply tool to the pen pointer type.
   private func setPointerTool(_ tool: IINKPointerTool) {
     do {
       try toolController?.set(tool: tool, forType: .pen)
-      try toolController?.set(tool: tool, forType: .touch)
     } catch {
       appLog(
         "❌ EditorViewModel.setPointerTool failed tool=\(tool) error=\(error.localizedDescription)")

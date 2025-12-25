@@ -29,6 +29,8 @@ class HomeViewModel {
   private var selectedInkColorHex = "#000000"
   // Tracks the selected tool so it can be re-applied when the editor is available.
   private var selectedTool: ToolPaletteView.ToolSelection = .pen
+  // Tracks the active input mode so touch tools can follow the toggle state.
+  private var inputMode: InputMode = .forcePen
 
   func setupModel(engineProvider: EngineProvider, documentHandle: DocumentHandle) {
     let model = HomeModel()
@@ -136,7 +138,9 @@ class HomeViewModel {
   }
 
   func updateInputMode(newInputMode: InputMode) {
+    inputMode = newInputMode
     self.model?.editorViewController?.updateInputMode(newInputMode: newInputMode)
+    applyToolSelectionIfPossible()
   }
 
   // Switches the active tool to match the palette selection.
@@ -172,7 +176,7 @@ class HomeViewModel {
     let tool = tool(for: selection)
     do {
       try editor.toolController.set(tool: tool, forType: .pen)
-      try editor.toolController.set(tool: tool, forType: .touch)
+      try applyTouchTool(tool: tool, editor: editor)
     } catch {
       appLog("❌ HomeViewModel.applyTool failed tool=\(tool) error=\(error)")
     }
@@ -302,12 +306,22 @@ extension HomeViewModel: EditorDelegate {
       return
     }
     do {
-      try editor.toolController.set(tool: tool(for: selectedTool), forType: .pen)
-      try editor.toolController.set(tool: tool(for: selectedTool), forType: .touch)
+      let tool = tool(for: selectedTool)
+      try editor.toolController.set(tool: tool, forType: .pen)
+      try applyTouchTool(tool: tool, editor: editor)
     } catch {
       appLog(
         "❌ HomeViewModel.applyToolSelectionIfPossible failed selection=\(selectedTool) error=\(error)"
       )
+    }
+  }
+
+  // Applies the correct touch tool based on the current input mode.
+  private func applyTouchTool(tool: IINKPointerTool, editor: IINKEditor) throws {
+    if inputMode == .forcePen {
+      try editor.toolController.set(tool: tool, forType: .touch)
+    } else {
+      try editor.toolController.set(tool: .hand, forType: .touch)
     }
   }
 
