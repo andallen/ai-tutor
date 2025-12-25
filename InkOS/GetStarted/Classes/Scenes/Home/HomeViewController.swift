@@ -2,6 +2,7 @@
 
 import Combine
 import Foundation
+import UIKit
 
 /// This is the Main ViewController of the project.
 /// It Encapsulates the EditorViewController, and permits editing actions (such as undo/redo)
@@ -23,8 +24,16 @@ class HomeViewController: UIViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
+    self.configureNavigationItems()
     self.bindViewModel()
     self.viewModel.setupModel(engineProvider: EngineProvider.sharedInstance)
+  }
+
+  override func viewWillDisappear(_ animated: Bool) {
+    super.viewWillDisappear(animated)
+    if self.isBeingDismissed || self.isMovingFromParent {
+      self.viewModel.releaseEditor()
+    }
   }
 
   // MARK: - Data Binding
@@ -79,5 +88,22 @@ class HomeViewController: UIViewController {
   @IBAction func inputTypeSegmentedControlValueChanged(_ sender: UISegmentedControl) {
     guard let inputMode = InputMode(rawValue: sender.selectedSegmentIndex) else { return }
     self.viewModel.updateInputMode(newInputMode: inputMode)
+  }
+
+  // MARK: - Navigation
+
+  private func configureNavigationItems() {
+    // Provide a clear way to return to the Dashboard.
+    self.navigationItem.leftBarButtonItem = UIBarButtonItem(
+      title: "Back",
+      style: .plain,
+      target: self,
+      action: #selector(backButtonTapped)
+    )
+  }
+
+  @objc private func backButtonTapped() {
+    self.viewModel.releaseEditor()
+    self.dismiss(animated: true)
   }
 }

@@ -89,12 +89,20 @@ class HomeViewModel {
     }
     do {
       var resultPackage: IINKContentPackage?
-      let fullPath =
-        FileManager.default.pathForFileInDocumentDirectory(fileName: packageName) + ".iink"
-      resultPackage = try engine.createPackage(fullPath.decomposedStringWithCanonicalMapping)
-      // Add a blank page type Text Document
-      try resultPackage?.createPart(with: packageType)
+      let fileManager = FileManager.default
+      let fullPath = fileManager.pathForFileInDocumentDirectory(fileName: packageName) + ".iink"
+      let canonicalPath = fullPath.decomposedStringWithCanonicalMapping
+      do {
+        // Open the package if it already exists or is already opened.
+        resultPackage = try engine.openPackage(canonicalPath)
+      } catch {
+        resultPackage = try engine.createPackage(canonicalPath)
+        try resultPackage?.createPart(with: packageType)
+      }
       if let package = resultPackage {
+        if package.partCount() == 0 {
+          try package.createPart(with: packageType)
+        }
         try self.editor?.part = package.part(at: 0)
       }
     } catch {
@@ -138,6 +146,15 @@ class HomeViewModel {
 
   func updateInputMode(newInputMode: InputMode) {
     self.model?.editorViewController?.updateInputMode(newInputMode: newInputMode)
+  }
+
+  // Releases the editor binding to avoid keeping the part locked.
+  func releaseEditor() {
+    do {
+      try self.editor?.set(part: nil)
+    } catch {
+      appLog("❌ HomeViewModel.releaseEditor failed error=\(error.localizedDescription)")
+    }
   }
 
 }
