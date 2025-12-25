@@ -27,6 +27,8 @@ class HomeViewModel {
   private let fullSaveDelayNanoseconds: UInt64 = 20_000_000_000
   // Tracks the selected ink color so it can be applied when the editor is ready.
   private var selectedInkColorHex = "#000000"
+  // Tracks the selected tool so it can be re-applied when the editor is available.
+  private var selectedTool: ToolPaletteView.ToolSelection = .pen
 
   func setupModel(engineProvider: EngineProvider, documentHandle: DocumentHandle) {
     let model = HomeModel()
@@ -110,6 +112,15 @@ class HomeViewModel {
     self.model?.editorViewController?.updateInputMode(newInputMode: newInputMode)
   }
 
+  // Switches the active tool to match the palette selection.
+  func updateTool(selection: ToolPaletteView.ToolSelection) {
+    selectedTool = selection
+    guard let editor = editor else {
+      return
+    }
+    applyTool(selection: selection, editor: editor)
+  }
+
   // Updates the pen style to match the selected color.
   func updateInkColor(hex: String) {
     selectedInkColorHex = hex
@@ -126,6 +137,25 @@ class HomeViewModel {
       try editor.toolController.set(style: "color:\(hex)", forTool: .toolMarker)
     } catch {
       appLog("❌ HomeViewModel.applyInkColor failed color=\(hex) error=\(error)")
+    }
+  }
+
+  // Sets the active tool on the editor for both pen and touch inputs.
+  private func applyTool(selection: ToolPaletteView.ToolSelection, editor: IINKEditor) {
+    let tool: IINKPointerTool
+    switch selection {
+    case .pen:
+      tool = .toolPen
+    case .eraser:
+      tool = .toolEraser
+    case .highlighter:
+      tool = .toolMarker
+    }
+    do {
+      try editor.toolController.set(tool: tool, forType: .pen)
+      try editor.toolController.set(tool: tool, forType: .touch)
+    } catch {
+      appLog("❌ HomeViewModel.applyTool failed tool=\(tool) error=\(error)")
     }
   }
 
@@ -228,6 +258,7 @@ extension HomeViewModel: EditorDelegate {
 
   func didCreateEditor(editor: IINKEditor) {
     self.editor = editor
+    applyTool(selection: selectedTool, editor: editor)
     applyInkColor(hex: selectedInkColorHex, editor: editor)
     self.loadNotebookPartIfReady()
   }
