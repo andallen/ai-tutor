@@ -23,6 +23,8 @@ class HomeViewController: UIViewController {
   private let offBlack: UIColor = UIColor(red: 0.20, green: 0.20, blue: 0.20, alpha: 1.0)
   // Stores the floating tool palette attached to the canvas view.
   private var toolPaletteView: ToolPaletteView?
+  // Stores the editing toolbar anchored to the bottom right.
+  private var editingToolbarView: EditingToolbarView?
 
   // MARK: - Life cycle
 
@@ -30,6 +32,7 @@ class HomeViewController: UIViewController {
     super.viewDidLoad()
     self.configureNavigationItems()
     self.configureToolPalette()
+    self.configureEditingToolbar()
     self.bindViewModel()
     guard let documentHandle = documentHandle else {
       self.viewModel.presentMissingNotebookError()
@@ -112,6 +115,7 @@ class HomeViewController: UIViewController {
   // MARK: - Navigation
 
   private func configureNavigationItems() {
+    configureNavigationBarAppearance()
     // Provide a clear way to return to the Dashboard.
     let backImage = UIImage(systemName: "house")?.withRenderingMode(.alwaysTemplate)
     let backItem = UIBarButtonItem(
@@ -142,7 +146,26 @@ class HomeViewController: UIViewController {
     segmentedControl.selectedSegmentTintColor = offBlack.withAlphaComponent(0.12)
     self.inputTypeSegmentedControl = segmentedControl
     self.navigationItem.titleView = segmentedControl
-    self.navigationItem.rightBarButtonItem = makeEditingBarButtonItem()
+    self.navigationItem.rightBarButtonItem = nil
+  }
+
+  // Removes bar button backgrounds so only the icon glyphs show.
+  private func configureNavigationBarAppearance() {
+    let appearance = UINavigationBarAppearance()
+    appearance.configureWithDefaultBackground()
+    let buttonAppearance = appearance.buttonAppearance
+    clearBarButtonItemBackground(buttonAppearance)
+    appearance.buttonAppearance = buttonAppearance
+    navigationItem.standardAppearance = appearance
+    navigationItem.scrollEdgeAppearance = appearance
+    navigationItem.compactAppearance = appearance
+  }
+
+  // Clears the background visuals for a bar button item appearance.
+  private func clearBarButtonItemBackground(_ appearance: UIBarButtonItemAppearance) {
+    appearance.normal.backgroundImage = UIImage()
+    appearance.highlighted.backgroundImage = UIImage()
+    appearance.disabled.backgroundImage = UIImage()
   }
 
   private func configureToolPalette() {
@@ -156,55 +179,35 @@ class HomeViewController: UIViewController {
     ).isActive = true
     paletteView.bottomAnchor.constraint(
       equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-      constant: -20
+      constant: -4
     ).isActive = true
     toolPaletteView = paletteView
   }
 
-  // Creates a single bar button item that hosts the undo, redo, and clear icons.
-  private func makeEditingBarButtonItem() -> UIBarButtonItem {
-    let undoButton = makeToolbarButton(
-      imageName: "Undo",
-      action: #selector(undoButtonWasTouchedUpInside(_:)),
-      accessibilityLabel: "Undo"
-    )
-    let redoButton = makeToolbarButton(
-      imageName: "Redo",
-      action: #selector(redoButtonWasTouchedUpInside(_:)),
-      accessibilityLabel: "Redo"
-    )
-    let clearButton = makeToolbarButton(
-      imageName: "Clear",
-      action: #selector(clearButtonWasTouchedUpInside(_:)),
-      accessibilityLabel: "Clear"
-    )
-    let stackView = UIStackView(arrangedSubviews: [undoButton, redoButton, clearButton])
-    stackView.axis = .horizontal
-    stackView.spacing = 12
-    stackView.alignment = .center
-    return UIBarButtonItem(customView: stackView)
-  }
-
-  // Ensures consistent sizing and tint for the toolbar icons.
-  private func makeToolbarButton(
-    imageName: String,
-    action: Selector,
-    accessibilityLabel: String
-  ) -> UIButton {
-    let button = UIButton(type: .system)
-    if let image = UIImage(named: imageName) {
-      button.setImage(image.withRenderingMode(.alwaysTemplate), for: .normal)
-    } else {
-      button.setTitle(imageName, for: .normal)
+  // Adds the editing toolbar to the bottom right of the screen.
+  private func configureEditingToolbar() {
+    let toolbarView = EditingToolbarView(accentColor: offBlack)
+    toolbarView.translatesAutoresizingMaskIntoConstraints = false
+    toolbarView.undoTapped = { [weak self] in
+      self?.viewModel.undo()
     }
-    button.tintColor = offBlack
-    button.accessibilityLabel = accessibilityLabel
-    button.addTarget(self, action: action, for: .touchUpInside)
-    button.translatesAutoresizingMaskIntoConstraints = false
-    let widthConstraint = button.widthAnchor.constraint(equalToConstant: 28)
-    let heightConstraint = button.heightAnchor.constraint(equalToConstant: 28)
-    NSLayoutConstraint.activate([widthConstraint, heightConstraint])
-    return button
+    toolbarView.redoTapped = { [weak self] in
+      self?.viewModel.redo()
+    }
+    toolbarView.clearTapped = { [weak self] in
+      self?.viewModel.clear()
+    }
+    view.addSubview(toolbarView)
+
+    toolbarView.trailingAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.trailingAnchor,
+      constant: -20
+    ).isActive = true
+    toolbarView.bottomAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+      constant: -4
+    ).isActive = true
+    editingToolbarView = toolbarView
   }
 
   @objc private func backButtonTapped() {
