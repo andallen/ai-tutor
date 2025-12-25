@@ -174,6 +174,16 @@ class HomeViewController: UIViewController {
     paletteView.expansionChanged = { [weak self] isExpanded in
       self?.editingToolbarView?.setCollapsed(isExpanded, animated: true)
     }
+    paletteView.selectionChanged = { [weak self] selection in
+      switch selection {
+      case .pen:
+        self?.viewModel.selectPenTool()
+      case .eraser:
+        self?.viewModel.selectEraserTool()
+      case .highlighter:
+        self?.viewModel.selectHighlighterTool()
+      }
+    }
     view.addSubview(paletteView)
 
     paletteView.leadingAnchor.constraint(

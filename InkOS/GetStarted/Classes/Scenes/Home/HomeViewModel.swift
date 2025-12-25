@@ -104,6 +104,21 @@ class HomeViewModel {
     self.editor?.redo()
   }
 
+  // Switches the Notebook to pen mode.
+  func selectPenTool() {
+    model?.editorViewController?.selectPenTool()
+  }
+
+  // Switches the Notebook to eraser mode.
+  func selectEraserTool() {
+    model?.editorViewController?.selectEraserTool()
+  }
+
+  // Switches the Notebook to highlighter mode.
+  func selectHighlighterTool() {
+    model?.editorViewController?.selectHighlighterTool()
+  }
+
   func updateInputMode(newInputMode: InputMode) {
     self.model?.editorViewController?.updateInputMode(newInputMode: newInputMode)
   }
