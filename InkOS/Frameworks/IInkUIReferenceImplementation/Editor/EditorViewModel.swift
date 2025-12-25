@@ -44,6 +44,8 @@ class EditorViewModel {
 
   var editor: IINKEditor?
   private weak var engine: IINKEngine?
+  // Stores the tool controller so tools can be switched from the Notebook toolbar.
+  private var toolController: IINKToolController?
   private(set) var originalViewOffset: CGPoint = CGPoint.zero
   private weak var editorDelegate: EditorDelegate?
   private var editorDelegateTrampoline: EditorDelegateTrampoline
@@ -167,6 +169,32 @@ class EditorViewModel {
     try? self.editor?.set(viewSize: size)
   }
 
+  // Select pen tool.
+  func selectPenTool() {
+    setPointerTool(.toolPen)
+  }
+
+  // Select eraser tool.
+  func selectEraserTool() {
+    setPointerTool(.eraser)
+  }
+
+  // Select highlighter tool.
+  func selectHighlighterTool() {
+    setPointerTool(.toolHighlighter)
+  }
+
+  // Apply tool to pen and touch pointer types to keep tools aligned.
+  private func setPointerTool(_ tool: IINKPointerTool) {
+    do {
+      try toolController?.set(tool: tool, forType: .pen)
+      try toolController?.set(tool: tool, forType: .touch)
+    } catch {
+      appLog(
+        "❌ EditorViewModel.setPointerTool failed tool=\(tool) error=\(error.localizedDescription)")
+    }
+  }
+
   private func initEditor(with target: DisplayViewModel) {
     guard let engine = self.engine,
       let renderer = try? engine.createRenderer(
@@ -180,6 +208,7 @@ class EditorViewModel {
     self.editor = self.engine?.createEditor(
       renderer: renderer,
       toolController: toolController)
+    self.toolController = toolController
 
     // Apply theme from css file if any
     if let path = Bundle.main.path(forResource: "theme", ofType: "css"),

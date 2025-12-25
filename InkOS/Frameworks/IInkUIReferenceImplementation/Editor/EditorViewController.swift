@@ -53,6 +53,21 @@ class EditorViewController: UIViewController {
     self.panGestureRecognizer?.isEnabled = enabled
   }
 
+  // Sets the editor tool to pen mode.
+  func selectPenTool() {
+    viewModel.selectPenTool()
+  }
+
+  // Sets the editor tool to eraser mode.
+  func selectEraserTool() {
+    viewModel.selectEraserTool()
+  }
+
+  // Sets the editor tool to highlighter mode.
+  func selectHighlighterTool() {
+    viewModel.selectHighlighterTool()
+  }
+
   //MARK: - UI settings
 
   private func displayModel(model: EditorModel) {

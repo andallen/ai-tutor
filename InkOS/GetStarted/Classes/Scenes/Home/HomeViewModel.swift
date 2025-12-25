@@ -106,6 +106,33 @@ class HomeViewModel {
     self.editor?.redo()
   }
 
+  // Applies the requested tool selection to the editor.
+  func selectTool(_ selection: ToolPaletteView.ToolSelection) {
+    switch selection {
+    case .pen:
+      selectPenTool()
+    case .eraser:
+      selectEraserTool()
+    case .highlighter:
+      selectHighlighterTool()
+    }
+  }
+
+  // Switches the Notebook to pen mode.
+  func selectPenTool() {
+    model?.editorViewController?.selectPenTool()
+  }
+
+  // Switches the Notebook to eraser mode.
+  func selectEraserTool() {
+    model?.editorViewController?.selectEraserTool()
+  }
+
+  // Switches the Notebook to highlighter mode.
+  func selectHighlighterTool() {
+    model?.editorViewController?.selectHighlighterTool()
+  }
+
   func updateInputMode(newInputMode: InputMode) {
     self.model?.editorViewController?.updateInputMode(newInputMode: newInputMode)
   }
