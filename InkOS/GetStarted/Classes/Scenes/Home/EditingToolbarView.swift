@@ -22,6 +22,10 @@ final class EditingToolbarView: UIView {
   private let toolbar = UIToolbar()
   // Holds the undo, redo, and clear buttons in one line.
   private let stackView = UIStackView()
+  // Stores the width constraint so it can animate in and out.
+  private var widthConstraint: NSLayoutConstraint?
+  // Tracks whether the toolbar is collapsed.
+  private var isCollapsed = false
   // Stores the undo button.
   private lazy var undoButton = makeToolButton(
     imageName: "Undo",
@@ -58,6 +62,9 @@ final class EditingToolbarView: UIView {
     (buttonSize * 3) + (spacing * 2) + (horizontalPadding * 2)
   }
 
+  // The fully collapsed width hides the toolbar entirely.
+  private var collapsedWidth: CGFloat { 0 }
+
   // Builds the view hierarchy and initial layout.
   private func configureView() {
     translatesAutoresizingMaskIntoConstraints = false
@@ -83,9 +90,12 @@ final class EditingToolbarView: UIView {
 
     // Locks the size to prevent clipping inside the navigation layout.
     heightAnchor.constraint(equalToConstant: toolbarHeight).isActive = true
-    widthAnchor.constraint(equalToConstant: toolbarWidth).isActive = true
+    let widthConstraint = widthAnchor.constraint(equalToConstant: toolbarWidth)
+    widthConstraint.isActive = true
+    self.widthConstraint = widthConstraint
 
     configureStackView()
+    setCollapsed(false, animated: false)
   }
 
   // Builds the stack view so the tools read as one bar.
@@ -131,6 +141,69 @@ final class EditingToolbarView: UIView {
     button.widthAnchor.constraint(equalToConstant: buttonSize).isActive = true
     button.heightAnchor.constraint(equalToConstant: buttonSize).isActive = true
     return button
+  }
+
+  // Expands or collapses the toolbar with optional animation.
+  func setCollapsed(_ collapsed: Bool, animated: Bool) {
+    guard collapsed != isCollapsed else { return }
+    isCollapsed = collapsed
+    superview?.layoutIfNeeded()
+    if collapsed {
+      prepareForCollapse()
+    } else {
+      prepareForExpand()
+    }
+    updateWidthForState(collapsed: collapsed)
+
+    let targetAlpha: CGFloat = collapsed ? 0 : 1
+    let animations = { [weak self] in
+      guard let self = self else { return }
+      self.superview?.layoutIfNeeded()
+      self.toolbar.alpha = targetAlpha
+    }
+
+    let completion: (Bool) -> Void = { [weak self] _ in
+      guard let self = self else { return }
+      if collapsed {
+        self.toolbar.isHidden = true
+      }
+    }
+
+    if animated {
+      UIView.animate(
+        withDuration: 0.22,
+        delay: 0,
+        options: [.curveEaseInOut],
+        animations: animations,
+        completion: completion
+      )
+    } else {
+      animations()
+      completion(true)
+    }
+  }
+
+  // Enables taps and accessibility for the toolbar buttons when expanding.
+  private func prepareForExpand() {
+    toolbar.isHidden = false
+    toolbar.alpha = 0
+    [undoButton, redoButton, clearButton].forEach { button in
+      button.isUserInteractionEnabled = true
+      button.isAccessibilityElement = true
+    }
+  }
+
+  // Disables taps and accessibility for the toolbar buttons when collapsing.
+  private func prepareForCollapse() {
+    [undoButton, redoButton, clearButton].forEach { button in
+      button.isUserInteractionEnabled = false
+      button.isAccessibilityElement = false
+    }
+  }
+
+  // Updates the width constraint to match the collapsed or expanded state.
+  private func updateWidthForState(collapsed: Bool) {
+    widthConstraint?.constant = collapsed ? collapsedWidth : toolbarWidth
   }
 
   // Handles undo taps.

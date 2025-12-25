@@ -9,6 +9,8 @@ final class ToolPaletteView: UIView {
 
   // Notifies the host when a new tool selection is made.
   var selectionChanged: ((ToolSelection) -> Void)?
+  // Notifies the host when the palette expands or collapses.
+  var expansionChanged: ((Bool) -> Void)?
 
   // Defines the shared tint used for the toolbar icons.
   private let accentColor: UIColor
@@ -187,6 +189,7 @@ final class ToolPaletteView: UIView {
   // Expands or collapses the toolbar with optional animation.
   private func setExpanded(_ expanded: Bool, animated: Bool) {
     updateToggleIcon(isExpanded: expanded)
+    expansionChanged?(expanded)
     animateExpansion(expanded: expanded, animated: animated)
   }
 
