@@ -174,6 +174,9 @@ class HomeViewController: UIViewController {
     paletteView.expansionChanged = { [weak self] isExpanded in
       self?.editingToolbarView?.setCollapsed(isExpanded, animated: true)
     }
+    paletteView.colorSelectionChanged = { [weak self] hex in
+      self?.viewModel.updateInkColor(hex: hex)
+    }
     view.addSubview(paletteView)
 
     paletteView.leadingAnchor.constraint(

@@ -25,6 +25,8 @@ class HomeViewModel {
   private var hasPresentedSaveError = false
   private let autoSaveDelayNanoseconds: UInt64 = 2_000_000_000
   private let fullSaveDelayNanoseconds: UInt64 = 20_000_000_000
+  // Tracks the selected ink color so it can be applied when the editor is ready.
+  private var selectedInkColorHex = "#000000"
 
   func setupModel(engineProvider: EngineProvider, documentHandle: DocumentHandle) {
     let model = HomeModel()
@@ -106,6 +108,25 @@ class HomeViewModel {
 
   func updateInputMode(newInputMode: InputMode) {
     self.model?.editorViewController?.updateInputMode(newInputMode: newInputMode)
+  }
+
+  // Updates the pen style to match the selected color.
+  func updateInkColor(hex: String) {
+    selectedInkColorHex = hex
+    guard let editor = editor else {
+      return
+    }
+    applyInkColor(hex: hex, editor: editor)
+  }
+
+  // Applies the selected ink color to the supported tools.
+  private func applyInkColor(hex: String, editor: IINKEditor) {
+    do {
+      try editor.toolController.set(style: "color:\(hex)", forTool: .toolPen)
+      try editor.toolController.set(style: "color:\(hex)", forTool: .toolMarker)
+    } catch {
+      appLog("❌ HomeViewModel.applyInkColor failed color=\(hex) error=\(error)")
+    }
   }
 
   // Releases the editor binding to avoid keeping the part locked.
@@ -207,6 +228,7 @@ extension HomeViewModel: EditorDelegate {
 
   func didCreateEditor(editor: IINKEditor) {
     self.editor = editor
+    applyInkColor(hex: selectedInkColorHex, editor: editor)
     self.loadNotebookPartIfReady()
   }
 
