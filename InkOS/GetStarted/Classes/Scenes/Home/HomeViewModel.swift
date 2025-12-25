@@ -25,6 +25,8 @@ class HomeViewModel {
   private var hasPresentedSaveError = false
   private let autoSaveDelayNanoseconds: UInt64 = 2_000_000_000
   private let fullSaveDelayNanoseconds: UInt64 = 20_000_000_000
+  // Tracks the last tool requested by the toolbar.
+  private var activeToolSelection: ToolPaletteView.ToolSelection = .pen
 
   func setupModel(engineProvider: EngineProvider, documentHandle: DocumentHandle) {
     let model = HomeModel()
@@ -135,6 +137,12 @@ class HomeViewModel {
     self.model?.editorViewController?.updateInputMode(newInputMode: newInputMode)
   }
 
+  // Persists the selected tool so it can be applied once the editor is ready.
+  func selectTool(_ selection: ToolPaletteView.ToolSelection) {
+    activeToolSelection = selection
+    applyToolSelectionIfPossible()
+  }
+
   // Releases the editor binding to avoid keeping the part locked.
   func releaseEditor() {
     autoSaveTask?.cancel()
@@ -234,6 +242,7 @@ extension HomeViewModel: EditorDelegate {
 
   func didCreateEditor(editor: IINKEditor) {
     self.editor = editor
+    applyToolSelectionIfPossible()
     self.loadNotebookPartIfReady()
   }
 
@@ -249,5 +258,27 @@ extension HomeViewModel: EditorDelegate {
 
   func onError(editor: IINKEditor, blockId: String, message: String) {
     createAlert(title: "Error", message: message)
+  }
+
+  // Applies the selected tool to the editor once the editor is available.
+  private func applyToolSelectionIfPossible() {
+    guard let editor = editor else {
+      return
+    }
+    let toolForSelection: IINKPointerTool
+    switch activeToolSelection {
+    case .pen:
+      toolForSelection = .toolPen
+    case .eraser:
+      toolForSelection = .eraser
+    case .highlighter:
+      toolForSelection = .toolHighlighter
+    }
+    do {
+      try editor.toolController.set(tool: toolForSelection, forType: .pen)
+      try editor.toolController.set(tool: toolForSelection, forType: .touch)
+    } catch {
+      appLog("❌ HomeViewModel.applyToolSelectionIfPossible failed selection=\(activeToolSelection) error=\(error)")
+    }
   }
 }
