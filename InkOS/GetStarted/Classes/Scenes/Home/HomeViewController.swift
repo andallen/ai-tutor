@@ -175,7 +175,10 @@ class HomeViewController: UIViewController {
       self?.editingToolbarView?.setCollapsed(isExpanded, animated: true)
     }
     paletteView.selectionChanged = { [weak self] selection in
-      self?.viewModel.selectTool(selection)
+      self?.viewModel.updateTool(selection: selection)
+    }
+    paletteView.colorSelectionChanged = { [weak self] hex in
+      self?.viewModel.updateInkColor(hex: hex)
     }
     view.addSubview(paletteView)
 

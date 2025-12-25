@@ -9,6 +9,8 @@ final class ToolPaletteView: UIView {
 
   // Notifies the host when a new tool selection is made.
   var selectionChanged: ((ToolSelection) -> Void)?
+  // Notifies the host when a color is chosen.
+  var colorSelectionChanged: ((String) -> Void)?
   // Notifies the host when the palette expands or collapses.
   var expansionChanged: ((Bool) -> Void)?
 
@@ -34,6 +36,20 @@ final class ToolPaletteView: UIView {
   private var isExpanded = false
   // Tracks which tool is currently selected.
   private var selectedTool: ToolSelection = .pen
+  // Tracks which hex color is currently selected.
+  private var selectedColorHex = "#000000"
+  // Defines the list of preset colors shown in the palette menu.
+  private let colorOptions: [ColorOption] = [
+    ColorOption(name: "Black", hex: "#000000", color: .black),
+    ColorOption(
+      name: "Blue", hex: "#0096FF", color: UIColor(red: 0, green: 0.59, blue: 1, alpha: 1)),
+    ColorOption(
+      name: "Red", hex: "#FF3232", color: UIColor(red: 1, green: 0.2, blue: 0.2, alpha: 1)),
+    ColorOption(
+      name: "Green", hex: "#00B26F", color: UIColor(red: 0, green: 0.7, blue: 0.44, alpha: 1)),
+    ColorOption(
+      name: "Golden", hex: "#F5A623", color: UIColor(red: 0.96, green: 0.65, blue: 0.14, alpha: 1)),
+  ]
   // Stores the toggle toolbar button.
   private lazy var toggleButton = makeToolButton(
     systemName: "pencil",
@@ -120,8 +136,15 @@ final class ToolPaletteView: UIView {
     self.widthConstraint = widthConstraint
 
     configureStackView()
+    configureColorMenu()
     applySelection(.pen)
     setExpanded(false, animated: false)
+  }
+
+  // Attaches the color menu to the palette button.
+  private func configureColorMenu() {
+    colorButton.menu = buildColorMenu()
+    colorButton.showsMenuAsPrimaryAction = true
   }
 
   // Builds the stack view so the tools read as one bar.
@@ -279,5 +302,43 @@ final class ToolPaletteView: UIView {
   }
 
   // Handles selection of the color button.
-  @objc private func colorTapped() {}
+  @objc private func colorTapped() {
+    colorButton.menu = buildColorMenu()
+    colorButton.showsMenuAsPrimaryAction = true
+  }
+
+  // Creates the menu used to pick a preset ink color.
+  private func buildColorMenu() -> UIMenu {
+    let actions = colorOptions.map { option -> UIAction in
+      let action = UIAction(
+        title: option.name,
+        image: colorImage(for: option)
+      ) { [weak self] _ in
+        self?.handleColorSelection(option)
+      }
+      action.state = option.hex == selectedColorHex ? .on : .off
+      return action
+    }
+    return UIMenu(title: "Ink Color", children: actions)
+  }
+
+  // Builds the colored circle symbol for the menu entry.
+  private func colorImage(for option: ColorOption) -> UIImage? {
+    let image = UIImage(systemName: "circle.fill")?.withRenderingMode(.alwaysOriginal)
+    return image?.withTintColor(option.color)
+  }
+
+  // Updates palette state when a color is chosen.
+  private func handleColorSelection(_ option: ColorOption) {
+    selectedColorHex = option.hex
+    colorSelectionChanged?(option.hex)
+    colorButton.menu = buildColorMenu()
+  }
+}
+
+// Describes a preset color shown in the palette menu.
+private struct ColorOption {
+  let name: String
+  let hex: String
+  let color: UIColor
 }

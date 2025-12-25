@@ -25,8 +25,10 @@ class HomeViewModel {
   private var hasPresentedSaveError = false
   private let autoSaveDelayNanoseconds: UInt64 = 2_000_000_000
   private let fullSaveDelayNanoseconds: UInt64 = 20_000_000_000
-  // Tracks the last tool requested by the toolbar.
-  private var activeToolSelection: ToolPaletteView.ToolSelection = .pen
+  // Tracks the selected ink color so it can be applied when the editor is ready.
+  private var selectedInkColorHex = "#000000"
+  // Tracks the selected tool so it can be re-applied when the editor is available.
+  private var selectedTool: ToolPaletteView.ToolSelection = .pen
 
   func setupModel(engineProvider: EngineProvider, documentHandle: DocumentHandle) {
     let model = HomeModel()
@@ -137,10 +139,43 @@ class HomeViewModel {
     self.model?.editorViewController?.updateInputMode(newInputMode: newInputMode)
   }
 
-  // Persists the selected tool so it can be applied once the editor is ready.
-  func selectTool(_ selection: ToolPaletteView.ToolSelection) {
-    activeToolSelection = selection
-    applyToolSelectionIfPossible()
+  // Switches the active tool to match the palette selection.
+  func updateTool(selection: ToolPaletteView.ToolSelection) {
+    selectedTool = selection
+    guard let editor = editor else {
+      return
+    }
+    applyTool(selection: selection, editor: editor)
+  }
+
+  // Updates the pen style to match the selected color.
+  func updateInkColor(hex: String) {
+    selectedInkColorHex = hex
+    guard let editor = editor else {
+      return
+    }
+    applyInkColor(hex: hex, editor: editor)
+  }
+
+  // Applies the selected ink color to the supported tools.
+  private func applyInkColor(hex: String, editor: IINKEditor) {
+    do {
+      try editor.toolController.set(style: "color:\(hex)", forTool: .toolPen)
+      try editor.toolController.set(style: "color:\(hex)", forTool: .toolHighlighter)
+    } catch {
+      appLog("❌ HomeViewModel.applyInkColor failed color=\(hex) error=\(error)")
+    }
+  }
+
+  // Sets the active tool on the editor for both pen and touch inputs.
+  private func applyTool(selection: ToolPaletteView.ToolSelection, editor: IINKEditor) {
+    let tool = tool(for: selection)
+    do {
+      try editor.toolController.set(tool: tool, forType: .pen)
+      try editor.toolController.set(tool: tool, forType: .touch)
+    } catch {
+      appLog("❌ HomeViewModel.applyTool failed tool=\(tool) error=\(error)")
+    }
   }
 
   // Releases the editor binding to avoid keeping the part locked.
@@ -242,7 +277,8 @@ extension HomeViewModel: EditorDelegate {
 
   func didCreateEditor(editor: IINKEditor) {
     self.editor = editor
-    applyToolSelectionIfPossible()
+    applyTool(selection: selectedTool, editor: editor)
+    applyInkColor(hex: selectedInkColorHex, editor: editor)
     self.loadNotebookPartIfReady()
   }
 
@@ -265,20 +301,25 @@ extension HomeViewModel: EditorDelegate {
     guard let editor = editor else {
       return
     }
-    let toolForSelection: IINKPointerTool
-    switch activeToolSelection {
-    case .pen:
-      toolForSelection = .toolPen
-    case .eraser:
-      toolForSelection = .eraser
-    case .highlighter:
-      toolForSelection = .toolHighlighter
-    }
     do {
-      try editor.toolController.set(tool: toolForSelection, forType: .pen)
-      try editor.toolController.set(tool: toolForSelection, forType: .touch)
+      try editor.toolController.set(tool: tool(for: selectedTool), forType: .pen)
+      try editor.toolController.set(tool: tool(for: selectedTool), forType: .touch)
     } catch {
-      appLog("❌ HomeViewModel.applyToolSelectionIfPossible failed selection=\(activeToolSelection) error=\(error)")
+      appLog(
+        "❌ HomeViewModel.applyToolSelectionIfPossible failed selection=\(selectedTool) error=\(error)"
+      )
+    }
+  }
+
+  // Maps palette selection to the SDK tool enum.
+  private func tool(for selection: ToolPaletteView.ToolSelection) -> IINKPointerTool {
+    switch selection {
+    case .pen:
+      return .toolPen
+    case .eraser:
+      return .eraser
+    case .highlighter:
+      return .toolHighlighter
     }
   }
 }
