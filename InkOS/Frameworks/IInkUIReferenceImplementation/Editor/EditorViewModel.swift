@@ -169,28 +169,29 @@ class EditorViewModel {
     try? self.editor?.set(viewSize: size)
   }
 
-  // Switches the pointer tool to pen mode.
+  // Select pen tool.
   func selectPenTool() {
     setPointerTool(.toolPen)
   }
 
-  // Switches the pointer tool to eraser mode.
+  // Select eraser tool.
   func selectEraserTool() {
-    setPointerTool(.toolEraser)
+    setPointerTool(.eraser)
   }
 
-  // Switches the pointer tool to highlighter mode.
+  // Select highlighter tool.
   func selectHighlighterTool() {
     setPointerTool(.toolHighlighter)
   }
 
-  // Applies the requested tool to pen and touch pointer types so switching input mode keeps tools aligned.
+  // Apply tool to pen and touch pointer types to keep tools aligned.
   private func setPointerTool(_ tool: IINKPointerTool) {
     do {
       try toolController?.set(tool: tool, forType: .pen)
       try toolController?.set(tool: tool, forType: .touch)
     } catch {
-      appLog("❌ EditorViewModel.setPointerTool failed tool=\(tool) error=\(error.localizedDescription)")
+      appLog(
+        "❌ EditorViewModel.setPointerTool failed tool=\(tool) error=\(error.localizedDescription)")
     }
   }
 
