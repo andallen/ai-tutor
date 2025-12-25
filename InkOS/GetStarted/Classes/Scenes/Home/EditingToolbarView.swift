@@ -29,18 +29,21 @@ final class EditingToolbarView: UIView {
   // Stores the undo button.
   private lazy var undoButton = makeToolButton(
     imageName: "Undo",
+    systemImageName: "arrow.uturn.backward",
     accessibilityLabel: "Undo",
     action: #selector(undoPressed)
   )
   // Stores the redo button.
   private lazy var redoButton = makeToolButton(
     imageName: "Redo",
+    systemImageName: "arrow.uturn.forward",
     accessibilityLabel: "Redo",
     action: #selector(redoPressed)
   )
   // Stores the clear button.
   private lazy var clearButton = makeToolButton(
     imageName: "Clear",
+    systemImageName: "trash",
     accessibilityLabel: "Clear",
     action: #selector(clearPressed)
   )
@@ -125,14 +128,18 @@ final class EditingToolbarView: UIView {
   // Creates a toolbar button with configured sizing and image.
   private func makeToolButton(
     imageName: String,
+    systemImageName: String,
     accessibilityLabel: String,
     action: Selector
   ) -> UIButton {
     let button = UIButton(type: .system)
-    if let image = UIImage(named: imageName) {
+    let namedImage = UIImage(named: imageName)
+    let systemImage = UIImage(systemName: systemImageName)
+    // Falls back to SF Symbols when the bundled image is missing.
+    if let image = namedImage ?? systemImage {
       button.setImage(image.withRenderingMode(.alwaysTemplate), for: .normal)
     } else {
-      button.setTitle(imageName, for: .normal)
+      button.setTitle(accessibilityLabel, for: .normal)
     }
     button.tintColor = accentColor
     button.accessibilityLabel = accessibilityLabel
