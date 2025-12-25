@@ -21,12 +21,15 @@ class HomeViewController: UIViewController {
   private var cancellables: Set<AnyCancellable> = []
   private var documentHandle: DocumentHandle?
   private let offBlack: UIColor = UIColor(red: 0.20, green: 0.20, blue: 0.20, alpha: 1.0)
+  // Stores the floating tool palette attached to the canvas view.
+  private var toolPaletteView: ToolPaletteView?
 
   // MARK: - Life cycle
 
   override func viewDidLoad() {
     super.viewDidLoad()
     self.configureNavigationItems()
+    self.configureToolPalette()
     self.bindViewModel()
     guard let documentHandle = documentHandle else {
       self.viewModel.presentMissingNotebookError()
@@ -63,9 +66,7 @@ class HomeViewController: UIViewController {
 
   private func bindViewModel() {
     self.viewModel.$model.sink { [weak self] model in
-      if let model = model,
-        let editorViewController = model.editorViewController
-      {
+      if let model = model, let editorViewController = model.editorViewController {
         self?.injectEditor(editor: editorViewController)
       }
     }.store(in: &cancellables)
@@ -142,6 +143,22 @@ class HomeViewController: UIViewController {
     self.inputTypeSegmentedControl = segmentedControl
     self.navigationItem.titleView = segmentedControl
     self.navigationItem.rightBarButtonItem = makeEditingBarButtonItem()
+  }
+
+  private func configureToolPalette() {
+    let paletteView = ToolPaletteView(accentColor: offBlack)
+    paletteView.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(paletteView)
+
+    paletteView.leadingAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.leadingAnchor,
+      constant: 20
+    ).isActive = true
+    paletteView.bottomAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+      constant: -20
+    ).isActive = true
+    toolPaletteView = paletteView
   }
 
   // Creates a single bar button item that hosts the undo, redo, and clear icons.
