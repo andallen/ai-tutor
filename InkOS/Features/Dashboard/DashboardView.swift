@@ -137,11 +137,24 @@ struct DashboardView: View {
           await library.createNotebook()
         }
       } label: {
-        Image(systemName: "plus")
-          .font(.system(size: 20, weight: .semibold))
-          .foregroundStyle(Color(red: 0.20, green: 0.20, blue: 0.20))
+        // Matches the circular home button used in the notebook view.
+        ZStack {
+          Circle()
+            .fill(Color.white)
+            .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 8)
+            .overlay(
+              Circle()
+                .stroke(Color.rule, lineWidth: 1)
+            )
+
+          Image(systemName: "plus")
+            .font(.system(size: 18, weight: .semibold))
+            .foregroundStyle(Color(red: 0.20, green: 0.20, blue: 0.20))
+        }
+        .frame(width: 44, height: 44)
       }
       .buttonStyle(.plain)
+      .accessibilityLabel("Create Notebook")
     }
   }
 
