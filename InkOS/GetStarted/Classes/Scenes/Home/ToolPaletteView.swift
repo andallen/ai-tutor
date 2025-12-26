@@ -352,7 +352,11 @@ final class ToolPaletteView: UIView {
 
   // Handles selection of the pen tool.
   @objc private func penTapped() {
-    applySelection(.pen)
+    if selectedTool == .pen, penColorSelector.isExpandedForTool {
+      collapseColorSelectors(animated: true)
+    } else {
+      applySelection(.pen)
+    }
   }
 
   // Handles selection of the eraser tool.
@@ -362,7 +366,11 @@ final class ToolPaletteView: UIView {
 
   // Handles selection of the highlighter tool.
   @objc private func highlighterTapped() {
-    applySelection(.highlighter)
+    if selectedTool == .highlighter, highlighterColorSelector.isExpandedForTool {
+      collapseColorSelectors(animated: true)
+    } else {
+      applySelection(.highlighter)
+    }
   }
 
   // Shows the matching color selector for the current tool.
@@ -406,7 +414,6 @@ final class ToolPaletteView: UIView {
     }
     updateItemAppearance()
     colorSelectionChanged?(tool, option.hex)
-    collapseColorSelectors(animated: true)
   }
 }
 
@@ -450,7 +457,7 @@ private final class ColorSelectorView: UIView {
     self.selectedHex = selectedHex
     super.init(frame: .zero)
     configureView()
-    updateSelection(for: selectedHex)
+    updateSelection(for: selectedHex, animated: false)
   }
 
   required init?(coder: NSCoder) {
@@ -494,14 +501,31 @@ private final class ColorSelectorView: UIView {
     }
   }
 
+  // Exposes whether the selector is currently open.
+  var isExpandedForTool: Bool {
+    isExpanded
+  }
+
   // Marks the matching button as selected.
-  private func updateSelection(for hex: String) {
+  private func updateSelection(for hex: String, animated: Bool) {
     selectedHex = hex
-    buttonConstraints.forEach { button, constraints in
-      let isSelected = buttonOptions[button]?.hex == hex
-      constraints.width.constant = isSelected ? selectedCircleSize : circleSize
-      constraints.height.constant = isSelected ? selectedCircleSize : circleSize
-      button.layer.cornerRadius = (constraints.width.constant) / 2
+    let applySizing = { [weak self] in
+      guard let self = self else { return }
+      self.buttonConstraints.forEach { button, constraints in
+        let isSelected = self.buttonOptions[button]?.hex == hex
+        constraints.width.constant = isSelected ? self.selectedCircleSize : self.circleSize
+        constraints.height.constant = isSelected ? self.selectedCircleSize : self.circleSize
+        button.layer.cornerRadius = (constraints.width.constant) / 2
+      }
+      self.layoutIfNeeded()
+    }
+    if animated {
+      layoutIfNeeded()
+      UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut]) {
+        applySizing()
+      }
+    } else {
+      applySizing()
     }
   }
 
@@ -550,7 +574,7 @@ private final class ColorSelectorView: UIView {
   // Handles taps on a color choice.
   @objc private func colorTapped(_ sender: UIButton) {
     guard let option = buttonOptions[sender] else { return }
-    updateSelection(for: option.hex)
+    updateSelection(for: option.hex, animated: true)
     selectionChanged?(option)
   }
 
