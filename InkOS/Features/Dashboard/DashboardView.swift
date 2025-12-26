@@ -139,9 +139,7 @@ struct DashboardView: View {
       } label: {
         Image(systemName: "plus")
           .font(.system(size: 20, weight: .semibold))
-          .foregroundStyle(Color.ink)
-          .frame(width: 44, height: 44)
-          .glassBackground(cornerRadius: 12)
+          .foregroundStyle(Color(red: 0.20, green: 0.20, blue: 0.20))
       }
       .buttonStyle(.plain)
     }
