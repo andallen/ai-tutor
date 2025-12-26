@@ -177,8 +177,8 @@ class HomeViewController: UIViewController {
     paletteView.selectionChanged = { [weak self] selection in
       self?.viewModel.updateTool(selection: selection)
     }
-    paletteView.colorSelectionChanged = { [weak self] hex in
-      self?.viewModel.updateInkColor(hex: hex)
+    paletteView.colorSelectionChanged = { [weak self] tool, hex in
+      self?.viewModel.updateInkColor(hex: hex, for: tool)
     }
     view.addSubview(paletteView)
 
