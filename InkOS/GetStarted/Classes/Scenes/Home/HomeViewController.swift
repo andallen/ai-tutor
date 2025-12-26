@@ -117,19 +117,8 @@ class HomeViewController: UIViewController {
   private func configureNavigationItems() {
     configureNavigationBarAppearance()
     // Provide a clear way to return to the Dashboard.
-    let backImage = UIImage(systemName: "house")?.withRenderingMode(.alwaysTemplate)
-    let backItem = UIBarButtonItem(
-      image: backImage,
-      style: .plain,
-      target: self,
-      action: #selector(backButtonTapped)
-    )
-    backItem.accessibilityLabel = "Home"
-    backItem.tintColor = offBlack
-    if backImage == nil {
-      backItem.title = "Home"
-    }
-    self.navigationItem.leftBarButtonItem = backItem
+    let backButton = makeNavigationButton(systemName: "house", accessibilityLabel: "Home")
+    self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
     // Center the pen and touch toggle in the navigation bar.
     let segmentedControl = UISegmentedControl(items: ["Pen", "Touch"])
     segmentedControl.selectedSegmentIndex = 0
@@ -147,6 +136,35 @@ class HomeViewController: UIViewController {
     self.inputTypeSegmentedControl = segmentedControl
     self.navigationItem.titleView = segmentedControl
     self.navigationItem.rightBarButtonItem = nil
+  }
+
+  // Builds a circular navigation button that matches the Dashboard add control styling.
+  private func makeNavigationButton(systemName: String, accessibilityLabel: String?) -> UIButton {
+    let button = UIButton(type: .system)
+    button.translatesAutoresizingMaskIntoConstraints = false
+    let image = UIImage(systemName: systemName)?.withRenderingMode(.alwaysTemplate)
+    button.setImage(image, for: .normal)
+    if image == nil {
+      button.setTitle(accessibilityLabel, for: .normal)
+    }
+    button.tintColor = NavigationButtonStyle.tintUIColor
+    button.backgroundColor = NavigationButtonStyle.backgroundUIColor
+    button.accessibilityLabel = accessibilityLabel
+    button.layer.cornerRadius = NavigationButtonStyle.cornerRadius
+    button.layer.borderColor = NavigationButtonStyle.strokeUIColor.cgColor
+    button.layer.borderWidth = 1
+    button.layer.shadowColor = NavigationButtonStyle.shadowUIColor.cgColor
+    button.layer.shadowOpacity = 1
+    button.layer.shadowRadius = 12
+    button.layer.shadowOffset = CGSize(width: 0, height: 4)
+    button.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
+
+    NSLayoutConstraint.activate([
+      button.widthAnchor.constraint(equalToConstant: NavigationButtonStyle.size),
+      button.heightAnchor.constraint(equalToConstant: NavigationButtonStyle.size),
+    ])
+
+    return button
   }
 
   // Removes bar button backgrounds so only the icon glyphs show.

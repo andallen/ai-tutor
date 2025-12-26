@@ -131,17 +131,33 @@ struct DashboardView: View {
 
       Spacer()
 
-      // Create button
+      // Create button styled with the same circular chrome used by the Notebook home control.
       Button {
         Task {
           await library.createNotebook()
         }
       } label: {
         Image(systemName: "plus")
-          .font(.system(size: 20, weight: .semibold))
-          .foregroundStyle(Color.ink)
-          .frame(width: 44, height: 44)
-          .glassBackground(cornerRadius: 12)
+          .font(
+            .system(
+              size: NavigationButtonStyle.iconPointSize, weight: NavigationButtonStyle.iconWeight)
+          )
+          .foregroundStyle(NavigationButtonStyle.tintColor)
+          .frame(width: NavigationButtonStyle.size, height: NavigationButtonStyle.size)
+          .background(
+            Circle()
+              .fill(NavigationButtonStyle.backgroundColor)
+              .overlay(
+                Circle()
+                  .stroke(NavigationButtonStyle.strokeColor, lineWidth: 1)
+              )
+              .shadow(
+                color: NavigationButtonStyle.shadowColor,
+                radius: 12,
+                x: 0,
+                y: 4
+              )
+          )
       }
       .buttonStyle(.plain)
     }
