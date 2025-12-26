@@ -49,9 +49,11 @@ final class ToolPaletteView: UIView {
   // Tracks the current pen thickness.
   private var selectedPenThickness: CGFloat = 3.0
   // Tracks the current highlighter thickness.
-  private var selectedHighlighterThickness: CGFloat = 10.0
-  // Sets the minimum and maximum thickness range shared by both sliders.
-  private let thicknessRange: (min: CGFloat, max: CGFloat) = (1.0, 16.0)
+  private var selectedHighlighterThickness: CGFloat = 12.0
+  // Sets the minimum and maximum thickness range for the pen slider.
+  private let penThicknessRange: (min: CGFloat, max: CGFloat) = (0.5, 10.0)
+  // Sets the minimum and maximum thickness range for the highlighter slider.
+  private let highlighterThicknessRange: (min: CGFloat, max: CGFloat) = (8.0, 24.0)
   // Defines the list of preset pen colors shown in the selector.
   private let penColorOptions: [ColorOption] = [
     ColorOption(name: "Black", hex: "#000000", color: .black),
@@ -90,15 +92,15 @@ final class ToolPaletteView: UIView {
   )
   // Stores the pen thickness slider.
   private lazy var penThicknessSlider = ThicknessSliderView(
-    minThickness: thicknessRange.min,
-    maxThickness: thicknessRange.max,
+    minThickness: penThicknessRange.min,
+    maxThickness: penThicknessRange.max,
     initialThickness: selectedPenThickness,
     color: selectedPenColor.color
   )
   // Stores the highlighter thickness slider.
   private lazy var highlighterThicknessSlider = ThicknessSliderView(
-    minThickness: thicknessRange.min,
-    maxThickness: thicknessRange.max,
+    minThickness: highlighterThicknessRange.min,
+    maxThickness: highlighterThicknessRange.max,
     initialThickness: selectedHighlighterThickness,
     color: selectedHighlighterColor.color
   )
@@ -711,9 +713,9 @@ private final class ThicknessSliderView: UIView, UIGestureRecognizerDelegate {
   // Sets the sizing for the slider visuals.
   private let thumbSize: CGFloat = 14
   private let trackWidth: CGFloat = 4
-  private let expandedHeight: CGFloat = 152
+  private let expandedHeight: CGFloat = 138
   private let trackPadding: CGFloat = 7
-  private let thumbHitPadding: CGFloat = 18
+  private let thumbHitPadding: CGFloat = 26
   // Stores layout helpers.
   private var isDraggingThumb = false
   private var isExpanded = false
@@ -827,10 +829,19 @@ private final class ThicknessSliderView: UIView, UIGestureRecognizerDelegate {
 
     let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
     panGesture.delegate = self
+    panGesture.maximumNumberOfTouches = 1
+    panGesture.cancelsTouchesInView = false
     addGestureRecognizer(panGesture)
 
     configureTrack()
     configureThumb()
+  }
+
+  func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+    let location = gestureRecognizer.location(in: self)
+    let thumbFrameInSelf = thumbView.convert(thumbView.bounds, to: self)
+      .insetBy(dx: -thumbHitPadding, dy: -thumbHitPadding)
+    return thumbFrameInSelf.contains(location)
   }
 
   // Builds the vertical track for the slider.
@@ -860,8 +871,10 @@ private final class ThicknessSliderView: UIView, UIGestureRecognizerDelegate {
 
   // Updates the slider value using the tapped or dragged location.
   private func updateValue(with location: CGPoint) {
-    let clampedY = max(0, min(location.y, trackView.bounds.height))
-    let progress = 1 - (clampedY / (trackView.bounds.height == 0 ? 1 : trackView.bounds.height))
+    layoutIfNeeded()
+    let trackHeight = max(trackView.bounds.height, 1)
+    let clampedY = max(0, min(location.y, trackHeight))
+    let progress = 1 - (clampedY / trackHeight)
     let thickness = minThickness + (progress * (maxThickness - minThickness))
     currentThickness = thickness
     updateThumb(for: thickness, animated: true)

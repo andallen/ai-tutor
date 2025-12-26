@@ -28,6 +28,9 @@ class HomeViewController: UIViewController {
   // Blocks accidental strokes near open toolbars.
   private let interactionShieldView = TouchShieldView()
   private let shieldPadding: CGFloat = 16
+  // Monitors active touches so strokes are canceled when entering the shield.
+  private var shieldPanRecognizer: UIPanGestureRecognizer?
+  private var hasCancelledCurrentStroke = false
 
   // MARK: - Life cycle
 
@@ -250,6 +253,13 @@ class HomeViewController: UIViewController {
       interactionShieldView.topAnchor.constraint(equalTo: view.topAnchor),
       interactionShieldView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
     ])
+
+    let monitor = UIPanGestureRecognizer(target: self, action: #selector(handleShieldPan(_:)))
+    monitor.maximumNumberOfTouches = 1
+    monitor.cancelsTouchesInView = false
+    monitor.delegate = self
+    view.addGestureRecognizer(monitor)
+    shieldPanRecognizer = monitor
   }
 
   private func updateInteractionShield() {
@@ -274,6 +284,34 @@ class HomeViewController: UIViewController {
     interactionShieldView.blockedRects = blockedAreas
   }
 
+  @objc private func handleShieldPan(_ recognizer: UIPanGestureRecognizer) {
+    let location = recognizer.location(in: view)
+    let inBlockedArea = interactionShieldView.blockedRects.contains { $0.contains(location) }
+    switch recognizer.state {
+    case .began:
+      hasCancelledCurrentStroke = false
+      if inBlockedArea {
+        cancelCurrentStroke()
+      }
+    case .changed:
+      if inBlockedArea && hasCancelledCurrentStroke == false {
+        cancelCurrentStroke()
+      }
+    case .ended, .cancelled, .failed:
+      hasCancelledCurrentStroke = false
+    default:
+      break
+    }
+  }
+
+  private func cancelCurrentStroke() {
+    hasCancelledCurrentStroke = true
+    editorContainerView.isUserInteractionEnabled = false
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) { [weak self] in
+      self?.editorContainerView.isUserInteractionEnabled = true
+    }
+  }
+
   @objc private func backButtonTapped() {
     self.viewModel.releaseEditor()
     self.dismiss(animated: true)
@@ -296,5 +334,16 @@ private final class TouchShieldView: UIView {
   override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
     guard isUserInteractionEnabled, isHidden == false, alpha > 0 else { return nil }
     return blockedRects.first(where: { $0.contains(point) }) == nil ? nil : self
+  }
+}
+
+extension HomeViewController: UIGestureRecognizerDelegate {
+
+  func gestureRecognizer(
+    _ gestureRecognizer: UIGestureRecognizer,
+    shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+  ) -> Bool {
+    return gestureRecognizer === shieldPanRecognizer
+      || otherGestureRecognizer === shieldPanRecognizer
   }
 }

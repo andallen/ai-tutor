@@ -33,7 +33,7 @@ class HomeViewModel {
   // Tracks the selected pen thickness so it can be applied when the editor is ready.
   private var selectedPenThickness: CGFloat = 3
   // Tracks the selected highlighter thickness so it can be applied when the editor is ready.
-  private var selectedHighlighterThickness: CGFloat = 10
+  private var selectedHighlighterThickness: CGFloat = 12
   // Tracks the selected tool so it can be re-applied when the editor is available.
   private var selectedTool: ToolPaletteView.ToolSelection = .pen
   // Tracks the active input mode so touch tools can follow the toggle state.
