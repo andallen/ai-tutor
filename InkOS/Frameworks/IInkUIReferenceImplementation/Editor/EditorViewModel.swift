@@ -181,7 +181,8 @@ class EditorViewModel {
     self.editor?.renderer.viewOffset = proposedOffset
     if state == UIGestureRecognizer.State.ended {
       self.originalViewOffset = self.editor?.renderer.viewOffset ?? CGPoint.zero
-      let verticalVelocity = -velocity.y
+      // Keep deceleration direction consistent with drag direction to avoid bouncing back.
+      let verticalVelocity = velocity.y * dragResistance
       if abs(verticalVelocity) > velocityThreshold {
         startDeceleration(with: verticalVelocity)
       }
