@@ -12,6 +12,8 @@ final class EditingToolbarView: UIView {
   private let accentColor: UIColor
   // Sets the toolbar height to align with navigation bar sizing.
   private let toolbarHeight: CGFloat = 44
+  // Stores the measured width for the expanded toolbar so the constraint can be applied reliably.
+  private var expandedWidth: CGFloat = 0
   // Hosts the icons inside a real toolbar.
   private let toolbar = UIToolbar()
   // Stores the width constraint so it can animate in and out.
@@ -52,12 +54,6 @@ final class EditingToolbarView: UIView {
     configureView()
   }
 
-  // Computes the width for the fixed toolbar size.
-  private var toolbarWidth: CGFloat {
-    toolbar.sizeThatFits(CGSize(width: CGFloat.greatestFiniteMagnitude, height: toolbarHeight))
-      .width
-  }
-
   // The fully collapsed width hides the toolbar entirely.
   private var collapsedWidth: CGFloat { 0 }
 
@@ -77,6 +73,7 @@ final class EditingToolbarView: UIView {
     toolbar.setShadowImage(UIImage(), forToolbarPosition: .any)
     toolbar.items = makeToolbarItems()
     toolbar.sizeToFit()
+    expandedWidth = measuredToolbarWidth()
 
     addSubview(toolbar)
 
@@ -88,7 +85,7 @@ final class EditingToolbarView: UIView {
 
     // Locks the size to prevent clipping inside the navigation layout.
     heightAnchor.constraint(equalToConstant: toolbarHeight).isActive = true
-    let widthConstraint = widthAnchor.constraint(equalToConstant: toolbarWidth)
+    let widthConstraint = widthAnchor.constraint(equalToConstant: expandedWidth)
     widthConstraint.isActive = true
     self.widthConstraint = widthConstraint
 
@@ -189,7 +186,21 @@ final class EditingToolbarView: UIView {
 
   // Updates the width constraint to match the collapsed or expanded state.
   private func updateWidthForState(collapsed: Bool) {
-    widthConstraint?.constant = collapsed ? collapsedWidth : toolbarWidth
+    if !collapsed {
+      expandedWidth = measuredToolbarWidth()
+    }
+    widthConstraint?.constant = collapsed ? collapsedWidth : expandedWidth
+  }
+
+  // Measures the toolbar width based on its intrinsic content size while guarding against invalid results.
+  private func measuredToolbarWidth() -> CGFloat {
+    let measuredSize = toolbar.sizeThatFits(
+      CGSize(width: UIView.noIntrinsicMetric, height: toolbarHeight))
+    let width = measuredSize.width
+    guard width.isFinite, width > 0 else {
+      return toolbarHeight * 3
+    }
+    return width
   }
 
   // Handles undo taps.
