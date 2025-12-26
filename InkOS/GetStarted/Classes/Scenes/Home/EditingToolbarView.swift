@@ -12,6 +12,8 @@ final class EditingToolbarView: UIView {
   private let accentColor: UIColor
   // Sets the toolbar height to align with navigation bar sizing.
   private let toolbarHeight: CGFloat = 44
+  // Adds padding so the icons have breathing room inside the pill background.
+  private let horizontalPadding: CGFloat = 12
   // Stores the measured width for the expanded toolbar so the constraint can be applied reliably.
   private var expandedWidth: CGFloat = 0
   // Hosts the icons inside a real toolbar.
@@ -61,18 +63,15 @@ final class EditingToolbarView: UIView {
   private func configureView() {
     translatesAutoresizingMaskIntoConstraints = false
     backgroundColor = UIColor.clear
-    layer.cornerRadius = toolbarHeight / 2
-    layer.masksToBounds = true
 
     toolbar.translatesAutoresizingMaskIntoConstraints = false
-    toolbar.isTranslucent = true
+    toolbar.isTranslucent = false
     toolbar.tintColor = accentColor
-    toolbar.backgroundColor = .clear
-    toolbar.setBackgroundImage(UIImage(), forToolbarPosition: .any, barMetrics: .default)
-    toolbar.setBackgroundImage(UIImage(), forToolbarPosition: .any, barMetrics: .compact)
+    toolbar.barTintColor = UIColor.secondarySystemBackground
+    toolbar.clipsToBounds = true
+    toolbar.layer.cornerRadius = toolbarHeight / 2
     toolbar.setShadowImage(UIImage(), forToolbarPosition: .any)
     toolbar.items = makeToolbarItems()
-    toolbar.sizeToFit()
     expandedWidth = measuredToolbarWidth()
 
     addSubview(toolbar)
@@ -115,15 +114,8 @@ final class EditingToolbarView: UIView {
 
   // Builds the toolbar with standard Apple spacing between icons.
   private func makeToolbarItems() -> [UIBarButtonItem] {
-    let spacer = makeFixedSpace()
-    return [undoItem, spacer, redoItem, spacer, clearItem]
-  }
-
-  // Creates a consistent fixed space item so the icons do not crowd each other.
-  private func makeFixedSpace() -> UIBarButtonItem {
-    let spacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
-    spacer.width = 16
-    return spacer
+    let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+    return [spacer, undoItem, spacer, redoItem, spacer, clearItem, spacer]
   }
 
   // Expands or collapses the toolbar with optional animation.
@@ -186,21 +178,23 @@ final class EditingToolbarView: UIView {
 
   // Updates the width constraint to match the collapsed or expanded state.
   private func updateWidthForState(collapsed: Bool) {
-    if !collapsed {
-      expandedWidth = measuredToolbarWidth()
+    if collapsed {
+      widthConstraint?.constant = collapsedWidth
+      return
     }
-    widthConstraint?.constant = collapsed ? collapsedWidth : expandedWidth
+    expandedWidth = measuredToolbarWidth()
+    widthConstraint?.constant = expandedWidth
   }
 
   // Measures the toolbar width based on its intrinsic content size while guarding against invalid results.
   private func measuredToolbarWidth() -> CGFloat {
-    let measuredSize = toolbar.sizeThatFits(
+    let fittingSize = toolbar.sizeThatFits(
       CGSize(width: UIView.noIntrinsicMetric, height: toolbarHeight))
-    let width = measuredSize.width
-    guard width.isFinite, width > 0 else {
-      return toolbarHeight * 3
-    }
-    return width
+    let measuredWidth =
+      fittingSize.width.isFinite && fittingSize.width > 0
+      ? fittingSize.width : toolbarHeight * 3
+    let paddedWidth = measuredWidth + (horizontalPadding * 2)
+    return max(paddedWidth, toolbarHeight * 3)
   }
 
   // Handles undo taps.
