@@ -47,6 +47,9 @@ class EditorViewModel {
   // Stores the tool controller so tools can be switched from the Notebook toolbar.
   private var toolController: IINKToolController?
   private(set) var originalViewOffset: CGPoint = CGPoint.zero
+  // Keeps the zoom baseline so the canvas cannot be scaled smaller than the initial view width.
+  private var pinchStartScale: CGFloat = 1.0
+  private var minimumViewScale: CGFloat = 1.0
   private weak var editorDelegate: EditorDelegate?
   private var editorDelegateTrampoline: EditorDelegateTrampoline
   private weak var smartGuideDelegate: SmartGuideViewControllerDelegate?
@@ -67,7 +70,8 @@ class EditorViewModel {
     self.smartGuideDelegate = smartGuideDelegate
   }
 
-  func setupModel(with panGesture: UIPanGestureRecognizer?) {
+  func setupModel(with panGesture: UIPanGestureRecognizer?, pinchGesture: UIPinchGestureRecognizer?)
+  {
     let model = EditorModel()
     let displayViewModel = DisplayViewModel()
     self.initEditor(with: displayViewModel)
@@ -82,6 +86,9 @@ class EditorViewModel {
     model.neboInputView?.editor = self.editor
     if let panGesture = panGesture {
       model.neboInputView?.addGestureRecognizer(panGesture)
+    }
+    if let pinchGesture = pinchGesture {
+      model.neboInputView?.addGestureRecognizer(pinchGesture)
     }
     self.model = model
   }
@@ -155,14 +162,32 @@ class EditorViewModel {
     if state == UIGestureRecognizer.State.began {
       self.originalViewOffset = self.editor?.renderer.viewOffset ?? CGPoint.zero
     }
-    var newOffset: CGPoint = CGPoint(
-      x: originalViewOffset.x - translation.x, y: originalViewOffset.y - translation.y)
-    self.editor?.clampViewOffset(&newOffset)
-    self.editor?.renderer.viewOffset = newOffset
+    let adjustedOffset = lockedViewOffset(for: translation)
+    self.editor?.renderer.viewOffset = adjustedOffset
     if state == UIGestureRecognizer.State.ended {
       self.originalViewOffset = self.editor?.renderer.viewOffset ?? CGPoint.zero
     }
     NotificationCenter.default.post(name: DisplayViewController.refreshNotification, object: nil)
+  }
+
+  func handlePinchGestureRecognizerAction(with scale: CGFloat, state: UIGestureRecognizer.State) {
+    guard let renderer = self.editor?.renderer, self.editor?.isScrollAllowed == true else {
+      return
+    }
+    if state == UIGestureRecognizer.State.began {
+      self.pinchStartScale = renderer.viewScale
+    }
+    var newScale = self.pinchStartScale * scale
+    // Keep the zoom level at or above the canvas width that matches the screen edges.
+    newScale = max(self.minimumViewScale, newScale)
+    renderer.viewScale = newScale
+    var clampedOffset = renderer.viewOffset
+    clampedOffset = self.clampedOffsetForLockedCanvas(offset: clampedOffset)
+    renderer.viewOffset = clampedOffset
+    NotificationCenter.default.post(name: DisplayViewController.refreshNotification, object: nil)
+    if state == UIGestureRecognizer.State.ended {
+      self.pinchStartScale = renderer.viewScale
+    }
   }
 
   func setEditorViewSize(size: CGSize) {
@@ -208,6 +233,7 @@ class EditorViewModel {
       renderer: renderer,
       toolController: toolController)
     self.toolController = toolController
+    self.minimumViewScale = renderer.viewScale
 
     // Apply theme from css file if any
     if let path = Bundle.main.path(forResource: "theme", ofType: "css"),
@@ -225,5 +251,21 @@ class EditorViewModel {
     target.imageLoader = ImageLoader()
 
     self.editor?.addDelegate(self.editorDelegateTrampoline)
+  }
+
+  private func lockedViewOffset(for translation: CGPoint) -> CGPoint {
+    // Allow moving back toward the origin but never past it; horizontal motion stays fixed.
+    let verticalOffset = max(0, self.originalViewOffset.y - translation.y)
+    var newOffset: CGPoint = CGPoint(x: 0, y: verticalOffset)
+    newOffset = self.clampedOffsetForLockedCanvas(offset: newOffset)
+    newOffset.x = 0
+    return newOffset
+  }
+
+  private func clampedOffsetForLockedCanvas(offset: CGPoint) -> CGPoint {
+    // The canvas is fixed horizontally and cannot move above the starting origin.
+    var adjustedOffset = CGPoint(x: 0, y: max(0, offset.y))
+    self.editor?.clampViewOffset(&adjustedOffset)
+    return adjustedOffset
   }
 }

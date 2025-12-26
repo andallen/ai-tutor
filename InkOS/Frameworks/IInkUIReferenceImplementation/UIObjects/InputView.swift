@@ -35,7 +35,8 @@ class InputView: UIView {
   }
 
   private func ownInit() {
-    self.isMultipleTouchEnabled = false
+    // Enable multi-touch so pinch gestures can be recognized alongside pen input.
+    self.isMultipleTouchEnabled = true
     self.trackPressure = self.traitCollection.forceTouchCapability == .available
     let rel_t: TimeInterval = ProcessInfo.processInfo.systemUptime
     let abs_t: TimeInterval = NSTimeIntervalSince1970

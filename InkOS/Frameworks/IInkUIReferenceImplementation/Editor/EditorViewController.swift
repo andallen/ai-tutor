@@ -11,6 +11,7 @@ class EditorViewController: UIViewController {
   //MARK: - Properties
 
   private var panGestureRecognizer: UIPanGestureRecognizer?
+  private var pinchGestureRecognizer: UIPinchGestureRecognizer?
   private var viewModel: EditorViewModel
   private var containerView: UIView = UIView(frame: CGRect.zero)
   private var cancellables: Set<AnyCancellable> = []
@@ -31,12 +32,20 @@ class EditorViewController: UIViewController {
     self.configureContainerView()
     self.panGestureRecognizer = UIPanGestureRecognizer(
       target: self, action: #selector(panGestureRecognizerAction(panGestureRecognizer:)))
+    self.pinchGestureRecognizer = UIPinchGestureRecognizer(
+      target: self, action: #selector(pinchGestureRecognizerAction(pinchGestureRecognizer:)))
     if let panGestureRecognizer = self.panGestureRecognizer {
       panGestureRecognizer.delegate = self
       panGestureRecognizer.allowedTouchTypes = [NSNumber(value: UITouch.TouchType.direct.rawValue)]
     }
+    if let pinchGestureRecognizer = self.pinchGestureRecognizer {
+      pinchGestureRecognizer.delegate = self
+      pinchGestureRecognizer.allowedTouchTypes = [
+        NSNumber(value: UITouch.TouchType.direct.rawValue)
+      ]
+    }
     self.bindViewModel()
-    self.viewModel.setupModel(with: panGestureRecognizer)
+    self.viewModel.setupModel(with: panGestureRecognizer, pinchGesture: self.pinchGestureRecognizer)
     self.viewModel.configureEditorUI(with: self.view.bounds.size)
   }
 
@@ -132,6 +141,16 @@ class EditorViewController: UIViewController {
           break
         }
       }
+      if let pinchGestureRecognizer = self?.pinchGestureRecognizer {
+        switch inputMode {
+        case .forcePen:
+          pinchGestureRecognizer.isEnabled = false
+          break
+        case .forceTouch, .auto:
+          pinchGestureRecognizer.isEnabled = true
+          break
+        }
+      }
     }.store(in: &cancellables)
   }
 }
@@ -146,7 +165,18 @@ extension EditorViewController: UIGestureRecognizerDelegate {
     self.viewModel.handlePanGestureRecognizerAction(with: translation, state: state)
   }
 
+  @objc private func pinchGestureRecognizerAction(pinchGestureRecognizer: UIPinchGestureRecognizer)
+  {
+    self.viewModel.handlePinchGestureRecognizerAction(
+      with: pinchGestureRecognizer.scale, state: pinchGestureRecognizer.state)
+  }
+
   func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-    return self.viewModel.inputMode != .forcePen && self.viewModel.editor?.isScrollAllowed ?? false
+    guard self.viewModel.inputMode != .forcePen else { return false }
+    if gestureRecognizer is UIPanGestureRecognizer || gestureRecognizer is UIPinchGestureRecognizer
+    {
+      return self.viewModel.editor?.isScrollAllowed ?? false
+    }
+    return true
   }
 }
