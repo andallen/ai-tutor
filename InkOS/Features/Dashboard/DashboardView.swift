@@ -140,10 +140,10 @@ struct DashboardView: View {
         Image(systemName: "plus")
           .font(.system(size: 20, weight: .semibold))
           .foregroundStyle(Color.ink)
-          .frame(width: 44, height: 44)
-          .glassBackground(cornerRadius: 12)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.bordered)
+      .buttonBorderShape(.circle)
+      .tint(Color.ink)
     }
   }
 
