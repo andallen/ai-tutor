@@ -187,7 +187,7 @@ struct DashboardView: View {
     ScrollView {
       LazyVGrid(
         columns: [
-          GridItem(.adaptive(minimum: 150, maximum: 170), spacing: 12)
+          GridItem(.adaptive(minimum: 145, maximum: 165), spacing: 12)
         ],
         spacing: 12
       ) {
@@ -244,14 +244,7 @@ private struct NotebookCard: View {
   let notebook: NotebookMetadata
 
   var body: some View {
-    let accentColor = Color(hue: 0.1, saturation: 0.2, brightness: 0.98)
-
-    VStack(alignment: .leading, spacing: 14) {
-      // Accent stripe gives the card a vertical profile while keeping it minimal.
-      Capsule()
-        .fill(accentColor)
-        .frame(height: 8)
-
+    VStack(alignment: .leading, spacing: 12) {
       // Notebook name
       Text(notebook.displayName)
         .font(.system(size: 16, weight: .semibold))
@@ -261,8 +254,9 @@ private struct NotebookCard: View {
 
       Spacer()
     }
-    .frame(maxWidth: .infinity, minHeight: 170, alignment: .topLeading)
-    .padding(12)
+    .frame(maxWidth: .infinity, minHeight: 210, alignment: .topLeading)
+    .padding(.vertical, 18)
+    .padding(.horizontal, 14)
     .glassBackground(cornerRadius: 16)
   }
 }
