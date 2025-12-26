@@ -125,7 +125,7 @@ struct DashboardView: View {
 
   private var header: some View {
     HStack(alignment: .center) {
-      Text("Notebooks")
+      Text("Notes")
         .font(.system(size: 34, weight: .bold))
         .foregroundStyle(Color.ink)
 
