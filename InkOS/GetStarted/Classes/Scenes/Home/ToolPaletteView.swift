@@ -198,8 +198,8 @@ final class ToolPaletteView: UIView {
       self?.handleColorSelection(option, for: .highlighter)
     }
 
-    toolbar.addSubview(penColorSelector)
-    toolbar.addSubview(highlighterColorSelector)
+    addSubview(penColorSelector)
+    addSubview(highlighterColorSelector)
 
     penColorSelector.centerXAnchor.constraint(equalTo: penButton.centerXAnchor).isActive = true
     penColorSelector.bottomAnchor.constraint(equalTo: penButton.topAnchor, constant: -6).isActive =
@@ -337,6 +337,17 @@ final class ToolPaletteView: UIView {
   @objc private func togglePalette() {
     isExpanded.toggle()
     setExpanded(isExpanded, animated: true)
+  }
+
+  override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+    let expandedSelectorFrames = [penColorSelector, highlighterColorSelector]
+      .compactMap { selector in
+        selector.isHidden ? nil : selector.frame
+      }
+    let extendedBounds = expandedSelectorFrames.reduce(bounds) { current, frame in
+      current.union(frame)
+    }
+    return extendedBounds.contains(point)
   }
 
   // Handles selection of the pen tool.
