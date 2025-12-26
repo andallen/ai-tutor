@@ -25,10 +25,6 @@ class HomeViewModel {
   private var hasPresentedSaveError = false
   private let autoSaveDelayNanoseconds: UInt64 = 2_000_000_000
   private let fullSaveDelayNanoseconds: UInt64 = 20_000_000_000
-  // Tracks the selected pen color so it can be applied when the editor is ready.
-  private var selectedPenColorHex = "#000000"
-  // Tracks the selected highlighter color so it can be applied when the editor is ready.
-  private var selectedHighlighterColorHex = "#FFF176"
   // Tracks the selected tool so it can be re-applied when the editor is available.
   private var selectedTool: ToolPaletteView.ToolSelection = .pen
   // Tracks the active input mode so touch tools can follow the toggle state.
@@ -154,32 +150,6 @@ class HomeViewModel {
     applyTool(selection: selection, editor: editor)
   }
 
-  // Updates the selected color for the requested tool.
-  func updateInkColor(hex: String, for tool: ToolPaletteView.ToolSelection) {
-    switch tool {
-    case .pen:
-      selectedPenColorHex = hex
-      applyInkColor(hex: hex, tool: .toolPen)
-    case .highlighter:
-      selectedHighlighterColorHex = hex
-      applyInkColor(hex: hex, tool: .toolHighlighter)
-    case .eraser:
-      break
-    }
-  }
-
-  // Applies the selected ink color to the requested tool.
-  private func applyInkColor(hex: String, tool: IINKPointerTool) {
-    guard let editor = editor else {
-      return
-    }
-    do {
-      try editor.toolController.set(style: "color:\(hex)", forTool: tool)
-    } catch {
-      appLog("❌ HomeViewModel.applyInkColor failed color=\(hex) tool=\(tool) error=\(error)")
-    }
-  }
-
   // Sets the active tool on the editor for pen input and updates touch to follow the current mode.
   private func applyTool(selection: ToolPaletteView.ToolSelection, editor: IINKEditor) {
     let tool = tool(for: selection)
@@ -291,8 +261,6 @@ extension HomeViewModel: EditorDelegate {
   func didCreateEditor(editor: IINKEditor) {
     self.editor = editor
     applyTool(selection: selectedTool, editor: editor)
-    applyInkColor(hex: selectedPenColorHex, tool: .toolPen)
-    applyInkColor(hex: selectedHighlighterColorHex, tool: .toolHighlighter)
     self.loadNotebookPartIfReady()
   }
 

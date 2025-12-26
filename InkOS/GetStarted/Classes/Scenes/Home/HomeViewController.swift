@@ -23,8 +23,8 @@ class HomeViewController: UIViewController {
   private let offBlack: UIColor = UIColor(red: 0.20, green: 0.20, blue: 0.20, alpha: 1.0)
   // Stores the floating tool palette attached to the canvas view.
   private var toolPaletteView: ToolPaletteView?
-  // Stores the editing toolbar anchored to the bottom right.
-  private var editingToolbarView: EditingToolbarView?
+  // Handles taps on the canvas while touch mode is enabled.
+  private var canvasTapRecognizer: UITapGestureRecognizer?
 
   // MARK: - Life cycle
 
@@ -32,7 +32,7 @@ class HomeViewController: UIViewController {
     super.viewDidLoad()
     self.configureNavigationItems()
     self.configureToolPalette()
-    self.configureEditingToolbar()
+    self.configureCanvasTapRecognizer()
     self.bindViewModel()
     guard let documentHandle = documentHandle else {
       self.viewModel.presentMissingNotebookError()
@@ -110,6 +110,7 @@ class HomeViewController: UIViewController {
   @IBAction func inputTypeSegmentedControlValueChanged(_ sender: UISegmentedControl) {
     guard let inputMode = InputMode(rawValue: sender.selectedSegmentIndex) else { return }
     self.viewModel.updateInputMode(newInputMode: inputMode)
+    updateCanvasTapRecognizer()
   }
 
   // MARK: - Navigation
@@ -171,52 +172,35 @@ class HomeViewController: UIViewController {
   private func configureToolPalette() {
     let paletteView = ToolPaletteView(accentColor: offBlack)
     paletteView.translatesAutoresizingMaskIntoConstraints = false
-    paletteView.expansionChanged = { [weak self] isExpanded in
-      self?.editingToolbarView?.setCollapsed(isExpanded, animated: true)
-    }
     paletteView.selectionChanged = { [weak self] selection in
       self?.viewModel.updateTool(selection: selection)
     }
-    paletteView.colorSelectionChanged = { [weak self] tool, hex in
-      self?.viewModel.updateInkColor(hex: hex, for: tool)
-    }
     view.addSubview(paletteView)
 
-    paletteView.leadingAnchor.constraint(
-      equalTo: view.safeAreaLayoutGuide.leadingAnchor,
-      constant: 20
-    ).isActive = true
-    paletteView.bottomAnchor.constraint(
-      equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-      constant: -4
-    ).isActive = true
+    paletteView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+    paletteView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+    paletteView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive =
+      true
     toolPaletteView = paletteView
   }
 
-  // Adds the editing toolbar to the bottom right of the screen.
-  private func configureEditingToolbar() {
-    let toolbarView = EditingToolbarView(accentColor: offBlack)
-    toolbarView.translatesAutoresizingMaskIntoConstraints = false
-    toolbarView.undoTapped = { [weak self] in
-      self?.viewModel.undo()
-    }
-    toolbarView.redoTapped = { [weak self] in
-      self?.viewModel.redo()
-    }
-    toolbarView.clearTapped = { [weak self] in
-      self?.viewModel.clear()
-    }
-    view.addSubview(toolbarView)
+  private func configureCanvasTapRecognizer() {
+    let tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(handleCanvasTap(_:)))
+    tapRecognizer.cancelsTouchesInView = false
+    tapRecognizer.isEnabled = false
+    editorContainerView.addGestureRecognizer(tapRecognizer)
+    canvasTapRecognizer = tapRecognizer
+  }
 
-    toolbarView.trailingAnchor.constraint(
-      equalTo: view.safeAreaLayoutGuide.trailingAnchor,
-      constant: -20
-    ).isActive = true
-    toolbarView.bottomAnchor.constraint(
-      equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-      constant: -4
-    ).isActive = true
-    editingToolbarView = toolbarView
+  private func updateCanvasTapRecognizer() {
+    let isTouchMode =
+      inputTypeSegmentedControl?.selectedSegmentIndex == InputMode.forceTouch.rawValue
+    canvasTapRecognizer?.isEnabled = isTouchMode
+  }
+
+  @objc private func handleCanvasTap(_ gesture: UITapGestureRecognizer) {
+    guard gesture.state == .ended else { return }
+    toolPaletteView?.hideToolbar()
   }
 
   @objc private func backButtonTapped() {
