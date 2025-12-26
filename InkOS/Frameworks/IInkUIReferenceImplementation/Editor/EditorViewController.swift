@@ -143,7 +143,9 @@ extension EditorViewController: UIGestureRecognizerDelegate {
   @objc private func panGestureRecognizerAction(panGestureRecognizer: UIPanGestureRecognizer) {
     guard let state = self.panGestureRecognizer?.state else { return }
     let translation: CGPoint = panGestureRecognizer.translation(in: self.view)
-    self.viewModel.handlePanGestureRecognizerAction(with: translation, state: state)
+    let velocity: CGPoint = panGestureRecognizer.velocity(in: self.view)
+    self.viewModel.handlePanGestureRecognizerAction(
+      with: translation, velocity: velocity, state: state)
   }
 
   func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {

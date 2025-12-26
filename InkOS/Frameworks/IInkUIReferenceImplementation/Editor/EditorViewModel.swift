@@ -1,6 +1,7 @@
 // Copyright @ MyScript. All rights reserved.
 
 import Combine
+import QuartzCore
 import UIKit
 
 protocol EditorDelegate: AnyObject {
@@ -52,6 +53,15 @@ class EditorViewModel {
   private weak var smartGuideDelegate: SmartGuideViewControllerDelegate?
   private var smartGuideDisabled: Bool = false
   private var didSetConstraints: Bool = false
+  // Tracks inertial scrolling so the canvas can glide after the finger lifts.
+  private var decelerationLink: CADisplayLink?
+  private var decelerationVelocity: CGFloat = 0
+  private var lastDecelerationTimestamp: CFTimeInterval?
+
+  // Softens drag to feel closer to native scroll physics.
+  private let dragResistance: CGFloat = 0.88
+  // Filters out tiny lifts so motion only continues when the finger is still moving.
+  private let velocityThreshold: CGFloat = 60
 
   init(
     engine: IINKEngine?,
@@ -147,20 +157,34 @@ class EditorViewModel {
         views: views))
   }
 
-  func handlePanGestureRecognizerAction(with translation: CGPoint, state: UIGestureRecognizer.State)
-  {
+  func handlePanGestureRecognizerAction(
+    with translation: CGPoint, velocity: CGPoint, state: UIGestureRecognizer.State
+  ) {
     guard self.editor?.isScrollAllowed == true else {
       return
+    }
+    // Restart inertia when a new pan begins.
+    if state == UIGestureRecognizer.State.began {
+      stopDeceleration()
     }
     if state == UIGestureRecognizer.State.began {
       self.originalViewOffset = self.editor?.renderer.viewOffset ?? CGPoint.zero
     }
-    var newOffset: CGPoint = CGPoint(
-      x: originalViewOffset.x - translation.x, y: originalViewOffset.y - translation.y)
-    self.editor?.clampViewOffset(&newOffset)
-    self.editor?.renderer.viewOffset = newOffset
+    // Reduce translation to avoid 1:1 tracking and match iOS scrolling cadence.
+    let adjustedTranslationY = translation.y * dragResistance
+    var proposedOffset = CGPoint(
+      x: originalViewOffset.x, y: originalViewOffset.y - adjustedTranslationY)
+    if var clampedOffset = Optional(proposedOffset) {
+      self.editor?.clampViewOffset(&clampedOffset)
+      proposedOffset.x = clampedOffset.x
+    }
+    self.editor?.renderer.viewOffset = proposedOffset
     if state == UIGestureRecognizer.State.ended {
       self.originalViewOffset = self.editor?.renderer.viewOffset ?? CGPoint.zero
+      let verticalVelocity = -velocity.y
+      if abs(verticalVelocity) > velocityThreshold {
+        startDeceleration(with: verticalVelocity)
+      }
     }
     NotificationCenter.default.post(name: DisplayViewController.refreshNotification, object: nil)
   }
@@ -192,6 +216,50 @@ class EditorViewModel {
       appLog(
         "❌ EditorViewModel.setPointerTool failed tool=\(tool) error=\(error.localizedDescription)")
     }
+  }
+
+  private func startDeceleration(with velocity: CGFloat) {
+    self.decelerationVelocity = velocity
+    self.lastDecelerationTimestamp = CACurrentMediaTime()
+    self.decelerationLink?.invalidate()
+    let displayLink = CADisplayLink(target: self, selector: #selector(applyDeceleration))
+    displayLink.add(to: .main, forMode: .common)
+    self.decelerationLink = displayLink
+  }
+
+  @objc private func applyDeceleration() {
+    guard let editor = self.editor, let timestamp = self.lastDecelerationTimestamp else {
+      stopDeceleration()
+      return
+    }
+    let now = CACurrentMediaTime()
+    let deltaTime = now - timestamp
+    self.lastDecelerationTimestamp = now
+
+    let rate = UIScrollView.DecelerationRate.normal.rawValue
+    let decay = pow(rate, deltaTime * 1000)
+    self.decelerationVelocity *= decay
+    if abs(self.decelerationVelocity) < 8 {
+      stopDeceleration()
+      return
+    }
+
+    var nextOffset = editor.renderer.viewOffset
+    nextOffset.y -= CGFloat(self.decelerationVelocity) * CGFloat(deltaTime)
+    if var clampedOffset = Optional(nextOffset) {
+      editor.clampViewOffset(&clampedOffset)
+      nextOffset.x = clampedOffset.x
+    }
+    editor.renderer.viewOffset = nextOffset
+    self.originalViewOffset = nextOffset
+    NotificationCenter.default.post(name: DisplayViewController.refreshNotification, object: nil)
+  }
+
+  private func stopDeceleration() {
+    self.decelerationLink?.invalidate()
+    self.decelerationLink = nil
+    self.lastDecelerationTimestamp = nil
+    self.decelerationVelocity = 0
   }
 
   private func initEditor(with target: DisplayViewModel) {
