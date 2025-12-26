@@ -152,10 +152,14 @@ class HomeViewController: UIViewController {
   // Removes bar button backgrounds so only the icon glyphs show.
   private func configureNavigationBarAppearance() {
     let appearance = UINavigationBarAppearance()
-    appearance.configureWithDefaultBackground()
+    // Clear the bar fill so the canvas sits behind the controls.
+    appearance.configureWithTransparentBackground()
+    appearance.backgroundColor = .clear
+    appearance.shadowColor = .clear
     let buttonAppearance = appearance.buttonAppearance
     clearBarButtonItemBackground(buttonAppearance)
     appearance.buttonAppearance = buttonAppearance
+    navigationController?.navigationBar.isTranslucent = true
     navigationItem.standardAppearance = appearance
     navigationItem.scrollEdgeAppearance = appearance
     navigationItem.compactAppearance = appearance
