@@ -137,11 +137,21 @@ struct DashboardView: View {
           await library.createNotebook()
         }
       } label: {
+        // Match the Notebook home button with a circular, lightly stroked background.
         Image(systemName: "plus")
           .font(.system(size: 20, weight: .semibold))
-          .foregroundStyle(Color.ink)
-          .frame(width: 44, height: 44)
-          .glassBackground(cornerRadius: 12)
+          .foregroundStyle(Color(red: 0.20, green: 0.20, blue: 0.20))
+          .padding(12)
+          .background(
+            Circle()
+              .fill(Color.white)
+              .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+              .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 0)
+          )
+          .overlay(
+            Circle()
+              .stroke(Color.rule, lineWidth: 0.5)
+          )
       }
       .buttonStyle(.plain)
     }
