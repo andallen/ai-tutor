@@ -15,6 +15,8 @@ final class ToolPaletteView: UIView {
   var thicknessChanged: ((ToolSelection, CGFloat) -> Void)?
   // Notifies the host when the palette expands or collapses.
   var expansionChanged: ((Bool) -> Void)?
+  // Notifies the host when the visible hit area changes.
+  var visibleAreaChanged: (() -> Void)?
 
   // Defines the shared tint used for the toolbar icons.
   private let accentColor: UIColor
@@ -184,6 +186,7 @@ final class ToolPaletteView: UIView {
     configureToolAccessories()
     applySelection(.pen)
     setExpanded(false, animated: false)
+    notifyVisibleAreaChanged()
   }
 
   // Builds the stack view so the tools read as one bar.
@@ -395,19 +398,7 @@ final class ToolPaletteView: UIView {
   }
 
   override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-    let expandedSelectorFrames = [
-      penColorSelector,
-      highlighterColorSelector,
-      penThicknessSlider,
-      highlighterThicknessSlider,
-    ]
-    .compactMap { selector in
-      selector.isHidden ? nil : selector.frame
-    }
-    let extendedBounds = expandedSelectorFrames.reduce(bounds) { current, frame in
-      current.union(frame)
-    }
-    return extendedBounds.contains(point)
+    return visibleHitBounds().contains(point)
   }
 
   // Handles selection of the pen tool.
@@ -494,6 +485,7 @@ final class ToolPaletteView: UIView {
     }
     updateItemAppearance()
     colorSelectionChanged?(tool, option.hex)
+    notifyVisibleAreaChanged()
   }
 
   // Updates palette state when a thickness is chosen.
@@ -507,6 +499,32 @@ final class ToolPaletteView: UIView {
       break
     }
     thicknessChanged?(tool, thickness)
+    notifyVisibleAreaChanged()
+  }
+
+  // Returns the combined bounds of the palette and any expanded accessory.
+  func visibleHitBounds() -> CGRect {
+    let expandedSelectorFrames = [
+      penColorSelector,
+      highlighterColorSelector,
+      penThicknessSlider,
+      highlighterThicknessSlider,
+    ]
+    .compactMap { selector in
+      selector.isHidden ? nil : selector.frame
+    }
+    return expandedSelectorFrames.reduce(bounds) { current, frame in
+      current.union(frame)
+    }
+  }
+
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    notifyVisibleAreaChanged()
+  }
+
+  private func notifyVisibleAreaChanged() {
+    visibleAreaChanged?()
   }
 }
 
@@ -694,6 +712,8 @@ private final class ThicknessSliderView: UIView, UIGestureRecognizerDelegate {
   private let thumbSize: CGFloat = 14
   private let trackWidth: CGFloat = 4
   private let expandedHeight: CGFloat = 152
+  private let trackPadding: CGFloat = 7
+  private let thumbHitPadding: CGFloat = 18
   // Stores layout helpers.
   private var isDraggingThumb = false
   private var isExpanded = false
@@ -775,7 +795,8 @@ private final class ThicknessSliderView: UIView, UIGestureRecognizerDelegate {
     switch recognizer.state {
     case .began:
       let thumbFrameInSelf = thumbView.convert(thumbView.bounds, to: self)
-      isDraggingThumb = thumbFrameInSelf.insetBy(dx: -10, dy: -10).contains(locationInSelf)
+      isDraggingThumb = thumbFrameInSelf.insetBy(dx: -thumbHitPadding, dy: -thumbHitPadding)
+        .contains(locationInSelf)
       if isDraggingThumb {
         updateValue(with: locationInTrack)
       }
@@ -816,8 +837,8 @@ private final class ThicknessSliderView: UIView, UIGestureRecognizerDelegate {
   private func configureTrack() {
     NSLayoutConstraint.activate([
       trackView.centerXAnchor.constraint(equalTo: centerXAnchor),
-      trackView.topAnchor.constraint(equalTo: topAnchor),
-      trackView.bottomAnchor.constraint(equalTo: bottomAnchor),
+      trackView.topAnchor.constraint(equalTo: topAnchor, constant: trackPadding),
+      trackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -trackPadding),
       trackView.widthAnchor.constraint(equalToConstant: trackWidth),
     ])
     trackView.layer.cornerRadius = trackWidth / 2

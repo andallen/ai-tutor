@@ -25,6 +25,9 @@ class HomeViewController: UIViewController {
   private var toolPaletteView: ToolPaletteView?
   // Stores the editing toolbar anchored to the bottom right.
   private var editingToolbarView: EditingToolbarView?
+  // Blocks accidental strokes near open toolbars.
+  private let interactionShieldView = TouchShieldView()
+  private let shieldPadding: CGFloat = 16
 
   // MARK: - Life cycle
 
@@ -33,6 +36,7 @@ class HomeViewController: UIViewController {
     self.configureNavigationItems()
     self.configureToolPalette()
     self.configureEditingToolbar()
+    self.configureInteractionShield()
     self.bindViewModel()
     guard let documentHandle = documentHandle else {
       self.viewModel.presentMissingNotebookError()
@@ -91,6 +95,7 @@ class HomeViewController: UIViewController {
   override func viewDidLayoutSubviews() {
     super.viewDidLayoutSubviews()
     self.viewModel.setEditorViewSize(bounds: self.view.bounds)
+    updateInteractionShield()
   }
 
   // MARK: - Outlets actions
@@ -173,15 +178,22 @@ class HomeViewController: UIViewController {
     paletteView.translatesAutoresizingMaskIntoConstraints = false
     paletteView.expansionChanged = { [weak self] isExpanded in
       self?.editingToolbarView?.setCollapsed(isExpanded, animated: true)
+      self?.updateInteractionShield()
     }
     paletteView.selectionChanged = { [weak self] selection in
       self?.viewModel.updateTool(selection: selection)
+      self?.updateInteractionShield()
     }
     paletteView.colorSelectionChanged = { [weak self] tool, hex in
       self?.viewModel.updateInkColor(hex: hex, for: tool)
+      self?.updateInteractionShield()
     }
     paletteView.thicknessChanged = { [weak self] tool, thickness in
       self?.viewModel.updateInkThickness(thickness, for: tool)
+      self?.updateInteractionShield()
+    }
+    paletteView.visibleAreaChanged = { [weak self] in
+      self?.updateInteractionShield()
     }
     view.addSubview(paletteView)
 
@@ -222,6 +234,46 @@ class HomeViewController: UIViewController {
     editingToolbarView = toolbarView
   }
 
+  private func configureInteractionShield() {
+    interactionShieldView.translatesAutoresizingMaskIntoConstraints = false
+    interactionShieldView.backgroundColor = .clear
+    interactionShieldView.isUserInteractionEnabled = true
+    if let editorContainerView {
+      view.insertSubview(interactionShieldView, aboveSubview: editorContainerView)
+    } else {
+      view.insertSubview(interactionShieldView, at: 0)
+    }
+
+    NSLayoutConstraint.activate([
+      interactionShieldView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      interactionShieldView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+      interactionShieldView.topAnchor.constraint(equalTo: view.topAnchor),
+      interactionShieldView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+    ])
+  }
+
+  private func updateInteractionShield() {
+    view.layoutIfNeeded()
+    var blockedAreas: [CGRect] = []
+
+    if let paletteBounds = toolPaletteView?.visibleHitBounds(),
+      let paletteFrame = toolPaletteView?.convert(paletteBounds, to: view)
+    {
+      blockedAreas.append(paletteFrame.insetBy(dx: -shieldPadding, dy: -shieldPadding))
+    }
+
+    if let toolbarView = editingToolbarView {
+      let toolbarFrame = toolbarView.convert(toolbarView.bounds, to: view)
+      if toolbarFrame.width > 0 && toolbarFrame.height > 0 && toolbarView.alpha > 0
+        && toolbarView.isHidden == false
+      {
+        blockedAreas.append(toolbarFrame.insetBy(dx: -shieldPadding, dy: -shieldPadding))
+      }
+    }
+
+    interactionShieldView.blockedRects = blockedAreas
+  }
+
   @objc private func backButtonTapped() {
     self.viewModel.releaseEditor()
     self.dismiss(animated: true)
@@ -233,5 +285,16 @@ class HomeViewController: UIViewController {
 
   func configure(documentHandle: DocumentHandle) {
     self.documentHandle = documentHandle
+  }
+}
+
+private final class TouchShieldView: UIView {
+
+  // Defines areas where touches should be intercepted.
+  var blockedRects: [CGRect] = []
+
+  override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+    guard isUserInteractionEnabled, isHidden == false, alpha > 0 else { return nil }
+    return blockedRects.first(where: { $0.contains(point) }) == nil ? nil : self
   }
 }
