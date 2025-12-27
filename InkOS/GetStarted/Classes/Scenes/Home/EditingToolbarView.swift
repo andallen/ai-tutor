@@ -78,10 +78,8 @@ final class EditingToolbarView: UIView {
     toolbar.translatesAutoresizingMaskIntoConstraints = false
     toolbar.isTranslucent = true
     toolbar.tintColor = accentColor
-    toolbar.backgroundColor = .clear
-    toolbar.setBackgroundImage(UIImage(), forToolbarPosition: .any, barMetrics: .default)
-    toolbar.setBackgroundImage(UIImage(), forToolbarPosition: .any, barMetrics: .compact)
-    toolbar.setShadowImage(UIImage(), forToolbarPosition: .any)
+    toolbar.clipsToBounds = true
+    configureToolbarAppearance()
 
     addSubview(toolbar)
 
@@ -99,6 +97,15 @@ final class EditingToolbarView: UIView {
 
     configureStackView()
     setCollapsed(false, animated: false)
+  }
+
+  // Applies the default pill toolbar appearance behind the icons.
+  private func configureToolbarAppearance() {
+    let appearance = UIToolbarAppearance()
+    appearance.configureWithDefaultBackground()
+    appearance.shadowColor = .clear
+    toolbar.standardAppearance = appearance
+    toolbar.compactAppearance = appearance
   }
 
   // Builds the stack view so the tools read as one bar.

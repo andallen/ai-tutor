@@ -59,6 +59,9 @@ extension Color {
   static let rule = Color.black.opacity(0.10)
   static let separator = Color.black.opacity(0.14)
 
+  // Matches the navigation bar icon tint.
+  static let offBlack = Color(red: 0.20, green: 0.20, blue: 0.20)
+
   static let ink = Color.black.opacity(0.88)
   static let inkSubtle = Color.black.opacity(0.62)
   static let inkFaint = Color.black.opacity(0.40)

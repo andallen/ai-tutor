@@ -9,10 +9,8 @@ DerivedData/
 *.tmp
 .cursor/
 *.moved-aside
-MyScriptCertificate/
 Resources/
 recognition-assets/
 Pods/
 buildServer.json
-Logs/
 .xcode-home/

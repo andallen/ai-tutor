@@ -30,12 +30,6 @@ struct DashboardView: View {
         .ignoresSafeArea()
 
       VStack(spacing: 0) {
-        // Header
-        header
-          .padding(.horizontal, 24)
-          .padding(.top, 20)
-          .padding(.bottom, 24)
-
         // Notebook grid or empty state
         if library.notebooks.isEmpty {
           emptyState
@@ -47,7 +41,21 @@ struct DashboardView: View {
       }
     }
     .fontDesign(.rounded)
-    .navigationBarHidden(true)
+    .navigationTitle("Notes")
+    .navigationBarTitleDisplayMode(.large)
+    .toolbar {
+      ToolbarItem(placement: .navigationBarTrailing) {
+        Button {
+          Task {
+            await library.createNotebook()
+          }
+        } label: {
+          Image(systemName: "plus")
+        }
+      }
+    }
+    .toolbarBackground(.hidden, for: .navigationBar)
+    .tint(Color.offBlack)
     .task {
       await library.loadBundles()
     }
@@ -119,32 +127,6 @@ struct DashboardView: View {
         GetStartedHostView(documentHandle: session.handle)
       }
     )
-  }
-
-  // MARK: - Header
-
-  private var header: some View {
-    HStack(alignment: .center) {
-      Text("Notes")
-        .font(.system(size: 34, weight: .bold))
-        .foregroundStyle(Color.ink)
-
-      Spacer()
-
-      // Create button
-      Button {
-        Task {
-          await library.createNotebook()
-        }
-      } label: {
-        Image(systemName: "plus")
-          .font(.system(size: 20, weight: .semibold))
-          .foregroundStyle(Color.ink)
-          .frame(width: 44, height: 44)
-          .glassBackground(cornerRadius: 12)
-      }
-      .buttonStyle(.plain)
-    }
   }
 
   // MARK: - Empty State
