@@ -89,7 +89,7 @@ final class EditingToolbarView: UIView {
     glassView.clipsToBounds = true
     if #available(iOS 26.0, *) {
       let effect = UIGlassEffect(style: .regular)
-      effect.isInteractive = true
+      effect.isInteractive = false
       glassView.effect = effect
     } else {
       glassView.effect = UIBlurEffect(style: .systemMaterial)
