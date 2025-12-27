@@ -10,8 +10,8 @@ final class EditingToolbarView: UIView {
 
   // Defines the shared tint used for the toolbar icons.
   private let accentColor: UIColor
-  // Matches the compact height used by the reference toolbar row.
-  private let toolbarHeight: CGFloat = 36
+  // Matches the bar button height so the pill aligns with the pencil button.
+  private let toolbarHeight: CGFloat = 44
   // Sets the button width to mirror the reference icon width.
   private let buttonWidth: CGFloat = 24
   // Adds pill padding so the background reads as one bar.

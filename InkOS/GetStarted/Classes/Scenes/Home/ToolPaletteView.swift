@@ -11,243 +11,317 @@ final class ToolPaletteView: UIView {
   var selectionChanged: ((ToolSelection) -> Void)?
   // Notifies the host when a color is chosen for a specific tool.
   var colorSelectionChanged: ((ToolSelection, String) -> Void)?
-  // Notifies the host when the palette expands or collapses.
+  // Notifies the host when the toolbar expands or collapses.
   var expansionChanged: ((Bool) -> Void)?
 
   // Defines the shared tint used for the toolbar icons.
   private let accentColor: UIColor
-  // Sets the toolbar height to align with navigation bar sizing.
-  private let toolbarHeight: CGFloat = 44
-  // Sets the button size to match the top bar buttons.
-  private let buttonSize: CGFloat = 28
-  // Adds horizontal padding so the toolbar looks balanced.
-  private let horizontalPadding: CGFloat = 8
-  // Matches the spacing used in the top bar stack of buttons.
-  private let spacing: CGFloat = 12
-  // Defines the point size for the SF Symbols used by the palette.
+  // Matches the compact height used by the editing toolbar pill.
+  private let toolbarHeight: CGFloat = 36
+  // Sets the button width to reduce the compressed icon look.
+  private let toolbarButtonWidth: CGFloat = 28
+  // Adds pill padding so the background reads as one bar.
+  private let toolbarHorizontalPadding: CGFloat = 10
+  // Matches the spacing used in the reference toolbar stack.
+  private let toolbarSpacing: CGFloat = 12
+  // Defines the point size for the SF Symbols used by the toolbar.
   private let symbolPointSize: CGFloat = 18
-  // Hosts the palette inside a real toolbar.
-  private let toolbar = UIToolbar()
-  // Holds the tool buttons in a single bar-style group.
-  private let stackView = UIStackView()
-  // Stores the width constraint so it can be animated.
-  private var widthConstraint: NSLayoutConstraint?
-  // Tracks whether the palette is expanded or collapsed.
-  private var isExpanded = false
-  // Tracks which tool is currently selected.
-  private var selectedTool: ToolSelection = .pen
-  // Tracks which pen color is currently selected.
-  private var selectedPenColor = ColorOption(name: "Black", hex: "#000000", color: .black)
-  // Tracks which highlighter color is currently selected.
-  private var selectedHighlighterColor =
-    ColorOption(
-      name: "Lemon", hex: "#FFF176", color: UIColor(red: 1, green: 0.95, blue: 0.46, alpha: 1))
-  // Defines the list of preset pen colors shown in the selector.
-  private let penColorOptions: [ColorOption] = [
-    ColorOption(name: "Black", hex: "#000000", color: .black),
-    ColorOption(
-      name: "Blue", hex: "#1976D2", color: UIColor(red: 0.1, green: 0.46, blue: 0.82, alpha: 1)),
-    ColorOption(
-      name: "Green", hex: "#2E7D32", color: UIColor(red: 0.18, green: 0.49, blue: 0.2, alpha: 1)),
-    ColorOption(
-      name: "Red", hex: "#C62828", color: UIColor(red: 0.78, green: 0.16, blue: 0.16, alpha: 1)),
-    ColorOption(
-      name: "Yellow", hex: "#FBC02D", color: UIColor(red: 0.98, green: 0.75, blue: 0.18, alpha: 1)),
-  ]
-  // Defines the list of preset highlighter colors shown in the selector.
-  private let highlighterColorOptions: [ColorOption] = [
-    ColorOption(
-      name: "Lemon", hex: "#FFF176", color: UIColor(red: 1, green: 0.95, blue: 0.46, alpha: 1)),
-    ColorOption(
-      name: "Sky", hex: "#80D8FF", color: UIColor(red: 0.5, green: 0.85, blue: 1, alpha: 1)),
-    ColorOption(
-      name: "Mint", hex: "#B9F6CA", color: UIColor(red: 0.73, green: 0.96, blue: 0.79, alpha: 1)),
-    ColorOption(
-      name: "Coral", hex: "#FFAB91", color: UIColor(red: 1, green: 0.67, blue: 0.57, alpha: 1)),
-    ColorOption(
-      name: "Lavender", hex: "#E1BEE7", color: UIColor(red: 0.88, green: 0.75, blue: 0.91, alpha: 1)
-    ),
-  ]
-  // Stores the pen color selector.
-  private lazy var penColorSelector = ColorSelectorView(
-    options: penColorOptions,
-    selectedHex: selectedPenColor.hex
-  )
-  // Stores the highlighter color selector.
-  private lazy var highlighterColorSelector = ColorSelectorView(
-    options: highlighterColorOptions,
-    selectedHex: selectedHighlighterColor.hex
-  )
-  // Stores the toggle toolbar button.
-  private lazy var toggleButton = makeToolButton(
-    systemName: "pencil",
-    accessibilityLabel: "Show tools",
-    action: #selector(togglePalette)
+  // Sets the gap between the toolbar and the color palette pill.
+  private let paletteSpacing: CGFloat = 8
+  // Sets the size of the standalone pencil toolbar container.
+  private let pencilButtonSize: CGFloat = 36
+
+  // Holds the glass background for the toolbar pill.
+  private let toolbarView = UIVisualEffectView()
+  // Holds the tool icons in one line.
+  private let toolbarStackView = UIStackView()
+  // Hosts the standalone pencil bar button to match the navigation bar styling.
+  private let pencilToolbar = UIToolbar()
+  // Stores the standalone pencil bar button item.
+  private lazy var pencilBarButton = UIBarButtonItem(
+    image: UIImage(systemName: "pencil"),
+    style: .plain,
+    target: self,
+    action: #selector(pencilTapped)
   )
   // Stores the pen toolbar button.
-  private lazy var penButton = makeToolButton(
+  private lazy var penButton = makeToolbarButton(
     systemName: "pencil.tip",
     accessibilityLabel: "Pen",
     action: #selector(penTapped)
   )
   // Stores the eraser toolbar button.
-  private lazy var eraserButton = makeToolButton(
+  private lazy var eraserButton = makeToolbarButton(
     systemName: "eraser",
     accessibilityLabel: "Eraser",
     action: #selector(eraserTapped)
   )
   // Stores the highlighter toolbar button.
-  private lazy var highlighterButton = makeToolButton(
+  private lazy var highlighterButton = makeToolbarButton(
     systemName: "highlighter",
     accessibilityLabel: "Highlighter",
     action: #selector(highlighterTapped)
   )
+  // Stores the palette toolbar button.
+  private lazy var paletteButton = makeToolbarButton(
+    systemName: "paintpalette",
+    accessibilityLabel: "Colors",
+    action: #selector(paletteTapped)
+  )
+
+  // Stores the pen color selector.
+  private let penColorOptions: [ColorOption]
+  // Stores the highlighter color selector.
+  private let highlighterColorOptions: [ColorOption]
+  // Shows the active color options in a pill.
+  private let colorPaletteView: ColorPaletteView
+
+  // Tracks whether the toolbar is currently visible.
+  private var isToolbarVisible = false
+  // Tracks whether the color palette is currently visible.
+  private var isColorPaletteVisible = false
+  // Tracks which tool is currently selected.
+  private var selectedTool: ToolSelection = .pen
+  // Tracks which pen color is currently selected.
+  private var selectedPenColor: ColorOption
+  // Tracks which highlighter color is currently selected.
+  private var selectedHighlighterColor: ColorOption
 
   init(accentColor: UIColor) {
     self.accentColor = accentColor
+    let penOptions = ToolPaletteView.makePenColorOptions()
+    let highlighterOptions = ToolPaletteView.makeHighlighterColorOptions()
+    self.penColorOptions = penOptions
+    self.highlighterColorOptions = highlighterOptions
+    self.selectedPenColor = penOptions.first ?? ColorOption(name: "Black", hex: "#000000", color: .black)
+    self.selectedHighlighterColor = highlighterOptions.first
+      ?? ColorOption(name: "Lemon", hex: "#FFF176", color: UIColor(red: 1, green: 0.95, blue: 0.46, alpha: 1))
+    let maxOptionCount = max(penOptions.count, highlighterOptions.count)
+    self.colorPaletteView = ColorPaletteView(maxOptionCount: maxOptionCount)
     super.init(frame: .zero)
     configureView()
   }
 
   required init?(coder: NSCoder) {
     self.accentColor = UIColor.label
+    let penOptions = ToolPaletteView.makePenColorOptions()
+    let highlighterOptions = ToolPaletteView.makeHighlighterColorOptions()
+    self.penColorOptions = penOptions
+    self.highlighterColorOptions = highlighterOptions
+    self.selectedPenColor = penOptions.first ?? ColorOption(name: "Black", hex: "#000000", color: .black)
+    self.selectedHighlighterColor = highlighterOptions.first
+      ?? ColorOption(name: "Lemon", hex: "#FFF176", color: UIColor(red: 1, green: 0.95, blue: 0.46, alpha: 1))
+    let maxOptionCount = max(penOptions.count, highlighterOptions.count)
+    self.colorPaletteView = ColorPaletteView(maxOptionCount: maxOptionCount)
     super.init(coder: coder)
     configureView()
   }
 
-  // Computes the width for the collapsed circular state.
-  private var collapsedWidth: CGFloat {
-    toolbarHeight
+  // Exposes whether the toolbar is expanded.
+  var isExpanded: Bool {
+    isToolbarVisible
+  }
+
+  // Updates the toolbar visibility with optional animation.
+  func setToolbarVisible(_ visible: Bool, animated: Bool) {
+    guard visible != isToolbarVisible else { return }
+    isToolbarVisible = visible
+    expansionChanged?(visible)
+    if visible == false {
+      setColorPaletteVisible(false, animated: animated)
+    }
+    animateToolbarVisibility(visible, animated: animated)
+  }
+
+  // Checks if a point in a host view is inside any visible palette element.
+  func containsInteraction(at location: CGPoint, in hostView: UIView) -> Bool {
+    let localPoint = convert(location, from: hostView)
+    return self.point(inside: localPoint, with: nil)
+  }
+
+  override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+    var hitFrames: [CGRect] = []
+    if pencilToolbar.isHidden == false {
+      hitFrames.append(pencilToolbar.frame)
+    }
+    if toolbarView.isHidden == false {
+      hitFrames.append(toolbarView.frame)
+    }
+    if colorPaletteView.isHidden == false {
+      hitFrames.append(colorPaletteView.frame)
+    }
+    let unionFrame = hitFrames.reduce(CGRect.null) { current, frame in
+      current.union(frame)
+    }
+    if unionFrame.isNull {
+      return false
+    }
+    return unionFrame.contains(point)
   }
 
   // Computes the width for the expanded toolbar state.
-  private var expandedWidth: CGFloat {
-    (buttonSize * 4) + (spacing * 3) + (horizontalPadding * 2)
+  private var toolbarWidth: CGFloat {
+    (toolbarButtonWidth * 4) + (toolbarSpacing * 3) + (toolbarHorizontalPadding * 2)
   }
 
-  // Collects the buttons that hide when collapsed.
-  private var toolButtons: [UIButton] {
-    [penButton, eraserButton, highlighterButton]
+  // Computes the maximum size for the palette container.
+  private var containerHeight: CGFloat {
+    toolbarHeight + paletteSpacing + colorPaletteView.paletteHeight
   }
 
   // Builds the view hierarchy and initial layout.
   private func configureView() {
     translatesAutoresizingMaskIntoConstraints = false
     backgroundColor = UIColor.clear
-    layer.cornerRadius = toolbarHeight / 2
-    layer.masksToBounds = false
-
-    toolbar.translatesAutoresizingMaskIntoConstraints = false
-    toolbar.isTranslucent = true
-    toolbar.tintColor = accentColor
-    toolbar.clipsToBounds = false
-
-    addSubview(toolbar)
-
-    // Anchors the toolbar to fill the palette container.
-    toolbar.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-    toolbar.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-    toolbar.topAnchor.constraint(equalTo: topAnchor).isActive = true
-    toolbar.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
-
-    // Locks the palette height to match the toolbar height.
-    heightAnchor.constraint(equalToConstant: toolbarHeight).isActive = true
-
-    // Keeps the width updated when the palette expands or collapses.
-    let widthConstraint = widthAnchor.constraint(equalToConstant: collapsedWidth)
-    widthConstraint.isActive = true
-    self.widthConstraint = widthConstraint
-
-    configureStackView()
-    configureColorSelectors()
+    // Keeps the container tall enough for the toolbar and palette.
+    configureSizingConstraints()
+    configurePencilButton()
+    configureToolbar()
+    configureColorPalette()
     applySelection(.pen)
-    setExpanded(false, animated: false)
+    // Forces the initial hidden state for the toolbar even when default state matches.
+    isToolbarVisible = true
+    setToolbarVisible(false, animated: false)
   }
 
-  // Builds the stack view so the tools read as one bar.
-  private func configureStackView() {
-    stackView.axis = .horizontal
-    stackView.alignment = .center
-    stackView.spacing = spacing
-    stackView.layoutMargins = UIEdgeInsets(
-      top: 0,
-      left: horizontalPadding,
-      bottom: 0,
-      right: horizontalPadding
+  // Sets the fixed size used to cover the toolbar and palette states.
+  private func configureSizingConstraints() {
+    heightAnchor.constraint(equalToConstant: containerHeight).isActive = true
+  }
+
+  // Configures the standalone pencil toggle button.
+  private func configurePencilButton() {
+    // Matches the navigation bar bar button styling by using a toolbar container.
+    let appearance = UIToolbarAppearance()
+    appearance.configureWithTransparentBackground()
+    appearance.backgroundColor = .clear
+    appearance.shadowColor = .clear
+    pencilBarButton.accessibilityLabel = "Show tools"
+    // Increases the pencil symbol so it reads clearly in the bar button.
+    let pencilSymbolConfig = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
+    pencilBarButton.image = UIImage(systemName: "pencil", withConfiguration: pencilSymbolConfig)
+    pencilToolbar.standardAppearance = appearance
+    if #available(iOS 15.0, *) {
+      pencilToolbar.scrollEdgeAppearance = appearance
+    }
+    pencilToolbar.isTranslucent = true
+    pencilToolbar.tintColor = accentColor
+    pencilToolbar.setItems([pencilBarButton], animated: false)
+    pencilToolbar.translatesAutoresizingMaskIntoConstraints = false
+    addSubview(pencilToolbar)
+
+    pencilToolbar.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8).isActive = true
+    pencilToolbar.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+    pencilToolbar.widthAnchor.constraint(equalToConstant: pencilButtonSize).isActive = true
+    pencilToolbar.heightAnchor.constraint(equalToConstant: pencilButtonSize).isActive = true
+  }
+
+  // Configures the glass toolbar pill that holds the tool icons.
+  private func configureToolbar() {
+    toolbarView.translatesAutoresizingMaskIntoConstraints = false
+    toolbarView.layer.cornerRadius = toolbarHeight / 2
+    toolbarView.layer.cornerCurve = .continuous
+    toolbarView.clipsToBounds = true
+    if #available(iOS 26.0, *) {
+      let effect = UIGlassEffect(style: .regular)
+      effect.isInteractive = false
+      toolbarView.effect = effect
+    } else {
+      toolbarView.effect = UIBlurEffect(style: .systemMaterial)
+    }
+    addSubview(toolbarView)
+
+    // Centers the toolbar so it rises into the bottom-middle of the screen.
+    toolbarView.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+    toolbarView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+    toolbarView.heightAnchor.constraint(equalToConstant: toolbarHeight).isActive = true
+    toolbarView.widthAnchor.constraint(equalToConstant: toolbarWidth).isActive = true
+
+    toolbarStackView.axis = .horizontal
+    toolbarStackView.alignment = .center
+    toolbarStackView.distribution = .fillEqually
+    toolbarStackView.spacing = toolbarSpacing
+    toolbarStackView.translatesAutoresizingMaskIntoConstraints = false
+    toolbarView.contentView.addSubview(toolbarStackView)
+
+    toolbarStackView.leadingAnchor.constraint(
+      equalTo: toolbarView.contentView.leadingAnchor,
+      constant: toolbarHorizontalPadding
     )
-    stackView.isLayoutMarginsRelativeArrangement = true
-    stackView.translatesAutoresizingMaskIntoConstraints = false
-    toolbar.addSubview(stackView)
-
-    // Pins the tool group to the leading edge of the toolbar.
-    stackView.leadingAnchor.constraint(equalTo: toolbar.leadingAnchor).isActive = true
-    stackView.centerYAnchor.constraint(equalTo: toolbar.centerYAnchor).isActive = true
-
-    stackView.addArrangedSubview(toggleButton)
-    stackView.addArrangedSubview(penButton)
-    stackView.addArrangedSubview(eraserButton)
-    stackView.addArrangedSubview(highlighterButton)
-  }
-
-  // Attaches the vertical color selectors above their tools.
-  private func configureColorSelectors() {
-    penColorSelector.selectionChanged = { [weak self] option in
-      self?.handleColorSelection(option, for: .pen)
-    }
-    highlighterColorSelector.selectionChanged = { [weak self] option in
-      self?.handleColorSelection(option, for: .highlighter)
-    }
-
-    addSubview(penColorSelector)
-    addSubview(highlighterColorSelector)
-
-    penColorSelector.centerXAnchor.constraint(equalTo: penButton.centerXAnchor).isActive = true
-    penColorSelector.bottomAnchor.constraint(equalTo: penButton.topAnchor, constant: -6).isActive =
+    .isActive = true
+    toolbarStackView.trailingAnchor.constraint(
+      equalTo: toolbarView.contentView.trailingAnchor,
+      constant: -toolbarHorizontalPadding
+    )
+    .isActive = true
+    toolbarStackView.topAnchor.constraint(equalTo: toolbarView.contentView.topAnchor).isActive = true
+    toolbarStackView.bottomAnchor.constraint(equalTo: toolbarView.contentView.bottomAnchor).isActive =
       true
 
-    highlighterColorSelector.centerXAnchor.constraint(equalTo: highlighterButton.centerXAnchor)
-      .isActive = true
-    highlighterColorSelector.bottomAnchor.constraint(
-      equalTo: highlighterButton.topAnchor, constant: -6
+    toolbarStackView.addArrangedSubview(penButton)
+    toolbarStackView.addArrangedSubview(eraserButton)
+    toolbarStackView.addArrangedSubview(highlighterButton)
+    toolbarStackView.addArrangedSubview(paletteButton)
+  }
+
+  // Configures the color palette pill shown above the toolbar.
+  private func configureColorPalette() {
+    colorPaletteView.translatesAutoresizingMaskIntoConstraints = false
+    colorPaletteView.isHidden = true
+    colorPaletteView.selectionChanged = { [weak self] option in
+      self?.handleColorSelection(option)
+    }
+    addSubview(colorPaletteView)
+
+    // Aligns the palette with the centered toolbar.
+    colorPaletteView.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+    colorPaletteView.bottomAnchor.constraint(
+      equalTo: toolbarView.topAnchor,
+      constant: -paletteSpacing
     )
     .isActive = true
   }
 
   // Creates a toolbar button with configured sizing and image.
-  private func makeToolButton(
+  private func makeToolbarButton(
     systemName: String,
     accessibilityLabel: String,
     action: Selector
   ) -> UIButton {
+    let button = UIButton(type: .system)
     let configuration = UIImage.SymbolConfiguration(pointSize: symbolPointSize, weight: .regular)
     let image = UIImage(systemName: systemName, withConfiguration: configuration)
-    let button = UIButton(type: .system)
-    button.setImage(image, for: .normal)
+    if let image = image {
+      button.setImage(image, for: .normal)
+    } else {
+      button.setTitle(accessibilityLabel, for: .normal)
+    }
     button.tintColor = accentColor
     button.accessibilityLabel = accessibilityLabel
+    button.backgroundColor = .clear
     button.addTarget(self, action: action, for: .touchUpInside)
     button.translatesAutoresizingMaskIntoConstraints = false
-    button.widthAnchor.constraint(equalToConstant: buttonSize).isActive = true
-    button.heightAnchor.constraint(equalToConstant: buttonSize).isActive = true
+    button.heightAnchor.constraint(equalToConstant: toolbarHeight).isActive = true
     return button
   }
 
   // Updates the selection state and notifies observers.
   private func applySelection(_ selection: ToolSelection) {
     selectedTool = selection
-    updateColorSelectors(for: selection, animated: true)
     updateItemAppearance()
+    updateColorPaletteOptions(animated: isColorPaletteVisible)
     selectionChanged?(selection)
   }
 
   // Applies the shared tint so the tools match the top bar buttons.
   private func updateItemAppearance() {
     let unselectedColor = accentColor.withAlphaComponent(0.45)
-    toggleButton.tintColor = accentColor
     penButton.tintColor = tint(for: selectedPenColor.color, isSelected: selectedTool == .pen)
     eraserButton.tintColor = selectedTool == .eraser ? accentColor : unselectedColor
     highlighterButton.tintColor =
       tint(for: selectedHighlighterColor.color, isSelected: selectedTool == .highlighter)
+    paletteButton.tintColor = selectedTool == .eraser ? unselectedColor : accentColor
+    paletteButton.isEnabled = selectedTool != .eraser
   }
 
   // Adjusts the tint based on the selection state.
@@ -256,67 +330,57 @@ final class ToolPaletteView: UIView {
     return isSelected ? color : fadedColor
   }
 
-  // Expands or collapses the toolbar with optional animation.
-  private func setExpanded(_ expanded: Bool, animated: Bool) {
-    isExpanded = expanded
-    if expanded {
-      updateColorSelectors(for: selectedTool, animated: animated)
-    } else {
-      collapseColorSelectors(animated: animated)
+  // Updates the color palette options based on the active tool.
+  private func updateColorPaletteOptions(animated: Bool) {
+    switch selectedTool {
+    case .pen:
+      colorPaletteView.updateOptions(
+        penColorOptions,
+        selectedHex: selectedPenColor.hex,
+        animated: animated
+      )
+    case .highlighter:
+      colorPaletteView.updateOptions(
+        highlighterColorOptions,
+        selectedHex: selectedHighlighterColor.hex,
+        animated: animated
+      )
+    case .eraser:
+      setColorPaletteVisible(false, animated: animated)
     }
-    updateToggleIcon(isExpanded: expanded)
-    expansionChanged?(expanded)
-    animateExpansion(expanded: expanded, animated: animated)
   }
 
-  // Updates the width constraint to match the expanded or collapsed state.
-  private func updateWidthForState(expanded: Bool) {
-    widthConstraint?.constant = expanded ? expandedWidth : collapsedWidth
-  }
-
-  // Updates the toggle icon without removing the leftmost button.
-  private func updateToggleIcon(isExpanded: Bool) {
-    let toggleName = isExpanded ? "xmark" : "pencil"
-    let configuration = UIImage.SymbolConfiguration(pointSize: symbolPointSize, weight: .regular)
-    toggleButton.setImage(
-      UIImage(systemName: toggleName, withConfiguration: configuration), for: .normal)
-    toggleButton.accessibilityLabel = isExpanded ? "Hide tools" : "Show tools"
-  }
-
-  // Makes tool buttons available before the expand animation starts.
-  private func prepareToolButtonsForExpansion() {
-    toolButtons.forEach { $0.isHidden = false }
-    toolButtons.forEach { $0.alpha = 0 }
-    toolButtons.forEach { $0.isUserInteractionEnabled = true }
-    toolButtons.forEach { $0.isAccessibilityElement = true }
-  }
-
-  // Prevents taps and accessibility focus while collapsing.
-  private func prepareToolButtonsForCollapse() {
-    toolButtons.forEach { $0.isUserInteractionEnabled = false }
-    toolButtons.forEach { $0.isAccessibilityElement = false }
-  }
-
-  // Animates the palette width and tool button alpha in a single pass.
-  private func animateExpansion(expanded: Bool, animated: Bool) {
-    superview?.layoutIfNeeded()
-    if expanded {
-      prepareToolButtonsForExpansion()
+  // Animates the toolbar in or out of view.
+  private func animateToolbarVisibility(_ visible: Bool, animated: Bool) {
+    // Pushes the toolbar below the safe area so it reads as sliding from under the screen.
+    let offset = toolbarHeight + 24
+    // Pushes the pencil button below the safe area when the toolbar expands.
+    let pencilOffset = pencilButtonSize + 12
+    if visible {
+      toolbarView.isHidden = false
+      toolbarView.alpha = 0
+      toolbarView.transform = CGAffineTransform(translationX: 0, y: offset)
+      pencilToolbar.isHidden = false
+      pencilToolbar.alpha = 1
+      pencilToolbar.transform = .identity
     } else {
-      prepareToolButtonsForCollapse()
+      pencilToolbar.isHidden = false
+      pencilToolbar.alpha = 1
+      pencilToolbar.transform = CGAffineTransform(translationX: 0, y: pencilOffset)
     }
-    updateWidthForState(expanded: expanded)
 
-    let targetAlpha: CGFloat = expanded ? 1 : 0
     let animations = { [weak self] in
       guard let self = self else { return }
-      self.superview?.layoutIfNeeded()
-      self.toolButtons.forEach { $0.alpha = targetAlpha }
+      self.toolbarView.alpha = visible ? 1 : 0
+      self.toolbarView.transform = visible ? .identity : CGAffineTransform(translationX: 0, y: offset)
+      self.pencilToolbar.transform =
+        visible ? CGAffineTransform(translationX: 0, y: pencilOffset) : .identity
     }
 
     let completion: (Bool) -> Void = { [weak self] _ in
-      guard let self = self, !expanded else { return }
-      self.toolButtons.forEach { $0.isHidden = true }
+      guard let self = self else { return }
+      self.toolbarView.isHidden = visible == false
+      self.pencilToolbar.isHidden = visible
     }
 
     if animated {
@@ -333,30 +397,52 @@ final class ToolPaletteView: UIView {
     }
   }
 
-  // Handles the expand and collapse toggle.
-  @objc private func togglePalette() {
-    isExpanded.toggle()
-    setExpanded(isExpanded, animated: true)
+  // Shows or hides the color palette pill.
+  private func setColorPaletteVisible(_ visible: Bool, animated: Bool) {
+    guard visible != isColorPaletteVisible else { return }
+    isColorPaletteVisible = visible
+    if visible {
+      colorPaletteView.isHidden = false
+      colorPaletteView.alpha = 0
+      colorPaletteView.transform = CGAffineTransform(translationX: 0, y: paletteSpacing)
+    }
+
+    let animations = { [weak self] in
+      guard let self = self else { return }
+      self.colorPaletteView.alpha = visible ? 1 : 0
+      self.colorPaletteView.transform =
+        visible ? .identity : CGAffineTransform(translationX: 0, y: self.paletteSpacing)
+    }
+
+    let completion: (Bool) -> Void = { [weak self] _ in
+      guard let self = self else { return }
+      if visible == false {
+        self.colorPaletteView.isHidden = true
+      }
+    }
+
+    if animated {
+      UIView.animate(
+        withDuration: 0.22,
+        delay: 0,
+        options: [.curveEaseInOut],
+        animations: animations,
+        completion: completion
+      )
+    } else {
+      animations()
+      completion(true)
+    }
   }
 
-  override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-    let expandedSelectorFrames = [penColorSelector, highlighterColorSelector]
-      .compactMap { selector in
-        selector.isHidden ? nil : selector.frame
-      }
-    let extendedBounds = expandedSelectorFrames.reduce(bounds) { current, frame in
-      current.union(frame)
-    }
-    return extendedBounds.contains(point)
+  // Handles taps on the pencil toggle button.
+  @objc private func pencilTapped() {
+    setToolbarVisible(true, animated: true)
   }
 
   // Handles selection of the pen tool.
   @objc private func penTapped() {
-    if selectedTool == .pen, penColorSelector.isExpandedForTool {
-      collapseColorSelectors(animated: true)
-    } else {
-      applySelection(.pen)
-    }
+    applySelection(.pen)
   }
 
   // Handles selection of the eraser tool.
@@ -366,54 +452,60 @@ final class ToolPaletteView: UIView {
 
   // Handles selection of the highlighter tool.
   @objc private func highlighterTapped() {
-    if selectedTool == .highlighter, highlighterColorSelector.isExpandedForTool {
-      collapseColorSelectors(animated: true)
-    } else {
-      applySelection(.highlighter)
-    }
+    applySelection(.highlighter)
   }
 
-  // Shows the matching color selector for the current tool.
-  private func updateColorSelectors(for selection: ToolSelection, animated: Bool) {
-    guard isExpanded else { return }
-    switch selection {
-    case .pen:
-      showColorSelector(penColorSelector, hiding: highlighterColorSelector, animated: animated)
-    case .highlighter:
-      showColorSelector(highlighterColorSelector, hiding: penColorSelector, animated: animated)
-    case .eraser:
-      collapseColorSelectors(animated: animated)
-    }
-  }
-
-  // Expands the requested selector and hides the other one.
-  private func showColorSelector(
-    _ selector: ColorSelectorView,
-    hiding otherSelector: ColorSelectorView,
-    animated: Bool
-  ) {
-    otherSelector.setExpanded(false, animated: animated)
-    selector.setExpanded(true, animated: animated)
-  }
-
-  // Collapses both color selectors.
-  private func collapseColorSelectors(animated: Bool) {
-    penColorSelector.setExpanded(false, animated: animated)
-    highlighterColorSelector.setExpanded(false, animated: animated)
+  // Toggles the color palette when the palette button is tapped.
+  @objc private func paletteTapped() {
+    guard selectedTool != .eraser else { return }
+    setColorPaletteVisible(!isColorPaletteVisible, animated: true)
   }
 
   // Updates palette state when a color is chosen.
-  private func handleColorSelection(_ option: ColorOption, for tool: ToolSelection) {
-    switch tool {
+  private func handleColorSelection(_ option: ColorOption) {
+    switch selectedTool {
     case .pen:
       selectedPenColor = option
+      colorSelectionChanged?(.pen, option.hex)
     case .highlighter:
       selectedHighlighterColor = option
+      colorSelectionChanged?(.highlighter, option.hex)
     case .eraser:
       break
     }
     updateItemAppearance()
-    colorSelectionChanged?(tool, option.hex)
+  }
+
+  // Defines the list of preset pen colors shown in the selector.
+  private static func makePenColorOptions() -> [ColorOption] {
+    [
+      ColorOption(name: "Black", hex: "#000000", color: .black),
+      ColorOption(
+        name: "Blue", hex: "#1976D2", color: UIColor(red: 0.1, green: 0.46, blue: 0.82, alpha: 1)),
+      ColorOption(
+        name: "Green", hex: "#2E7D32", color: UIColor(red: 0.18, green: 0.49, blue: 0.2, alpha: 1)),
+      ColorOption(
+        name: "Red", hex: "#C62828", color: UIColor(red: 0.78, green: 0.16, blue: 0.16, alpha: 1)),
+      ColorOption(
+        name: "Yellow", hex: "#FBC02D", color: UIColor(red: 0.98, green: 0.75, blue: 0.18, alpha: 1)),
+    ]
+  }
+
+  // Defines the list of preset highlighter colors shown in the selector.
+  private static func makeHighlighterColorOptions() -> [ColorOption] {
+    [
+      ColorOption(
+        name: "Lemon", hex: "#FFF176", color: UIColor(red: 1, green: 0.95, blue: 0.46, alpha: 1)),
+      ColorOption(
+        name: "Sky", hex: "#80D8FF", color: UIColor(red: 0.5, green: 0.85, blue: 1, alpha: 1)),
+      ColorOption(
+        name: "Mint", hex: "#B9F6CA", color: UIColor(red: 0.73, green: 0.96, blue: 0.79, alpha: 1)),
+      ColorOption(
+        name: "Coral", hex: "#FFAB91", color: UIColor(red: 1, green: 0.67, blue: 0.57, alpha: 1)),
+      ColorOption(
+        name: "Lavender", hex: "#E1BEE7", color: UIColor(red: 0.88, green: 0.75, blue: 0.91, alpha: 1)
+      ),
+    ]
   }
 }
 
@@ -424,98 +516,144 @@ private struct ColorOption {
   let color: UIColor
 }
 
-// Presents a vertical list of color choices that expands from bottom to top.
-private final class ColorSelectorView: UIView {
+// Presents a horizontal list of color choices in a glass pill.
+private final class ColorPaletteView: UIView {
 
   // Notifies when the user picks a color.
   var selectionChanged: ((ColorOption) -> Void)?
 
-  // Holds the available color options.
-  private let options: [ColorOption]
+  // Holds the glass background for the palette.
+  private let glassView = UIVisualEffectView()
+  // Builds the horizontal stack of color buttons.
+  private let stackView = UIStackView()
+  // Defines the pill height to match the toolbar.
+  let paletteHeight: CGFloat = 36
   // Sets the base size for the color circles.
   private let circleSize: CGFloat = 18
   // Enlarges the selected circle for clarity.
   private let selectedCircleSize: CGFloat = 24
   // Controls spacing between the circles.
   private let spacing: CGFloat = 8
-  // Builds the vertical stack of color buttons.
-  private let stackView = UIStackView()
-  // Stores the height constraint so it can animate open and closed.
-  private var heightConstraint: NSLayoutConstraint?
-  // Tracks whether the selector is visible.
-  private var isExpanded = false
+  // Adds horizontal padding inside the glass pill.
+  private let horizontalPadding: CGFloat = 12
+  // Stores the maximum options to size the container.
+  private let maxOptionCount: Int
+  // Stores the width constraint so it can be updated.
+  private var widthConstraint: NSLayoutConstraint?
   // Tracks the chosen color hex value.
-  private var selectedHex: String
+  private var selectedHex: String = ""
   // Associates buttons with their colors for updates.
   private var buttonOptions: [UIButton: ColorOption] = [:]
   // Tracks sizing constraints so the selected circle can expand.
   private var buttonConstraints:
     [UIButton: (width: NSLayoutConstraint, height: NSLayoutConstraint)] = [:]
 
-  init(options: [ColorOption], selectedHex: String) {
-    self.options = options
-    self.selectedHex = selectedHex
+  init(maxOptionCount: Int) {
+    self.maxOptionCount = maxOptionCount
     super.init(frame: .zero)
     configureView()
-    updateSelection(for: selectedHex, animated: false)
   }
 
   required init?(coder: NSCoder) {
-    self.options = []
-    self.selectedHex = ""
+    self.maxOptionCount = 0
     super.init(coder: coder)
+    configureView()
   }
 
-  // Opens or closes the selector with a shared animation curve.
-  func setExpanded(_ expanded: Bool, animated: Bool) {
-    guard expanded != isExpanded else { return }
-    isExpanded = expanded
-    superview?.layoutIfNeeded()
-    if expanded {
-      isHidden = false
-      alpha = 0
-    }
-    heightConstraint?.constant = expanded ? expandedHeight : 0
-    let animations = { [weak self] in
-      guard let self = self else { return }
-      self.superview?.layoutIfNeeded()
-      self.alpha = expanded ? 1 : 0
-    }
-    let completion: (Bool) -> Void = { [weak self] _ in
-      guard let self = self else { return }
-      if expanded == false {
-        self.isHidden = true
-      }
-    }
-    if animated {
-      UIView.animate(
-        withDuration: 0.22,
-        delay: 0,
-        options: [.curveEaseInOut],
-        animations: animations,
-        completion: completion
-      )
+  // Exposes the widest size needed for the palette.
+  var maximumWidth: CGFloat {
+    width(for: maxOptionCount)
+  }
+
+  // Updates the option list and selection state.
+  func updateOptions(_ options: [ColorOption], selectedHex: String, animated: Bool) {
+    self.selectedHex = selectedHex
+    rebuildButtons(with: options)
+    updateSelection(for: selectedHex, animated: animated)
+  }
+
+  // Builds the layout for the palette pill.
+  private func configureView() {
+    translatesAutoresizingMaskIntoConstraints = false
+    backgroundColor = UIColor.clear
+
+    configureGlassView()
+    addSubview(glassView)
+
+    glassView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+    glassView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+    glassView.topAnchor.constraint(equalTo: topAnchor).isActive = true
+    glassView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+
+    heightAnchor.constraint(equalToConstant: paletteHeight).isActive = true
+    widthConstraint = widthAnchor.constraint(equalToConstant: maximumWidth)
+    widthConstraint?.isActive = true
+
+    configureStackView()
+  }
+
+  // Configures the glass material background for the pill.
+  private func configureGlassView() {
+    glassView.translatesAutoresizingMaskIntoConstraints = false
+    glassView.layer.cornerRadius = paletteHeight / 2
+    glassView.layer.cornerCurve = .continuous
+    glassView.clipsToBounds = true
+    if #available(iOS 26.0, *) {
+      let effect = UIGlassEffect(style: .regular)
+      effect.isInteractive = false
+      glassView.effect = effect
     } else {
-      animations()
-      completion(true)
+      glassView.effect = UIBlurEffect(style: .systemMaterial)
     }
   }
 
-  // Exposes whether the selector is currently open.
-  var isExpandedForTool: Bool {
-    isExpanded
+  // Builds the layout for the color buttons.
+  private func configureStackView() {
+    stackView.axis = .horizontal
+    stackView.alignment = .center
+    stackView.spacing = spacing
+    stackView.translatesAutoresizingMaskIntoConstraints = false
+    glassView.contentView.addSubview(stackView)
+
+    stackView.leadingAnchor.constraint(
+      equalTo: glassView.contentView.leadingAnchor,
+      constant: horizontalPadding
+    )
+    .isActive = true
+    stackView.trailingAnchor.constraint(
+      equalTo: glassView.contentView.trailingAnchor,
+      constant: -horizontalPadding
+    )
+    .isActive = true
+    stackView.topAnchor.constraint(equalTo: glassView.contentView.topAnchor).isActive = true
+    stackView.bottomAnchor.constraint(equalTo: glassView.contentView.bottomAnchor).isActive = true
   }
 
-  // Marks the matching button as selected.
+  // Rebuilds the stack to show the current options.
+  private func rebuildButtons(with options: [ColorOption]) {
+    stackView.arrangedSubviews.forEach { view in
+      view.removeFromSuperview()
+    }
+    buttonOptions.removeAll()
+    buttonConstraints.removeAll()
+
+    options.forEach { option in
+      let button = makeColorButton(for: option)
+      stackView.addArrangedSubview(button)
+      buttonOptions[button] = option
+    }
+    widthConstraint?.constant = width(for: options.count)
+  }
+
+  // Updates the selection state for the palette buttons.
   private func updateSelection(for hex: String, animated: Bool) {
-    selectedHex = hex
     let applySizing = { [weak self] in
       guard let self = self else { return }
       self.buttonConstraints.forEach { button, constraints in
         let isSelected = self.buttonOptions[button]?.hex == hex
         constraints.width.constant = isSelected ? self.selectedCircleSize : self.circleSize
         constraints.height.constant = isSelected ? self.selectedCircleSize : self.circleSize
-        button.layer.cornerRadius = (constraints.width.constant) / 2
+        button.layer.cornerRadius = constraints.width.constant / 2
       }
       self.layoutIfNeeded()
     }
@@ -527,32 +665,6 @@ private final class ColorSelectorView: UIView {
     } else {
       applySizing()
     }
-  }
-
-  // Builds the layout for the color list.
-  private func configureView() {
-    translatesAutoresizingMaskIntoConstraints = false
-    clipsToBounds = true
-    stackView.axis = .vertical
-    stackView.alignment = .center
-    stackView.spacing = spacing
-    stackView.translatesAutoresizingMaskIntoConstraints = false
-    addSubview(stackView)
-
-    stackView.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-    stackView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
-    stackView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-    stackView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-
-    options.reversed().forEach { option in
-      let button = makeColorButton(for: option)
-      stackView.addArrangedSubview(button)
-      buttonOptions[button] = option
-    }
-
-    heightConstraint = heightAnchor.constraint(equalToConstant: 0)
-    heightConstraint?.isActive = true
-    isHidden = true
   }
 
   // Creates a small circular button for a color.
@@ -578,10 +690,11 @@ private final class ColorSelectorView: UIView {
     selectionChanged?(option)
   }
 
-  // Computes the target height for the expanded state.
-  private var expandedHeight: CGFloat {
-    let count = CGFloat(options.count)
-    let spacingTotal = spacing * (count - 1)
-    return (count * selectedCircleSize) + spacingTotal
+  // Computes the target width for the given option count.
+  private func width(for count: Int) -> CGFloat {
+    guard count > 0 else { return 0 }
+    let countValue = CGFloat(count)
+    let spacingTotal = spacing * (countValue - 1)
+    return (countValue * selectedCircleSize) + spacingTotal + (horizontalPadding * 2)
   }
 }

@@ -1,0 +1,81 @@
+
+----- xcbeautify -----
+Version: 3.1.2
+----------------------
+
+note: Building targets in dependency order
+note: Target dependency graph (3 targets)
+note: Run script build phase 'Copy Recognition Assets' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'InkOS' from project 'InkOS')
+[InkOS] Compiling HomeViewController.swift
+[InkOS] Compiling NotebookLibrary.swift
+[InkOS] Compiling NotebookModel.swift
+[InkOS] Compiling HomeViewModel.swift
+[InkOS] Compiling GetStartedHostView.swift
+[InkOS] Compiling DashboardView.swift
+[InkOS] Compiling BundleManager.swift
+[InkOS] Compiling ToolPaletteView.swift
+[InkOS] Compiling HomeModel.swift
+[InkOS] Compiling ToolPaletteView.swift
+[InkOS] Compiling BundleManager.swift
+[InkOS] Compiling RenderView.swift
+[InkOS] Compiling HomeModel.swift
+[InkOS] Compiling HomeViewController.swift
+[InkOS] Compiling HomeViewModel.swift
+[InkOS] Compiling GetStartedHostView.swift
+[InkOS] Compiling DashboardView.swift
+[InkOS] Compiling EditorViewModel.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-notebook-view/InkOS/Frameworks/IInkUIReferenceImplementation/Editor/EditorViewModel.swift:283:28: 'init(contentsOfFile:)' was deprecated in iOS 18: Use `init(contentsOfFile:encoding:)` instead
+      let cssString = try? String(contentsOfFile: path).trimmingCharacters(
+                           ^
+[InkOS] Compiling Canvas.swift
+[InkOS] Compiling NotebookLibrary.swift
+[InkOS] Compiling NotebookModel.swift
+[InkOS] Compiling Logging.swift
+[InkOS] Compiling AppRootView.swift
+[InkOS] Compiling DisplayViewModel.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-notebook-view/InkOS/Frameworks/IInkUIReferenceImplementation/Display/DisplayViewModel.swift:113:27: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return Float(UIScreen.main.scale)
+                          ^
+[InkOS] Compiling DisplayModel.swift
+[InkOS] Compiling DisplayViewController.swift
+[InkOS] Copy arm64-apple-ios-simulator.swiftsourceinfo -> GetStarted.swiftsourceinfo
+[InkOS] Compiling InputView.swift
+[InkOS] Compiling OffscreenRenderSurfaces.swift
+[InkOS] Compiling InkOSApp.swift
+[InkOS] Copy x86_64-apple-ios-simulator.abi.json -> GetStarted.abi.json
+[InkOS] Copy arm64-apple-ios-simulator.abi.json -> GetStarted.abi.json
+[InkOS] Copy x86_64-apple-ios-simulator.swiftsourceinfo -> GetStarted.swiftsourceinfo
+[InkOS] Compiling DocumentHandle.swift
+[InkOS] Compiling Logging.swift
+[InkOS] Compiling AppRootView.swift
+[InkOS] Compiling SmartGuideViewController.mm
+[InkOS] Compiling SmartGuideViewController.mm
+[InkOS] Compiling ImagePainter.swift
+[InkOS] Compiling EditorViewController.swift
+[InkOS] Compiling me.andy.allen.Trivial.c
+[InkOS] Compiling me.andy.allen.Trivial.c
+[InkOS] Compiling DocumentHandle.swift
+[InkOS] Compiling InkOSApp.swift
+[InkOS] Compiling EditorViewModel.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-notebook-view/InkOS/Frameworks/IInkUIReferenceImplementation/Editor/EditorViewModel.swift:283:28: 'init(contentsOfFile:)' was deprecated in iOS 18: Use `init(contentsOfFile:encoding:)` instead
+      let cssString = try? String(contentsOfFile: path).trimmingCharacters(
+                           ^
+[InkOS] Compiling EditorModel.swift
+[InkOS] Linking InkOS.debug.dylib
+[!] ld: ignoring duplicate libraries: '-lc++'
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.tQ8HdN/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Linking InkOS.debug.dylib
+[!] ld: ignoring duplicate libraries: '-lc++'
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.tQ8HdN/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+note: Using stub executor library with Swift entry point. (in target 'InkOS' from project 'InkOS')
+note: Using stub executor library with Swift entry point. (in target 'InkOS' from project 'InkOS')
+[InkOS] Create Universal Binary InkOS.debug.dylib
+[InkOS] Linking InkOS
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.tQ8HdN/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Linking InkOS
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.tQ8HdN/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Create Universal Binary InkOS
+[InkOS] Running script Copy Recognition Assets
+[InkOS] Extract App Intents Metadata
+[InkOS] Processing Info.plist
+Build Succeeded

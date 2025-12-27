@@ -1,4 +1,6 @@
 #!/bin/bash
+set -euo pipefail
+
 # Navigate to the project root
 cd "$(dirname "$0")/.."
 
@@ -7,10 +9,41 @@ rm -f ./Logs/build_logs.txt
 
 echo "🔨 Compiling InkOS (No Tests)..."
 
-xcodebuild build \
-  -workspace InkOS.xcworkspace \
-  -scheme InkOS \
-  -destination 'platform=iOS,id=00008140-000A789E1EA1801C' \
-  -allowProvisioningUpdates \
-  COMPILER_INDEX_STORE_ENABLE=NO \
-  | xcbeautify --disable-colored-output | tee ./Logs/build_logs.txt
+DESTINATION="generic/platform=iOS Simulator"
+DERIVED_DATA_PATH="./Logs/DerivedData"
+CONFIGURATION="Debug"
+SYMROOT_PATH="./build"
+OBJROOT_PATH="./build/Intermediates.noindex"
+
+COMMON_BUILD_ARGS=(
+  -configuration "$CONFIGURATION"
+  -destination "$DESTINATION"
+  -derivedDataPath "$DERIVED_DATA_PATH"
+  -allowProvisioningUpdates
+  COMPILER_INDEX_STORE_ENABLE=NO
+  CODE_SIGNING_ALLOWED=NO
+  SYMROOT="$SYMROOT_PATH"
+  OBJROOT="$OBJROOT_PATH"
+)
+
+run_build() {
+  xcodebuild "$@" | xcbeautify --disable-colored-output | tee -a ./Logs/build_logs.txt
+}
+
+if xcodebuild -list -workspace InkOS.xcworkspace >/dev/null 2>&1; then
+  run_build build \
+    -workspace InkOS.xcworkspace \
+    -scheme InkOS \
+    "${COMMON_BUILD_ARGS[@]}"
+else
+  echo "⚠️  Workspace unavailable, building Pods and app projects directly." \
+    | tee -a ./Logs/build_logs.txt
+  run_build build \
+    -project Pods/Pods.xcodeproj \
+    -scheme Pods-InkOS \
+    "${COMMON_BUILD_ARGS[@]}"
+  run_build build \
+    -project InkOS.xcodeproj \
+    -scheme InkOS \
+    "${COMMON_BUILD_ARGS[@]}"
+fi

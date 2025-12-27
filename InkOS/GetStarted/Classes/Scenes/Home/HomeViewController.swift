@@ -25,6 +25,12 @@ class HomeViewController: UIViewController {
   private var toolPaletteView: ToolPaletteView?
   // Stores the editing toolbar anchored to the bottom right.
   private var editingToolbarView: EditingToolbarView?
+  // Tracks the current visibility state of the editing toolbar.
+  private var isEditingToolbarVisible = true
+  // Tracks whether touch mode is active for tap-to-dismiss behavior.
+  private var isTouchModeEnabled = false
+  // Stores the tap gesture that dismisses the tool palette.
+  private var outsideTapRecognizer: UITapGestureRecognizer?
 
   // MARK: - Life cycle
 
@@ -33,6 +39,7 @@ class HomeViewController: UIViewController {
     self.configureNavigationItems()
     self.configureToolPalette()
     self.configureEditingToolbar()
+    self.configureTapToDismissPalette()
     self.bindViewModel()
     guard let documentHandle = documentHandle else {
       self.viewModel.presentMissingNotebookError()
@@ -109,6 +116,7 @@ class HomeViewController: UIViewController {
 
   @IBAction func inputTypeSegmentedControlValueChanged(_ sender: UISegmentedControl) {
     guard let inputMode = InputMode(rawValue: sender.selectedSegmentIndex) else { return }
+    isTouchModeEnabled = inputMode == .forceTouch
     self.viewModel.updateInputMode(newInputMode: inputMode)
   }
 
@@ -138,6 +146,7 @@ class HomeViewController: UIViewController {
       action: #selector(inputTypeSegmentedControlValueChanged(_:)),
       for: .valueChanged
     )
+    isTouchModeEnabled = false
     let titleAttributes: [NSAttributedString.Key: Any] = [
       .foregroundColor: offBlack
     ]
@@ -181,15 +190,22 @@ class HomeViewController: UIViewController {
     paletteView.colorSelectionChanged = { [weak self] tool, hex in
       self?.viewModel.updateInkColor(hex: hex, for: tool)
     }
+    paletteView.expansionChanged = { [weak self] isExpanded in
+      self?.setEditingToolbarVisible(isExpanded == false, animated: true)
+    }
     view.addSubview(paletteView)
 
     paletteView.leadingAnchor.constraint(
       equalTo: view.safeAreaLayoutGuide.leadingAnchor,
       constant: 20
     ).isActive = true
+    paletteView.trailingAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.trailingAnchor,
+      constant: -20
+    ).isActive = true
     paletteView.bottomAnchor.constraint(
       equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-      constant: -4
+      constant: -8
     ).isActive = true
     toolPaletteView = paletteView
   }
@@ -220,6 +236,67 @@ class HomeViewController: UIViewController {
     editingToolbarView = toolbarView
   }
 
+  // Shows or hides the editing toolbar while keeping its layout constraints intact.
+  private func setEditingToolbarVisible(_ visible: Bool, animated: Bool) {
+    guard let toolbarView = editingToolbarView else {
+      return
+    }
+    guard visible != isEditingToolbarVisible else {
+      return
+    }
+    isEditingToolbarVisible = visible
+    let offset = max(toolbarView.bounds.height, 36) + 12
+    if visible {
+      toolbarView.isHidden = false
+      toolbarView.alpha = 0
+      toolbarView.transform = CGAffineTransform(translationX: 0, y: offset)
+    }
+
+    let animations = {
+      toolbarView.alpha = visible ? 1 : 0
+      toolbarView.transform = visible ? .identity : CGAffineTransform(translationX: 0, y: offset)
+    }
+
+    let completion: (Bool) -> Void = { _ in
+      if visible == false {
+        toolbarView.isHidden = true
+      }
+    }
+
+    if animated {
+      UIView.animate(
+        withDuration: 0.22,
+        delay: 0,
+        options: [.curveEaseInOut],
+        animations: animations,
+        completion: completion
+      )
+    } else {
+      animations()
+      completion(true)
+    }
+  }
+
+  // Adds a tap gesture that dismisses the tool palette in touch mode.
+  private func configureTapToDismissPalette() {
+    let recognizer = UITapGestureRecognizer(target: self, action: #selector(handleOutsideTap(_:)))
+    recognizer.cancelsTouchesInView = false
+    recognizer.delegate = self
+    view.addGestureRecognizer(recognizer)
+    outsideTapRecognizer = recognizer
+  }
+
+  // Handles taps outside the tool palette when touch mode is enabled.
+  @objc private func handleOutsideTap(_ recognizer: UITapGestureRecognizer) {
+    guard isTouchModeEnabled else {
+      return
+    }
+    guard let toolPaletteView = toolPaletteView, toolPaletteView.isExpanded else {
+      return
+    }
+    toolPaletteView.setToolbarVisible(false, animated: true)
+  }
+
   @objc private func backButtonTapped() {
     self.viewModel.releaseEditor()
     self.dismiss(animated: true)
@@ -231,5 +308,25 @@ class HomeViewController: UIViewController {
 
   func configure(documentHandle: DocumentHandle) {
     self.documentHandle = documentHandle
+  }
+}
+
+extension HomeViewController: UIGestureRecognizerDelegate {
+
+  // Allows the tap recognizer only when the palette is open and the touch is outside it.
+  func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch)
+    -> Bool
+  {
+    guard isTouchModeEnabled else {
+      return false
+    }
+    guard let toolPaletteView = toolPaletteView, toolPaletteView.isExpanded else {
+      return false
+    }
+    let location = touch.location(in: view)
+    if toolPaletteView.containsInteraction(at: location, in: view) {
+      return false
+    }
+    return true
   }
 }
