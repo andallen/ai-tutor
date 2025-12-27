@@ -25,7 +25,7 @@ struct DashboardView: View {
   @Namespace private var animation
 
   var body: some View {
-    ZStack {
+    ZStack(alignment: .topLeading) {
       BackgroundWhite()
         .ignoresSafeArea()
 
@@ -39,11 +39,21 @@ struct DashboardView: View {
 
         Spacer(minLength: 0)
       }
+
+      // Shows the title as a separate overlay above the transparent navigation bar.
+      Text("Notes")
+        .font(.system(size: 32, weight: .semibold))
+        .foregroundStyle(Color.offBlack)
+        .accessibilityAddTraits(.isHeader)
+        .padding(.leading, 16)
+        .padding(.top, 8)
+        .offset(y: -60)
+        .allowsHitTesting(false)
     }
     .fontDesign(.rounded)
-    .navigationTitle("Notes")
-    .navigationBarTitleDisplayMode(.large)
+    .navigationBarTitleDisplayMode(.inline)
     .toolbar {
+      // Adds a new notebook from the trailing navigation bar button.
       ToolbarItem(placement: .navigationBarTrailing) {
         Button {
           Task {
