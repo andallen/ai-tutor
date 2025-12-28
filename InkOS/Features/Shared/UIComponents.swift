@@ -66,3 +66,76 @@ extension Color {
   static let inkSubtle = Color.black.opacity(0.62)
   static let inkFaint = Color.black.opacity(0.40)
 }
+
+// Rounded rectangle with individually rounded corners.
+struct RoundedCornerShape: Shape {
+  struct Corner: OptionSet {
+    let rawValue: Int
+
+    static let topLeft = Corner(rawValue: 1 << 0)
+    static let topRight = Corner(rawValue: 1 << 1)
+    static let bottomLeft = Corner(rawValue: 1 << 2)
+    static let bottomRight = Corner(rawValue: 1 << 3)
+  }
+
+  var radius: CGFloat
+  let corners: Corner
+
+  var animatableData: CGFloat {
+    get { radius }
+    set { radius = newValue }
+  }
+
+  func path(in rect: CGRect) -> SwiftUI.Path {
+    let clampedRadius = min(radius, min(rect.width, rect.height) * 0.5)
+    let topLeft = corners.contains(.topLeft) ? clampedRadius : 0
+    let topRight = corners.contains(.topRight) ? clampedRadius : 0
+    let bottomLeft = corners.contains(.bottomLeft) ? clampedRadius : 0
+    let bottomRight = corners.contains(.bottomRight) ? clampedRadius : 0
+
+    var path = SwiftUI.Path()
+    path.move(to: CGPoint(x: rect.minX + topLeft, y: rect.minY))
+    path.addLine(to: CGPoint(x: rect.maxX - topRight, y: rect.minY))
+    if topRight > 0 {
+      path.addArc(
+        center: CGPoint(x: rect.maxX - topRight, y: rect.minY + topRight),
+        radius: topRight,
+        startAngle: .degrees(-90),
+        endAngle: .degrees(0),
+        clockwise: false
+      )
+    }
+    path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - bottomRight))
+    if bottomRight > 0 {
+      path.addArc(
+        center: CGPoint(x: rect.maxX - bottomRight, y: rect.maxY - bottomRight),
+        radius: bottomRight,
+        startAngle: .degrees(0),
+        endAngle: .degrees(90),
+        clockwise: false
+      )
+    }
+    path.addLine(to: CGPoint(x: rect.minX + bottomLeft, y: rect.maxY))
+    if bottomLeft > 0 {
+      path.addArc(
+        center: CGPoint(x: rect.minX + bottomLeft, y: rect.maxY - bottomLeft),
+        radius: bottomLeft,
+        startAngle: .degrees(90),
+        endAngle: .degrees(180),
+        clockwise: false
+      )
+    }
+    path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + topLeft))
+    if topLeft > 0 {
+      path.addArc(
+        center: CGPoint(x: rect.minX + topLeft, y: rect.minY + topLeft),
+        radius: topLeft,
+        startAngle: .degrees(180),
+        endAngle: .degrees(270),
+        clockwise: false
+      )
+    }
+    path.closeSubpath()
+    return path
+  }
+}

@@ -26,6 +26,9 @@ struct Manifest: Codable, @unchecked Sendable {
   // Timestamp when the notebook was last modified.
   var modifiedAt: Date
 
+  // Timestamp when the notebook was last accessed.
+  var lastAccessedAt: Date?
+
   // Creates a new Manifest with the given notebook ID and display name.
   // Sets version and records creation timestamp.
   init(notebookID: String, displayName: String) {
@@ -35,6 +38,7 @@ struct Manifest: Codable, @unchecked Sendable {
     let now = Date()
     self.createdAt = now
     self.modifiedAt = now
+    self.lastAccessedAt = now
   }
 }
 
@@ -46,6 +50,7 @@ extension Manifest {
     case version
     case createdAt
     case modifiedAt
+    case lastAccessedAt
   }
 
   init(from decoder: any Decoder) throws {
@@ -55,6 +60,7 @@ extension Manifest {
     self.version = try container.decode(Int.self, forKey: .version)
     self.createdAt = try container.decode(Date.self, forKey: .createdAt)
     self.modifiedAt = try container.decode(Date.self, forKey: .modifiedAt)
+    self.lastAccessedAt = try container.decodeIfPresent(Date.self, forKey: .lastAccessedAt)
   }
 
   func encode(to encoder: any Encoder) throws {
@@ -64,5 +70,6 @@ extension Manifest {
     try container.encode(version, forKey: .version)
     try container.encode(createdAt, forKey: .createdAt)
     try container.encode(modifiedAt, forKey: .modifiedAt)
+    try container.encodeIfPresent(lastAccessedAt, forKey: .lastAccessedAt)
   }
 }
