@@ -399,10 +399,10 @@ private struct NotebookTitleBand: View {
           LinearGradient(
             stops: [
               .init(color: Color.white.opacity(1.0), location: 0.0),
-              .init(color: Color.white.opacity(1.0), location: 0.25),
-              .init(color: Color.white.opacity(0.7), location: 0.42),
-              .init(color: Color.white.opacity(0.35), location: 0.55),
-              .init(color: Color.white.opacity(0.0), location: 0.7),
+              .init(color: Color.white.opacity(1.0), location: 0.28),
+              .init(color: Color.white.opacity(0.2), location: 0.3),
+              // .init(color: Color.white.opacity(0.0), location: 0.45),
+              // .init(color: Color.white.opacity(0.0), location: 0.7),
             ],
             startPoint: .bottom,
             endPoint: .top
