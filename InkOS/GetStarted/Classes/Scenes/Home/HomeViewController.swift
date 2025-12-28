@@ -190,6 +190,9 @@ class HomeViewController: UIViewController {
     paletteView.colorSelectionChanged = { [weak self] tool, hex in
       self?.viewModel.updateInkColor(hex: hex, for: tool)
     }
+    paletteView.thicknessChanged = { [weak self] tool, width in
+      self?.viewModel.updateInkWidth(width: width, for: tool)
+    }
     paletteView.expansionChanged = { [weak self] isExpanded in
       self?.setEditingToolbarVisible(isExpanded == false, animated: true)
     }

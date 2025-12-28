@@ -2,6 +2,7 @@
 
 import Combine
 import Foundation
+import UIKit
 
 /// This class is the ViewModel of the HomeViewController. It handles all its business logic.
 
@@ -29,6 +30,10 @@ class HomeViewModel {
   private var selectedPenColorHex = "#000000"
   // Tracks the selected highlighter color so it can be applied when the editor is ready.
   private var selectedHighlighterColorHex = "#FFF176"
+  // Tracks the selected pen width so it can be applied when the editor is ready.
+  private var selectedPenWidth: CGFloat = 0.65
+  // Tracks the selected highlighter width so it can be applied when the editor is ready.
+  private var selectedHighlighterWidth: CGFloat = 5.0
   // Tracks the selected tool so it can be re-applied when the editor is available.
   private var selectedTool: ToolPaletteView.ToolSelection = .pen
   // Tracks the active input mode so touch tools can follow the toggle state.
@@ -159,24 +164,74 @@ class HomeViewModel {
     switch tool {
     case .pen:
       selectedPenColorHex = hex
-      applyInkColor(hex: hex, tool: .toolPen)
+      applyInkStyle(colorHex: hex, width: selectedPenWidth, tool: .toolPen)
     case .highlighter:
       selectedHighlighterColorHex = hex
-      applyInkColor(hex: hex, tool: .toolHighlighter)
+      applyInkStyle(colorHex: hex, width: selectedHighlighterWidth, tool: .toolHighlighter)
     case .eraser:
       break
     }
   }
 
-  // Applies the selected ink color to the requested tool.
-  private func applyInkColor(hex: String, tool: IINKPointerTool) {
+  // Updates the selected thickness for the requested tool.
+  func updateInkWidth(width: CGFloat, for tool: ToolPaletteView.ToolSelection) {
+    switch tool {
+    case .pen:
+      selectedPenWidth = width
+      applyInkStyle(colorHex: selectedPenColorHex, width: width, tool: .toolPen)
+    case .highlighter:
+      selectedHighlighterWidth = width
+      applyInkStyle(colorHex: selectedHighlighterColorHex, width: width, tool: .toolHighlighter)
+    case .eraser:
+      break
+    }
+  }
+
+  // Applies the selected ink style to the requested tool.
+  private func applyInkStyle(colorHex: String, width: CGFloat, tool: IINKPointerTool) {
     guard let editor = editor else {
       return
     }
+    let styleString = String(format: "color:%@;-myscript-pen-width:%.3f", colorHex, width)
     do {
-      try editor.toolController.set(style: "color:\(hex)", forTool: tool)
+      try editor.toolController.set(style: styleString, forTool: tool)
     } catch {
-      appLog("❌ HomeViewModel.applyInkColor failed color=\(hex) tool=\(tool) error=\(error)")
+      appLog(
+        "❌ HomeViewModel.applyInkStyle failed color=\(colorHex) width=\(width) tool=\(tool) error=\(error)"
+      )
+    }
+  }
+
+  // Applies the eraser radius across supported part types.
+  private func applyEraserRadius(width: CGFloat) {
+    guard let editor = editor else {
+      return
+    }
+    let configuration = editor.configuration
+    do {
+      // Shows the eraser halo and keeps the radius consistent across strokes.
+      try configuration.set(boolean: true, forKey: "raw-content.eraser.show")
+      try configuration.set(boolean: false, forKey: "raw-content.eraser.dynamic-radius")
+      try configuration.set(boolean: true, forKey: "raw-content.eraser.erase-precisely")
+      try configuration.set(number: width, forKey: "raw-content.eraser.radius")
+      try configuration.set(boolean: true, forKey: "text.eraser.show")
+      try configuration.set(boolean: false, forKey: "text.eraser.dynamic-radius")
+      try configuration.set(boolean: true, forKey: "text.eraser.erase-precisely")
+      try configuration.set(number: width, forKey: "text.eraser.radius")
+      try configuration.set(boolean: true, forKey: "math.eraser.show")
+      try configuration.set(boolean: false, forKey: "math.eraser.dynamic-radius")
+      try configuration.set(boolean: true, forKey: "math.eraser.erase-precisely")
+      try configuration.set(number: width, forKey: "math.eraser.radius")
+      try configuration.set(boolean: true, forKey: "diagram.eraser.show")
+      try configuration.set(boolean: false, forKey: "diagram.eraser.dynamic-radius")
+      try configuration.set(boolean: true, forKey: "diagram.eraser.erase-precisely")
+      try configuration.set(number: width, forKey: "diagram.eraser.radius")
+      try configuration.set(boolean: true, forKey: "text-document.eraser.show")
+      try configuration.set(boolean: false, forKey: "text-document.eraser.dynamic-radius")
+      try configuration.set(boolean: true, forKey: "text-document.eraser.erase-precisely")
+      try configuration.set(number: width, forKey: "text-document.eraser.radius")
+    } catch {
+      appLog("❌ HomeViewModel.applyEraserRadius failed width=\(width) error=\(error)")
     }
   }
 
@@ -291,8 +346,12 @@ extension HomeViewModel: EditorDelegate {
   func didCreateEditor(editor: IINKEditor) {
     self.editor = editor
     applyTool(selection: selectedTool, editor: editor)
-    applyInkColor(hex: selectedPenColorHex, tool: .toolPen)
-    applyInkColor(hex: selectedHighlighterColorHex, tool: .toolHighlighter)
+    applyInkStyle(colorHex: selectedPenColorHex, width: selectedPenWidth, tool: .toolPen)
+    applyInkStyle(
+      colorHex: selectedHighlighterColorHex,
+      width: selectedHighlighterWidth,
+      tool: .toolHighlighter
+    )
     self.loadNotebookPartIfReady()
   }
 
