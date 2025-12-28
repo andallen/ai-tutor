@@ -11,6 +11,8 @@ class EditorViewController: UIViewController {
   //MARK: - Properties
 
   private var panGestureRecognizer: UIPanGestureRecognizer?
+  // Detects touch-down to stop inertial scrolling immediately.
+  private var touchDownGestureRecognizer: UILongPressGestureRecognizer?
   private var viewModel: EditorViewModel
   private var containerView: UIView = UIView(frame: CGRect.zero)
   private var cancellables: Set<AnyCancellable> = []
@@ -35,6 +37,15 @@ class EditorViewController: UIViewController {
       panGestureRecognizer.delegate = self
       panGestureRecognizer.allowedTouchTypes = [NSNumber(value: UITouch.TouchType.direct.rawValue)]
     }
+    let touchDownGestureRecognizer = UILongPressGestureRecognizer(
+      target: self, action: #selector(touchDownGestureRecognizerAction(_:)))
+    touchDownGestureRecognizer.minimumPressDuration = 0
+    touchDownGestureRecognizer.cancelsTouchesInView = false
+    touchDownGestureRecognizer.delegate = self
+    touchDownGestureRecognizer.allowedTouchTypes = [
+      NSNumber(value: UITouch.TouchType.direct.rawValue)
+    ]
+    self.touchDownGestureRecognizer = touchDownGestureRecognizer
     self.bindViewModel()
     self.viewModel.setupModel(with: panGestureRecognizer)
     self.viewModel.configureEditorUI(with: self.view.bounds.size)
@@ -75,6 +86,11 @@ class EditorViewController: UIViewController {
       self.view.addSubview(inputView)
       inputView.translatesAutoresizingMaskIntoConstraints = false
       inputView.backgroundColor = UIColor.clear
+      if let touchDownGestureRecognizer = self.touchDownGestureRecognizer,
+        inputView.gestureRecognizers?.contains(touchDownGestureRecognizer) == false
+      {
+        inputView.addGestureRecognizer(touchDownGestureRecognizer)
+      }
     }
     if let displayViewController = model.displayViewController {
       self.inject(viewController: displayViewController, in: self.containerView)
@@ -148,7 +164,21 @@ extension EditorViewController: UIGestureRecognizerDelegate {
       with: translation, velocity: velocity, state: state)
   }
 
+  @objc private func touchDownGestureRecognizerAction(_ gestureRecognizer: UILongPressGestureRecognizer) {
+    guard gestureRecognizer.state == .began else {
+      return
+    }
+    self.viewModel.stopInertialScroll()
+  }
+
   func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
     return self.viewModel.inputMode != .forcePen && self.viewModel.editor?.isScrollAllowed ?? false
+  }
+
+  func gestureRecognizer(
+    _ gestureRecognizer: UIGestureRecognizer,
+    shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+  ) -> Bool {
+    return true
   }
 }
