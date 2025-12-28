@@ -12,8 +12,6 @@ echo "🔨 Compiling InkOS (No Tests)..."
 DESTINATION="generic/platform=iOS Simulator"
 DERIVED_DATA_PATH="./Logs/DerivedData"
 CONFIGURATION="Debug"
-SYMROOT_PATH="./build"
-OBJROOT_PATH="./build/Intermediates.noindex"
 
 COMMON_BUILD_ARGS=(
   -configuration "$CONFIGURATION"
@@ -22,8 +20,6 @@ COMMON_BUILD_ARGS=(
   -allowProvisioningUpdates
   COMPILER_INDEX_STORE_ENABLE=NO
   CODE_SIGNING_ALLOWED=NO
-  SYMROOT="$SYMROOT_PATH"
-  OBJROOT="$OBJROOT_PATH"
 )
 
 run_build() {
