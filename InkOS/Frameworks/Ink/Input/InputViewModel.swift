@@ -32,14 +32,16 @@ private class EditorDelegateTrampoline: NSObject, IINKEditorDelegate {
   }
 }
 
-/// This class is the ViewModel of the EditorViewController. It handles all its business logic.
+/// This class is the ViewModel of the InputViewController. It handles all its business logic.
 
-class EditorViewModel {
+class InputViewModel {
 
   //MARK: - Reactive Properties
 
   @Published var inputMode: InputMode = .forcePen
-  @Published var model: EditorModel?
+  @Published var displayViewController: DisplayViewController?
+  @Published var smartGuideViewController: SmartGuideViewController?
+  @Published var neboInputView: InputView?
 
   //MARK: - Properties
 
@@ -78,27 +80,25 @@ class EditorViewModel {
   }
 
   func setupModel(with panGesture: UIPanGestureRecognizer?) {
-    let model = EditorModel()
     let displayViewModel = DisplayViewModel()
     self.initEditor(with: displayViewModel)
-    model.displayViewController = DisplayViewController(viewModel: displayViewModel)
+    self.displayViewController = DisplayViewController(viewModel: displayViewModel)
     if self.smartGuideDisabled == false {
-      model.smartGuideViewController = SmartGuideViewController()
-      model.smartGuideViewController?.editor = self.editor
-      model.smartGuideViewController?.delegate = self.smartGuideDelegate
+      self.smartGuideViewController = SmartGuideViewController()
+      self.smartGuideViewController?.editor = self.editor
+      self.smartGuideViewController?.delegate = self.smartGuideDelegate
     }
-    model.neboInputView = InputView(frame: CGRect.zero)
-    model.neboInputView?.inputMode = self.inputMode
-    model.neboInputView?.editor = self.editor
+    self.neboInputView = InputView(frame: CGRect.zero)
+    self.neboInputView?.inputMode = self.inputMode
+    self.neboInputView?.editor = self.editor
     if let panGesture = panGesture {
-      model.neboInputView?.addGestureRecognizer(panGesture)
+      self.neboInputView?.addGestureRecognizer(panGesture)
     }
-    self.model = model
   }
 
   func updateInputMode(newInputMode: InputMode) {
     self.inputMode = newInputMode
-    self.model?.neboInputView?.inputMode = inputMode
+    self.neboInputView?.inputMode = inputMode
   }
 
   func configureEditorUI(with viewSize: CGSize) {
@@ -121,10 +121,9 @@ class EditorViewModel {
 
   func initModelViewConstraints(view: UIView, containerView: UIView) {
     guard self.didSetConstraints == false,
-      let model = self.model,
-      let displayViewController = model.displayViewController,
+      let displayViewController = self.displayViewController,
       let displayViewControllerView = displayViewController.view,
-      let inputView = model.neboInputView
+      let inputView = self.neboInputView
     else {
       return
     }
@@ -215,7 +214,7 @@ class EditorViewModel {
       try toolController?.set(tool: tool, forType: .pen)
     } catch {
       appLog(
-        "❌ EditorViewModel.setPointerTool failed tool=\(tool) error=\(error.localizedDescription)")
+        "❌ InputViewModel.setPointerTool failed tool=\(tool) error=\(error.localizedDescription)")
     }
   }
 

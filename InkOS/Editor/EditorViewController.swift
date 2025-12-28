@@ -5,19 +5,17 @@ import Foundation
 import UIKit
 
 /// This is the Main ViewController of the project.
-/// It Encapsulates the EditorViewController, and permits editing actions (such as undo/redo)
+/// It Encapsulates the InputViewController, and permits editing actions (such as undo/redo)
 
-class HomeViewController: UIViewController {
-
-  // MARK: Outlets
-
-  @IBOutlet private weak var editorContainerView: UIView!
+class EditorViewController: UIViewController {
 
   // MARK: Properties
 
+  private var editorContainerView: UIView!
+
   private var inputTypeSegmentedControl: UISegmentedControl?
-  private var viewModel: HomeViewModel = HomeViewModel()
-  private var editorViewController: EditorViewController?
+  private var viewModel: EditorViewModel = EditorViewModel()
+  private var editorViewController: InputViewController?
   private var cancellables: Set<AnyCancellable> = []
   private var documentHandle: DocumentHandle?
   private let offBlack: UIColor = UIColor(red: 0.20, green: 0.20, blue: 0.20, alpha: 1.0)
@@ -35,6 +33,16 @@ class HomeViewController: UIViewController {
   private var outsideTapRecognizer: UITapGestureRecognizer?
 
   // MARK: - Life cycle
+
+  override func loadView() {
+    super.loadView()
+    // Creates the editor container view programmatically.
+    let containerView = UIView(frame: UIScreen.main.bounds)
+    containerView.backgroundColor = UIColor.white
+    containerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    self.view.addSubview(containerView)
+    self.editorContainerView = containerView
+  }
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -77,8 +85,8 @@ class HomeViewController: UIViewController {
   // MARK: - Data Binding
 
   private func bindViewModel() {
-    self.viewModel.$model.sink { [weak self] model in
-      if let model = model, let editorViewController = model.editorViewController {
+    self.viewModel.$editorViewController.sink { [weak self] editorViewController in
+      if let editorViewController = editorViewController {
         self?.injectEditor(editor: editorViewController)
       }
     }.store(in: &cancellables)
@@ -90,7 +98,7 @@ class HomeViewController: UIViewController {
 
   // MARK: - EditorViewController UI config
 
-  private func injectEditor(editor: EditorViewController) {
+  private func injectEditor(editor: InputViewController) {
     self.editorViewController = editor
     self.addChild(editor)
     self.editorContainerView.addSubview(editor.view)
@@ -103,21 +111,9 @@ class HomeViewController: UIViewController {
     self.viewModel.setEditorViewSize(bounds: self.view.bounds)
   }
 
-  // MARK: - Outlets actions
+  // MARK: - Actions
 
-  @IBAction func clearButtonWasTouchedUpInside(_ sender: Any) {
-    self.viewModel.clear()
-  }
-
-  @IBAction func undoButtonWasTouchedUpInside(_ sender: Any) {
-    self.viewModel.undo()
-  }
-
-  @IBAction func redoButtonWasTouchedUpInside(_ sender: Any) {
-    self.viewModel.redo()
-  }
-
-  @IBAction func inputTypeSegmentedControlValueChanged(_ sender: UISegmentedControl) {
+  @objc private func inputTypeSegmentedControlValueChanged(_ sender: UISegmentedControl) {
     guard let inputMode = InputMode(rawValue: sender.selectedSegmentIndex) else { return }
     isTouchModeEnabled = inputMode == .forceTouch
     self.viewModel.updateInputMode(newInputMode: inputMode)
@@ -315,17 +311,17 @@ class HomeViewController: UIViewController {
   // Captures a preview and releases the editor once per exit.
   private func prepareForExit() {
     guard hasPreparedForExit == false else {
-      addLog("🧪 HomeViewController.prepareForExit skip alreadyPrepared")
+      addLog("🧪 EditorViewController.prepareForExit skip alreadyPrepared")
       return
     }
     hasPreparedForExit = true
     addLog(
-      "🧪 HomeViewController.prepareForExit start dismissed=\(isBeingDismissed) movingFromParent=\(isMovingFromParent)"
+      "🧪 EditorViewController.prepareForExit start dismissed=\(isBeingDismissed) movingFromParent=\(isMovingFromParent)"
     )
     let previewImage = editorViewController?.capturePreviewImage(
       maxPixelDimension: previewMaxPixelDimension)
     addLog(
-      "🧪 HomeViewController.prepareForExit capturedPreview=\(previewImage != nil)"
+      "🧪 EditorViewController.prepareForExit capturedPreview=\(previewImage != nil)"
     )
     viewModel.releaseEditor(previewImage: previewImage)
   }
@@ -335,7 +331,7 @@ class HomeViewController: UIViewController {
   }
 }
 
-extension HomeViewController: UIGestureRecognizerDelegate {
+extension EditorViewController: UIGestureRecognizerDelegate {
 
   // Allows the tap recognizer only when the palette is open and the touch is outside it.
   func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch)

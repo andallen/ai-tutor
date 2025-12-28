@@ -4,14 +4,15 @@ import Combine
 import Foundation
 import UIKit
 
-/// This class is the ViewModel of the HomeViewController. It handles all its business logic.
+/// This class is the ViewModel of the EditorViewController. It handles all its business logic.
 
 @MainActor
-class HomeViewModel {
+class EditorViewModel {
 
   // MARK: Published Properties
 
-  @Published var model: HomeModel?
+  @Published var editorViewController: InputViewController?
+  @Published var title: String? = ""
   @Published var alert: UIAlertController?
 
   // MARK: Properties
@@ -40,16 +41,14 @@ class HomeViewModel {
   private var inputMode: InputMode = .forcePen
 
   func setupModel(engineProvider: EngineProvider, documentHandle: DocumentHandle) {
-    let model = HomeModel()
     // We want the Pen mode for this GetStarted sample code. It lets the user use either its mouse or fingers to draw.
     // If you have got an iPad Pro with an Apple Pencil, please set this value to InputModeAuto for a better experience.
-    let editorViewModel: EditorViewModel = EditorViewModel(
+    let inputViewModel: InputViewModel = InputViewModel(
       engine: engineProvider.engine, inputMode: .forcePen, editorDelegate: self,
       smartGuideDelegate: nil)
-    model.editorViewController = EditorViewController(viewModel: editorViewModel)
-    model.title = documentHandle.initialManifest.displayName
+    self.editorViewController = InputViewController(viewModel: inputViewModel)
+    self.title = documentHandle.initialManifest.displayName
     self.documentHandle = documentHandle
-    self.model = model
     self.loadNotebookPartIfReady()
   }
 
@@ -68,7 +67,7 @@ class HomeViewModel {
   }
 
   func setEditorViewSize(bounds: CGRect) {
-    self.model?.editorViewController?.view.frame = bounds
+    self.editorViewController?.view.frame = bounds
   }
 
   // MARK: Editor Business Logic
@@ -93,7 +92,7 @@ class HomeViewModel {
       try editor.set(part: part)
     } catch {
       createNonFatalAlert(title: "Error", message: error.localizedDescription)
-      appLog("❌ HomeViewModel.loadNotebookPart failed error=\(error)")
+      appLog("❌ EditorViewModel.loadNotebookPart failed error=\(error)")
     }
     isLoadingPart = false
   }
@@ -131,22 +130,22 @@ class HomeViewModel {
 
   // Switches the Notebook to pen mode.
   func selectPenTool() {
-    model?.editorViewController?.selectPenTool()
+    editorViewController?.selectPenTool()
   }
 
   // Switches the Notebook to eraser mode.
   func selectEraserTool() {
-    model?.editorViewController?.selectEraserTool()
+    editorViewController?.selectEraserTool()
   }
 
   // Switches the Notebook to highlighter mode.
   func selectHighlighterTool() {
-    model?.editorViewController?.selectHighlighterTool()
+    editorViewController?.selectHighlighterTool()
   }
 
   func updateInputMode(newInputMode: InputMode) {
     inputMode = newInputMode
-    self.model?.editorViewController?.updateInputMode(newInputMode: newInputMode)
+    self.editorViewController?.updateInputMode(newInputMode: newInputMode)
     applyToolSelectionIfPossible()
   }
 
@@ -197,7 +196,7 @@ class HomeViewModel {
       try editor.toolController.set(style: styleString, forTool: tool)
     } catch {
       appLog(
-        "❌ HomeViewModel.applyInkStyle failed color=\(colorHex) width=\(width) tool=\(tool) error=\(error)"
+        "❌ EditorViewModel.applyInkStyle failed color=\(colorHex) width=\(width) tool=\(tool) error=\(error)"
       )
     }
   }
@@ -231,7 +230,7 @@ class HomeViewModel {
       try configuration.set(boolean: true, forKey: "text-document.eraser.erase-precisely")
       try configuration.set(number: width, forKey: "text-document.eraser.radius")
     } catch {
-      appLog("❌ HomeViewModel.applyEraserRadius failed width=\(width) error=\(error)")
+      appLog("❌ EditorViewModel.applyEraserRadius failed width=\(width) error=\(error)")
     }
   }
 
@@ -242,7 +241,7 @@ class HomeViewModel {
       try editor.toolController.set(tool: tool, forType: .pen)
       try applyTouchTool(tool: tool, editor: editor)
     } catch {
-      appLog("❌ HomeViewModel.applyTool failed tool=\(tool) error=\(error)")
+      appLog("❌ EditorViewModel.applyTool failed tool=\(tool) error=\(error)")
     }
   }
 
@@ -253,14 +252,14 @@ class HomeViewModel {
     do {
       try self.editor?.set(part: nil)
     } catch {
-      appLog("❌ HomeViewModel.releaseEditor failed error=\(error.localizedDescription)")
+      appLog("❌ EditorViewModel.releaseEditor failed error=\(error.localizedDescription)")
     }
     let handle = documentHandle
     let previewData = previewImage?.pngData()
     let hasPreviewImage = previewImage != nil
     let previewBytes = previewData?.count ?? 0
     addLog(
-      "🧪 HomeViewModel.releaseEditor previewImage=\(hasPreviewImage) previewBytes=\(previewBytes)"
+      "🧪 EditorViewModel.releaseEditor previewImage=\(hasPreviewImage) previewBytes=\(previewBytes)"
     )
     documentHandle = nil
     Task { [weak self] in
@@ -272,7 +271,7 @@ class HomeViewModel {
           try await handle.savePreviewImageData(previewData)
           await MainActor.run {
             addLog(
-              "🧪 HomeViewModel.releaseEditor previewSaved notification notebookID=\(handle.notebookID)"
+              "🧪 EditorViewModel.releaseEditor previewSaved notification notebookID=\(handle.notebookID)"
             )
             NotificationCenter.default.post(
               name: .notebookPreviewUpdated,
@@ -280,10 +279,10 @@ class HomeViewModel {
             )
           }
         } catch {
-          addLog("🧪 HomeViewModel.releaseEditor previewSaveFailed error=\(error)")
+          addLog("🧪 EditorViewModel.releaseEditor previewSaveFailed error=\(error)")
         }
       } else {
-        addLog("🧪 HomeViewModel.releaseEditor previewSaveSkipped")
+        addLog("🧪 EditorViewModel.releaseEditor previewSaveSkipped")
       }
       do {
         try await handle.savePackage()
@@ -332,7 +331,7 @@ class HomeViewModel {
     }
     do {
       try await documentHandle.savePackageToTemp()
-      appLog("✅ HomeViewModel.performAutoSave saved temp")
+      appLog("✅ EditorViewModel.performAutoSave saved temp")
     } catch {
       presentSaveError(message: error.localizedDescription)
     }
@@ -349,7 +348,7 @@ class HomeViewModel {
       try await documentHandle.savePackage()
       hasPendingFullSave = false
       hasPresentedSaveError = false
-      appLog("✅ HomeViewModel.performFullSave saved full reason=\(reason)")
+      appLog("✅ EditorViewModel.performFullSave saved full reason=\(reason)")
     } catch {
       presentSaveError(message: error.localizedDescription)
     }
@@ -365,7 +364,7 @@ class HomeViewModel {
 
 }
 
-extension HomeViewModel: EditorDelegate {
+extension EditorViewModel: EditorDelegate {
 
   func didCreateEditor(editor: IINKEditor) {
     self.editor = editor
@@ -404,7 +403,7 @@ extension HomeViewModel: EditorDelegate {
       try applyTouchTool(tool: tool, editor: editor)
     } catch {
       appLog(
-        "❌ HomeViewModel.applyToolSelectionIfPossible failed selection=\(selectedTool) error=\(error)"
+        "❌ EditorViewModel.applyToolSelectionIfPossible failed selection=\(selectedTool) error=\(error)"
       )
     }
   }

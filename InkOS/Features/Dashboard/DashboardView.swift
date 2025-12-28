@@ -143,7 +143,7 @@ struct DashboardView: View {
         activeSession = nil
       },
       content: { session in
-        GetStartedHostView(documentHandle: session.handle)
+        EditorHostView(documentHandle: session.handle)
       }
     )
     .onReceive(NotificationCenter.default.publisher(for: .notebookPreviewUpdated)) { _ in

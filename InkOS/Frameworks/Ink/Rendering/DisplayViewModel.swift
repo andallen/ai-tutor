@@ -10,7 +10,7 @@ class DisplayViewModel: NSObject {
 
   //MARK: - Reactive Properties
 
-  @Published var model: DisplayModel?
+  @Published var renderView: RenderView?
 
   //MARK: - Properties
 
@@ -20,15 +20,15 @@ class DisplayViewModel: NSObject {
   private var didSetConstraints: Bool = false
 
   func setupModel() {
-    let model: DisplayModel = DisplayModel()
-    model.renderView.offscreenRenderSurfaces = offscreenRenderSurfaces
+    let renderView = RenderView(frame: CGRect.zero)
+    renderView.offscreenRenderSurfaces = offscreenRenderSurfaces
     if let renderer {
-      model.renderView.renderer = renderer
+      renderView.renderer = renderer
     }
     if let imageLoader {
-      model.renderView.imageLoader = imageLoader
+      renderView.imageLoader = imageLoader
     }
-    self.model = model
+    self.renderView = renderView
   }
 
   func setOffScreenRendererSurfacesScale(scale: CGFloat) {
@@ -36,9 +36,9 @@ class DisplayViewModel: NSObject {
   }
 
   func initModelViewConstraints(view: UIView) {
-    guard self.didSetConstraints == false, let model = self.model else { return }
+    guard self.didSetConstraints == false, let renderView = self.renderView else { return }
     self.didSetConstraints = true
-    let views: [String: RenderView] = ["renderView": model.renderView]
+    let views: [String: RenderView] = ["renderView": renderView]
     view.addConstraints(
       NSLayoutConstraint.constraints(
         withVisualFormat: "H:|[renderView]|", options: .alignAllLeft, metrics: nil, views: views))
@@ -48,7 +48,7 @@ class DisplayViewModel: NSObject {
   }
 
   func refreshDisplay() {
-    self.model?.renderView.setNeedsDisplay()
+    self.renderView?.setNeedsDisplay()
   }
 }
 
@@ -56,14 +56,14 @@ extension DisplayViewModel: IINKIRenderTarget {
 
   func invalidate(_ renderer: IINKRenderer, layers: IINKLayerType) {
     DispatchQueue.main.async { [weak self] in
-      self?.model?.renderView.setNeedsDisplay()
+      self?.renderView?.setNeedsDisplay()
     }
   }
 
   func invalidate(_ renderer: IINKRenderer, area: CGRect, layers: IINKLayerType) {
     DispatchQueue.main.async { [weak self] in
       // Force a full redraw to avoid live-capture striping artifacts.
-      self?.model?.renderView.setNeedsDisplay()
+      self?.renderView?.setNeedsDisplay()
     }
   }
 

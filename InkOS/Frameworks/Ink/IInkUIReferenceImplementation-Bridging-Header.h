@@ -3,5 +3,5 @@
 //
 
 #import <iink/IINK.h>
-#import <IInkUIReferenceImplementation/IInkUIReferenceImplementation.h>
+#import <Ink/SmartGuide/SmartGuideViewController.h>
 #import "MyCertificate.h"

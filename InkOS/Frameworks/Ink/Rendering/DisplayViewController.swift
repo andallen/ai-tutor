@@ -47,11 +47,6 @@ class DisplayViewController: UIViewController {
 
   //MARK: - UI settings
 
-  private func displayModel(model: DisplayModel) {
-    self.configureRenderView(renderView: model.renderView)
-    self.viewModel.refreshDisplay()
-  }
-
   private func configureRenderView(renderView: RenderView) {
     self.view.addSubview(renderView)
     renderView.translatesAutoresizingMaskIntoConstraints = false
@@ -82,9 +77,10 @@ class DisplayViewController: UIViewController {
   //MARK: - Data Binding
 
   private func bindViewModel() {
-    self.viewModel.$model.sink { [weak self] model in
-      if let model = model {
-        self?.displayModel(model: model)
+    self.viewModel.$renderView.sink { [weak self] renderView in
+      if let renderView = renderView, let self = self {
+        self.configureRenderView(renderView: renderView)
+        self.viewModel.refreshDisplay()
       }
     }.store(in: &cancellables)
   }

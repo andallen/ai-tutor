@@ -1,4 +1,5 @@
 ## Project Structure & Module Organization
+
 InkOS/
 ├── InkOS/                                # App source root
 │   ├── InkOSApp.swift                    # App Entry Point
@@ -6,7 +7,7 @@ InkOS/
 │   │
 │   ├── App/                              # High-level navigation & integration
 │   │   ├── AppRootView.swift             # Root view (Loading -> Dashboard)
-│   │   └── GetStartedHostView.swift      # SwiftUI bridge for the Editor (HomeViewController)
+│   │   └── EditorHostView.swift          # SwiftUI bridge for the Editor (EditorViewController)
 │   │
 │   ├── Features/                         # SwiftUI Feature Modules
 │   │   ├── Dashboard/                    # Notebook management UI
@@ -24,23 +25,37 @@ InkOS/
 │   │   ├── DocumentHandle.swift          # Safe handle for open notebook operations
 │   │   └── Manifest.swift                # JSON metadata structure
 │   │
-│   ├── GetStarted/                       # ACTIVE EDITOR IMPLEMENTATION (Core Logic)
-│   │   └── Classes/
-│   │       ├── Business/
-│   │       │   └── EngineProvider.swift  # Singleton managing IINKEngine lifecycle
-│   │       └── Scenes/
-│   │           └── Home/
-│   │               ├── HomeViewController.swift  # The main Editor Canvas UI
-│   │               ├── HomeViewModel.swift       # Editor state & tool logic
-│   │               ├── ToolPaletteView.swift     # Floating custom toolbar
-│   │               └── EditingToolbarView.swift  # Undo/Redo/Clear toolbar
+│   ├── Editor/                           # EDITOR IMPLEMENTATION (Core Logic)
+│   │   ├── EditorViewController.swift    # The main Editor Canvas UI
+│   │   ├── EditorViewModel.swift         # Editor state & tool logic
+│   │   ├── EngineProvider.swift          # Singleton managing IINKEngine lifecycle
+│   │   ├── ToolPaletteView.swift         # Floating custom toolbar
+│   │   ├── EditingToolbarView.swift      # Undo/Redo/Clear toolbar
+│   │   ├── ColorPaletteView.swift        # Color selection UI
+│   │   └── ThicknessSliderView.swift     # Brush thickness control
 │   │
 │   └── Frameworks/
-│       └── IInkUIReferenceImplementation/ # Low-level MyScript Wrappers
-│           ├── RenderView.swift           # Metal/GL rendering surface
-│           ├── EditorViewController.swift # Internal editor controller
-│           ├── InputView.swift            # Touch/Pen input capture
-│           └── SmartGuide/                # Text conversion guide UI
+│       └── Ink/                          # Low-level MyScript Wrappers
+│           ├── Input/                    # Touch/Pen input handling
+│           │   ├── InputViewController.swift
+│           │   └── InputViewModel.swift
+│           ├── Rendering/                # Display & rendering logic
+│           │   ├── DisplayViewController.swift
+│           │   └── DisplayViewModel.swift
+│           ├── SmartGuide/               # Text conversion guide UI
+│           │   ├── SmartGuideViewController.h
+│           │   └── SmartGuideViewController.mm
+│           ├── UIObjects/                # Core UI rendering components
+│           │   ├── Canvas.swift
+│           │   ├── InputView.swift
+│           │   ├── RenderView.swift
+│           │   └── OffscreenRenderSurfaces.swift
+│           └── Utils/                    # Utility helpers
+│               ├── FontMetricsProvider.swift
+│               ├── ImageLoader.swift
+│               ├── ImagePainter.swift
+│               ├── TextFormatHelper.swift
+│               └── [other utilities]
 │
 ├── MyScriptCertificate/                  # License Key
 │   ├── MyCertificate.h
