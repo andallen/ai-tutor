@@ -22,6 +22,8 @@ actor DocumentHandle {
 
   // Stores the manifest file name inside the notebook folder.
   private static let manifestFileName = "manifest.json"
+  // Stores the preview image file name inside the notebook folder.
+  private static let previewImageFileName = "preview.png"
 
   // Creates a handle and opens the iink package.
   // Opens on the main actor because the engine is used on the main actor in this project.
@@ -162,6 +164,22 @@ actor DocumentHandle {
     }
     self.package = nil
   }
+
+  // Saves a preview image for the notebook.
+  func savePreviewImageData(_ data: Data) throws {
+    let previewURL = bundleURL.appendingPathComponent(Self.previewImageFileName)
+    do {
+      try data.write(to: previewURL, options: [.atomic])
+      addLog(
+        "🧪 DocumentHandle.savePreviewImageData saved notebookID=\(notebookID) bytes=\(data.count) path=\(previewURL.lastPathComponent)"
+      )
+    } catch {
+      addLog(
+        "🧪 DocumentHandle.savePreviewImageData failed notebookID=\(notebookID) error=\(error)"
+      )
+      throw DocumentHandleError.previewSaveFailed(underlyingError: error)
+    }
+  }
 }
 
 // Represents errors for package access.
@@ -171,6 +189,7 @@ enum DocumentHandleError: LocalizedError {
   case packageNotAvailable
   case partCreationFailed(underlyingError: Error)
   case partLoadFailed(underlyingError: Error)
+  case previewSaveFailed(underlyingError: Error)
 
   var errorDescription: String? {
     switch self {
@@ -184,6 +203,8 @@ enum DocumentHandleError: LocalizedError {
       return "Failed to create a content part: \(underlyingError.localizedDescription)"
     case .partLoadFailed(let underlyingError):
       return "Failed to load a content part: \(underlyingError.localizedDescription)"
+    case .previewSaveFailed(let underlyingError):
+      return "Failed to save notebook preview: \(underlyingError.localizedDescription)"
     }
   }
 }

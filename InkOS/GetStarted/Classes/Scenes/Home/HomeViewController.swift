@@ -21,6 +21,8 @@ class HomeViewController: UIViewController {
   private var cancellables: Set<AnyCancellable> = []
   private var documentHandle: DocumentHandle?
   private let offBlack: UIColor = UIColor(red: 0.20, green: 0.20, blue: 0.20, alpha: 1.0)
+  private let previewMaxPixelDimension: CGFloat = 1200
+  private var hasPreparedForExit = false
   // Stores the floating tool palette attached to the canvas view.
   private var toolPaletteView: ToolPaletteView?
   // Stores the editing toolbar anchored to the bottom right.
@@ -60,7 +62,7 @@ class HomeViewController: UIViewController {
   override func viewWillDisappear(_ animated: Bool) {
     super.viewWillDisappear(animated)
     if self.isBeingDismissed || self.isMovingFromParent {
-      self.viewModel.releaseEditor()
+      prepareForExit()
     }
   }
 
@@ -89,6 +91,7 @@ class HomeViewController: UIViewController {
   // MARK: - EditorViewController UI config
 
   private func injectEditor(editor: EditorViewController) {
+    self.editorViewController = editor
     self.addChild(editor)
     self.editorContainerView.addSubview(editor.view)
     editor.view.frame = self.view.bounds
@@ -301,12 +304,30 @@ class HomeViewController: UIViewController {
   }
 
   @objc private func backButtonTapped() {
-    self.viewModel.releaseEditor()
+    prepareForExit()
     self.dismiss(animated: true)
   }
 
   @objc private func handleWillResignActive() {
     self.viewModel.handleAppBackground()
+  }
+
+  // Captures a preview and releases the editor once per exit.
+  private func prepareForExit() {
+    guard hasPreparedForExit == false else {
+      addLog("🧪 HomeViewController.prepareForExit skip alreadyPrepared")
+      return
+    }
+    hasPreparedForExit = true
+    addLog(
+      "🧪 HomeViewController.prepareForExit start dismissed=\(isBeingDismissed) movingFromParent=\(isMovingFromParent)"
+    )
+    let previewImage = editorViewController?.capturePreviewImage(
+      maxPixelDimension: previewMaxPixelDimension)
+    addLog(
+      "🧪 HomeViewController.prepareForExit capturedPreview=\(previewImage != nil)"
+    )
+    viewModel.releaseEditor(previewImage: previewImage)
   }
 
   func configure(documentHandle: DocumentHandle) {

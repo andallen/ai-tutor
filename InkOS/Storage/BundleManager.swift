@@ -9,6 +9,12 @@ struct NotebookMetadata: Identifiable, Sendable {
 
   // Display name shown to the user.
   let displayName: String
+
+  // Cached preview image data for the Notebook.
+  let previewImageData: Data?
+
+  // Timestamp when the notebook was last accessed.
+  let lastAccessedAt: Date?
 }
 
 // The Bundle Manager is the only code allowed to perform direct file operations on Bundles.
@@ -19,6 +25,8 @@ actor BundleManager {
 
   // The name of the MyScript iink package file inside each Bundle.
   private static let iinkFileName = "content.iink"
+  // The name of the preview image inside each Bundle.
+  private static let previewImageFileName = "preview.png"
 
   // Lists all existing Bundles in the Notebooks directory.
   // Returns an array of NotebookMetadata for each Bundle that has a valid Manifest.
@@ -58,8 +66,29 @@ actor BundleManager {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         let manifest = try decoder.decode(Manifest.self, from: data)
+        let previewURL = url.appendingPathComponent(Self.previewImageFileName)
+        let previewData: Data?
+        if fileManager.fileExists(atPath: previewURL.path) {
+          previewData = try? Data(contentsOf: previewURL)
+          let attributes = try? fileManager.attributesOfItem(atPath: previewURL.path)
+          let modifiedAt = attributes?[.modificationDate] as? Date
+          let previewBytes = previewData?.count ?? 0
+          addLog(
+            "🧪 BundleManager.listBundles previewFile notebookID=\(manifest.notebookID) bytes=\(previewBytes) modifiedAt=\(modifiedAt?.description ?? "nil")"
+          )
+        } else {
+          previewData = nil
+          addLog(
+            "🧪 BundleManager.listBundles previewFileMissing notebookID=\(manifest.notebookID)"
+          )
+        }
         notebooks.append(
-          NotebookMetadata(id: manifest.notebookID, displayName: manifest.displayName))
+          NotebookMetadata(
+            id: manifest.notebookID,
+            displayName: manifest.displayName,
+            previewImageData: previewData,
+            lastAccessedAt: manifest.lastAccessedAt ?? manifest.modifiedAt
+          ))
       } catch {
         // Skip Bundles with invalid Manifests.
         continue
@@ -128,7 +157,12 @@ actor BundleManager {
     }
 
     appLog("✅ BundleManager.createBundle success notebookID=\(notebookID)")
-    return NotebookMetadata(id: notebookID, displayName: displayName)
+    return NotebookMetadata(
+      id: notebookID,
+      displayName: displayName,
+      previewImageData: nil,
+      lastAccessedAt: manifest.lastAccessedAt
+    )
   }
 
   // Renames a Notebook by updating the display name in its Manifest.
@@ -270,6 +304,17 @@ actor BundleManager {
       throw BundleError.invalidManifest(notebookID: notebookID, reason: "displayName is empty")
     }
 
+    // Updates the last accessed timestamp before opening.
+    var handleManifest = manifest
+    handleManifest.lastAccessedAt = Date()
+    do {
+      try writeManifest(handleManifest, to: manifestURL)
+    } catch {
+      // Logs the error but continues opening to avoid blocking access.
+      appLog("❌ BundleManager.openNotebook lastAccessedAt update failed notebookID=\(notebookID) error=\(error)")
+      handleManifest = manifest
+    }
+
     // Construct the path to the iink package.
     let packagePath =
       bundleURL
@@ -282,7 +327,7 @@ actor BundleManager {
     let handle = try await DocumentHandle(
       notebookID: notebookID,
       bundleURL: bundleURL,
-      manifest: manifest,
+      manifest: handleManifest,
       packagePath: packagePath,
       openOption: .existing
     )
