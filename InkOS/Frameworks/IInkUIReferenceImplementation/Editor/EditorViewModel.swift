@@ -263,6 +263,11 @@ class EditorViewModel {
     self.decelerationVelocity = 0
   }
 
+  // Stops inertial scrolling when the user touches down.
+  func stopInertialScroll() {
+    stopDeceleration()
+  }
+
   private func initEditor(with target: DisplayViewModel) {
     guard let engine = self.engine,
       let renderer = try? engine.createRenderer(
