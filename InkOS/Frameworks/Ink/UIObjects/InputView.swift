@@ -9,7 +9,8 @@ enum InputMode: Int {
   case auto
 }
 
-/// The InputView role is to capture all the touch events and follow them back to the editor so it can convert them to a stroke
+/// The InputView role is to capture all the touch events and follow them back to the editor
+/// so it can convert them to a stroke
 
 class InputView: UIView {
 
@@ -60,31 +61,29 @@ class InputView: UIView {
     return Float(force)
   }
 
-  private func pointerEvent(from touch: UITouch, eventType: IINKPointerEventType)
-    -> IINKPointerEvent
-  {
+  private func pointerEvent(
+    from touch: UITouch,
+    eventType: IINKPointerEventType
+  ) -> IINKPointerEvent {
     var pointerType: IINKPointerType = .pen
     switch self.inputMode {
     case .forcePen:
       pointerType = .pen
-      break
     case .forceTouch:
       pointerType = .touch
-      break
     default:
       pointerType = touch.type == .stylus ? .pen : .touch
-      break
     }
     var point: CGPoint = CGPoint.zero
-    var f: Float = 1.0
+    var force: Float = 1.0
     if touch.type == .stylus {
       point = touch.preciseLocation(in: self)
-      f = self.normalizeForce(from: touch)
+      force = self.normalizeForce(from: touch)
     } else {
       point = touch.location(in: self)
     }
-    let t: Int64 = Int64(1000 * (touch.timestamp + self.eventTimeOffset))
-    return IINKPointerEventMake(eventType, point, t, f, pointerType, 0)
+    let timestamp: Int64 = Int64(1000 * (touch.timestamp + self.eventTimeOffset))
+    return IINKPointerEventMake(eventType, point, timestamp, force, pointerType, 0)
   }
 
   func pointerDownEvent(from touch: UITouch) -> IINKPointerEvent {
@@ -102,13 +101,18 @@ class InputView: UIView {
   override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
     super.touchesBegan(touches, with: event)
     guard let touch: UITouch = touches.randomElement() else { return }
-    let e: IINKPointerEvent = self.pointerDownEvent(from: touch)
-    if e.pointerType == .pen {
+    let pointerEvent: IINKPointerEvent = self.pointerDownEvent(from: touch)
+    if pointerEvent.pointerType == .pen {
       self.touchesBegan = true
     }
-    let point = CGPoint(x: CGFloat(e.x), y: CGFloat(e.y))
-    let _ = try? self.editor?.pointerDown(
-      point: point, timestamp: e.t, force: e.f, type: e.pointerType, pointerId: Int(e.pointerId))
+    let point = CGPoint(x: CGFloat(pointerEvent.x), y: CGFloat(pointerEvent.y))
+    _ = try? self.editor?.pointerDown(
+      point: point,
+      timestamp: pointerEvent.t,
+      force: pointerEvent.f,
+      type: pointerEvent.pointerType,
+      pointerId: Int(pointerEvent.pointerId)
+    )
     self.cancelled = false
   }
 
@@ -130,11 +134,15 @@ class InputView: UIView {
         print(error)
       }
     } else {
-      let e: IINKPointerEvent = self.pointerMoveEvent(from: touch)
+      let pointerEvent: IINKPointerEvent = self.pointerMoveEvent(from: touch)
       do {
         try self.editor?.pointerMove(
-          point: CGPoint(x: CGFloat(e.x), y: CGFloat(e.y)), timestamp: e.t, force: e.f,
-          type: e.pointerType, pointerId: Int(e.pointerId))
+          point: CGPoint(x: CGFloat(pointerEvent.x), y: CGFloat(pointerEvent.y)),
+          timestamp: pointerEvent.t,
+          force: pointerEvent.f,
+          type: pointerEvent.pointerType,
+          pointerId: Int(pointerEvent.pointerId)
+        )
       } catch {  // Error not catched for now
         print(error)
       }
@@ -144,11 +152,15 @@ class InputView: UIView {
   override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
     super.touchesEnded(touches, with: event)
     guard let touch: UITouch = touches.randomElement() else { return }
-    let e: IINKPointerEvent = self.pointerUpEvent(from: touch)
+    let pointerEvent: IINKPointerEvent = self.pointerUpEvent(from: touch)
     do {
       try self.editor?.pointerUp(
-        point: CGPoint(x: CGFloat(e.x), y: CGFloat(e.y)), timestamp: e.t, force: e.f,
-        type: e.pointerType, pointerId: Int(e.pointerId))
+        point: CGPoint(x: CGFloat(pointerEvent.x), y: CGFloat(pointerEvent.y)),
+        timestamp: pointerEvent.t,
+        force: pointerEvent.f,
+        type: pointerEvent.pointerType,
+        pointerId: Int(pointerEvent.pointerId)
+      )
     } catch {  // Error not catched for now
       print(error)
     }

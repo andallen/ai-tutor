@@ -10,16 +10,18 @@ import UIKit
 
 class InputViewController: UIViewController {
 
-  //MARK: - Properties
+  // MARK: - Properties
 
   private var panGestureRecognizer: UIPanGestureRecognizer?
+  // Pinch gesture for zooming in and out.
+  private var pinchGestureRecognizer: UIPinchGestureRecognizer?
   // Detects touch-down to stop inertial scrolling immediately.
   private var touchDownGestureRecognizer: UILongPressGestureRecognizer?
   private var viewModel: InputViewModel
   private var containerView: UIView = UIView(frame: CGRect.zero)
   private var cancellables: Set<AnyCancellable> = []
 
-  //MARK: - Life cycle
+  // MARK: - Life cycle
 
   init(viewModel: InputViewModel) {
     self.viewModel = viewModel
@@ -39,6 +41,12 @@ class InputViewController: UIViewController {
       panGestureRecognizer.delegate = self
       panGestureRecognizer.allowedTouchTypes = [NSNumber(value: UITouch.TouchType.direct.rawValue)]
     }
+    // Create pinch gesture for zooming.
+    self.pinchGestureRecognizer = UIPinchGestureRecognizer(
+      target: self, action: #selector(pinchGestureRecognizerAction(pinchGestureRecognizer:)))
+    if let pinchGestureRecognizer = self.pinchGestureRecognizer {
+      pinchGestureRecognizer.delegate = self
+    }
     let touchDownGestureRecognizer = UILongPressGestureRecognizer(
       target: self, action: #selector(touchDownGestureRecognizerAction(_:)))
     touchDownGestureRecognizer.minimumPressDuration = 0
@@ -49,7 +57,9 @@ class InputViewController: UIViewController {
     ]
     self.touchDownGestureRecognizer = touchDownGestureRecognizer
     self.bindViewModel()
-    self.viewModel.setupModel(with: panGestureRecognizer)
+    self.viewModel.setupModel(
+      panGesture: panGestureRecognizer,
+      pinchGesture: pinchGestureRecognizer)
     self.viewModel.configureEditorUI(with: self.view.bounds.size)
   }
 
@@ -81,7 +91,7 @@ class InputViewController: UIViewController {
     viewModel.selectHighlighterTool()
   }
 
-  //MARK: - UI settings
+  // MARK: - UI settings
 
   private func configureContainerView() {
     self.view.addSubview(self.containerView)
@@ -148,7 +158,7 @@ class InputViewController: UIViewController {
     return image
   }
 
-  //MARK: - Data Binding
+  // MARK: - Data Binding
 
   private func bindViewModel() {
     self.viewModel.$neboInputView.sink { [weak self] inputView in
@@ -180,27 +190,24 @@ class InputViewController: UIViewController {
         switch inputMode {
         case .forcePen:
           panGestureRecognizer.isEnabled = false
-          break
         case .forceTouch:
           panGestureRecognizer.isEnabled = true
           panGestureRecognizer.allowedTouchTypes = [
             NSNumber(value: UITouch.TouchType.direct.rawValue),
-            NSNumber(value: UITouch.TouchType.stylus.rawValue),
+            NSNumber(value: UITouch.TouchType.stylus.rawValue)
           ]
-          break
         case .auto:
           panGestureRecognizer.isEnabled = true
           panGestureRecognizer.allowedTouchTypes = [
             NSNumber(value: UITouch.TouchType.direct.rawValue)
           ]
-          break
         }
       }
     }.store(in: &cancellables)
   }
 }
 
-//MARK: - Pan Gesture
+// MARK: - Pan Gesture
 
 extension InputViewController: UIGestureRecognizerDelegate {
 
@@ -210,6 +217,21 @@ extension InputViewController: UIGestureRecognizerDelegate {
     let velocity: CGPoint = panGestureRecognizer.velocity(in: self.view)
     self.viewModel.handlePanGestureRecognizerAction(
       with: translation, velocity: velocity, state: state)
+  }
+
+  // Handles pinch gesture for zooming in and out.
+  @objc private func pinchGestureRecognizerAction(
+    pinchGestureRecognizer: UIPinchGestureRecognizer
+  ) {
+    guard let state = self.pinchGestureRecognizer?.state else {
+      return
+    }
+    let scale = pinchGestureRecognizer.scale
+    let center = pinchGestureRecognizer.location(in: self.view)
+    self.viewModel.handlePinchGestureRecognizerAction(
+      scale: scale, center: center, state: state)
+    // Reset scale to 1.0 for incremental updates on each gesture change.
+    pinchGestureRecognizer.scale = 1.0
   }
 
   @objc private func touchDownGestureRecognizerAction(
@@ -222,6 +244,11 @@ extension InputViewController: UIGestureRecognizerDelegate {
   }
 
   func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+    // Pinch gesture for zooming should always be allowed regardless of input mode.
+    if gestureRecognizer is UIPinchGestureRecognizer {
+      return true
+    }
+    // Pan gesture only begins when not in forcePen mode and scrolling is allowed.
     let shouldBegin =
       self.viewModel.inputMode != .forcePen && self.viewModel.editor?.isScrollAllowed ?? false
     return shouldBegin
@@ -231,6 +258,18 @@ extension InputViewController: UIGestureRecognizerDelegate {
     _ gestureRecognizer: UIGestureRecognizer,
     shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
   ) -> Bool {
+    // Prevent pan and pinch from firing simultaneously to avoid conflicting
+    // viewport transformations. Pan modifies offset while pinch zooms around
+    // a center point, causing drift when both fire together.
+    let isPan =
+      gestureRecognizer is UIPanGestureRecognizer
+      || otherGestureRecognizer is UIPanGestureRecognizer
+    let isPinch =
+      gestureRecognizer is UIPinchGestureRecognizer
+      || otherGestureRecognizer is UIPinchGestureRecognizer
+    if isPan && isPinch {
+      return false
+    }
     return true
   }
 }

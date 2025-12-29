@@ -67,10 +67,13 @@ class DisplayViewController: UIViewController {
 
   // MARK: - KVO
 
+  // Legacy KVO implementation required for view.layer.bounds observation in MyScript framework integration
+  // swiftlint:disable block_based_kvo
   override func observeValue(
     forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?,
     context: UnsafeMutableRawPointer?
   ) {
+    // swiftlint:enable block_based_kvo
     if keyPath == DisplayViewController.keyPathObserved {
       self.viewModel.refreshDisplay()
     }

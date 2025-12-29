@@ -31,6 +31,8 @@ actor BundleManager {
   // Lists all existing Bundles in the Notebooks directory.
   // Returns an array of NotebookMetadata for each Bundle that has a valid Manifest.
   // Skips Bundles that don't have a Manifest or have invalid Manifests.
+  // swiftlint:disable function_body_length
+  // Function requires comprehensive error handling and validation for file system operations
   func listBundles() async throws -> [NotebookMetadata] {
     appLog("🧭 BundleManager.listBundles start")
     // Get the directory where Bundles are stored.
@@ -74,7 +76,10 @@ actor BundleManager {
           let modifiedAt = attributes?[.modificationDate] as? Date
           let previewBytes = previewData?.count ?? 0
           addLog(
-            "🧪 BundleManager.listBundles previewFile notebookID=\(manifest.notebookID) bytes=\(previewBytes) modifiedAt=\(modifiedAt?.description ?? "nil")"
+            """
+            🧪 BundleManager.listBundles previewFile notebookID=\(manifest.notebookID) \
+            bytes=\(previewBytes) modifiedAt=\(modifiedAt?.description ?? "nil")
+            """
           )
         } else {
           previewData = nil
@@ -98,6 +103,7 @@ actor BundleManager {
     appLog("🧭 BundleManager.listBundles end count=\(notebooks.count)")
     return notebooks
   }
+  // swiftlint:enable function_body_length
 
   // Creates a new Bundle folder with an initial Manifest and iink package.
   // Generates a new UUID for the Notebook ID.
@@ -254,6 +260,8 @@ actor BundleManager {
   // Validates that the Bundle exists, the Manifest can be decoded,
   // the version is supported, and required fields are present.
   // Throws if any validation fails.
+  // swiftlint:disable function_body_length
+  // Function requires comprehensive validation and error handling for notebook opening
   func openNotebook(id notebookID: String) async throws -> DocumentHandle {
     appLog("🧭 BundleManager.openNotebook start notebookID=\(notebookID)")
     // Get the directory where Bundles are stored.

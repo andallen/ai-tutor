@@ -17,7 +17,7 @@ class ImageLoader: NSObject {
   }
 
   func imageData(from url: String) -> NSData? {
-    var obj: NSData? = nil
+    var obj: NSData?
     synchronized(self) {
       obj = self.cache.object(forKey: url as NSString)
       if obj == nil {

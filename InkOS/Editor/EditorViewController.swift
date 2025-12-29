@@ -4,9 +4,9 @@ import Combine
 import Foundation
 import UIKit
 
-/// This is the Main ViewController of the project.
-/// It Encapsulates the InputViewController, and permits editing actions (such as undo/redo)
-
+// This is the Main ViewController of the project.
+// It Encapsulates the InputViewController, and permits editing actions (such as undo/redo)
+// EditorViewController is large due to MyScript SDK integration and comprehensive editing features
 // swiftlint:disable type_body_length
 class EditorViewController: UIViewController {
 
@@ -350,3 +350,4 @@ extension EditorViewController: UIGestureRecognizerDelegate {
     return true
   }
 }
+// swiftlint:enable type_body_length

@@ -36,9 +36,10 @@ struct ContextualActionsHelper {
   /**
    * Returns the available actions for a block.
    */
-  static func availableActions(forBlock block: IINKContentBlock, editor: IINKEditor)
-    -> [ContextualAction]
-  {
+  static func availableActions(
+    forBlock block: IINKContentBlock,
+    editor: IINKEditor
+  ) -> [ContextualAction] {
 
     let isRootBlock: Bool = block.identifier == editor.rootBlock?.identifier
     let onTextDocument: Bool = editor.part?.type == "Text Document"
@@ -83,9 +84,10 @@ struct ContextualActionsHelper {
   /**
    * Returns the available actions for a selection.
    */
-  static func availableActions(forSelection selection: IINKContentSelection, editor: IINKEditor)
-    -> [ContextualAction]
-  {
+  static func availableActions(
+    forSelection selection: IINKContentSelection,
+    editor: IINKEditor
+  ) -> [ContextualAction] {
 
     let displayConvert: Bool =
       !editor.supportedTargetConversionState(forSelection: selection).isEmpty

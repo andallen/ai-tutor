@@ -1,5 +1,8 @@
 // Copyright @ MyScript. All rights reserved.
 
+// InputViewModel manages editor setup, gesture handling, inertial scrolling, and zoom logic.
+// Splitting this into separate files would break cohesion of related gesture state management.
+
 import Combine
 import QuartzCore
 import UIKit
@@ -32,8 +35,10 @@ private class EditorDelegateTrampoline: NSObject, IINKEditorDelegate {
   }
 }
 
+// swiftlint:disable type_body_length
+// InputViewModel manages editor setup, gesture handling, inertial scrolling, and zoom logic.
+// Splitting this into separate classes would break cohesion of related gesture state management.
 /// This class is the ViewModel of the InputViewController. It handles all its business logic.
-
 class InputViewModel {
 
   // MARK: - Reactive Properties
@@ -57,13 +62,19 @@ class InputViewModel {
   private var didSetConstraints: Bool = false
   // Tracks inertial scrolling so the canvas can glide after the finger lifts.
   private var decelerationLink: CADisplayLink?
-  private var decelerationVelocity: CGFloat = 0
+  private var decelerationVelocityY: CGFloat = 0
+  private var decelerationVelocityX: CGFloat = 0
   private var lastDecelerationTimestamp: CFTimeInterval?
 
   // Softens drag to feel closer to native scroll physics.
   private let dragResistance: CGFloat = 0.88
   // Filters out tiny lifts so motion only continues when the finger is still moving.
   private let velocityThreshold: CGFloat = 60
+
+  // Zoom scale limits. Default view is 1.0, so minimum prevents zooming out beyond default.
+  // Maximum of 4.0 allows significant zoom while maintaining performance.
+  private let minZoomScale: Float = 1.0
+  private let maxZoomScale: Float = 4.0
 
   init(
     engine: IINKEngine?,
@@ -79,7 +90,10 @@ class InputViewModel {
     self.smartGuideDelegate = smartGuideDelegate
   }
 
-  func setupModel(with panGesture: UIPanGestureRecognizer?) {
+  func setupModel(
+    panGesture: UIPanGestureRecognizer?,
+    pinchGesture: UIPinchGestureRecognizer?
+  ) {
     let displayViewModel = DisplayViewModel()
     self.initEditor(with: displayViewModel)
     self.displayViewController = DisplayViewController(viewModel: displayViewModel)
@@ -93,6 +107,9 @@ class InputViewModel {
     self.neboInputView?.editor = self.editor
     if let panGesture = panGesture {
       self.neboInputView?.addGestureRecognizer(panGesture)
+    }
+    if let pinchGesture = pinchGesture {
+      self.neboInputView?.addGestureRecognizer(pinchGesture)
     }
   }
 
@@ -169,30 +186,133 @@ class InputViewModel {
     if state == UIGestureRecognizer.State.began {
       self.originalViewOffset = self.editor?.renderer.viewOffset ?? CGPoint.zero
     }
+
+    // Check if user is zoomed in to enable 360-degree panning.
+    let currentScale = self.editor?.renderer.viewScale ?? 1.0
+    let isZoomedIn = currentScale > 1.0
+    let currentOffset = self.editor?.renderer.viewOffset ?? .zero
+    appLog("📐 pan state scale=\(currentScale) isZoomedIn=\(isZoomedIn) currentOffset=\(currentOffset) translation=\(translation)")
+
     // Reduce translation to avoid 1:1 tracking and match iOS scrolling cadence.
     let adjustedTranslationY = translation.y * dragResistance
+    let adjustedTranslationX = isZoomedIn ? translation.x * dragResistance : 0
+
     var proposedOffset = CGPoint(
-      x: originalViewOffset.x, y: originalViewOffset.y - adjustedTranslationY)
+      x: originalViewOffset.x - adjustedTranslationX,
+      y: originalViewOffset.y - adjustedTranslationY)
+
+    // Store desired X before SDK clamping since clampViewOffset may reset X to 0.
+    let desiredXOffset = proposedOffset.x
+
+    // Let SDK clamp vertical scrolling only.
     if var clampedOffset = Optional(proposedOffset) {
       self.editor?.clampViewOffset(&clampedOffset)
       proposedOffset = clampedOffset
     }
-    // Enforce minimum Y offset to prevent scrolling above document top.
-    // Drawing parts have undefined bounds, so MyScript clamping is ineffective.
-    // The document origin is at Y=0, so viewOffset.y must not go negative.
+
+    // Restore X and apply custom horizontal bounds.
+    proposedOffset.x = desiredXOffset
+
+    // Enforce horizontal bounds: left edge at 0, right edge at maxXOffset.
+    if proposedOffset.x < 0 {
+      proposedOffset.x = 0
+    }
+    let maxXOffset = calculateMaxXOffset()
+    appLog("📐 pan desiredX=\(desiredXOffset) maxXOffset=\(maxXOffset) clamped=\(proposedOffset.x > maxXOffset)")
+    if proposedOffset.x > maxXOffset {
+      proposedOffset.x = maxXOffset
+    }
+    // Enforce top edge at 0, no bottom limit (document grows downward).
     if proposedOffset.y < 0 {
       proposedOffset.y = 0
     }
     self.editor?.renderer.viewOffset = proposedOffset
     if state == UIGestureRecognizer.State.ended {
       self.originalViewOffset = self.editor?.renderer.viewOffset ?? CGPoint.zero
-      // Keep deceleration direction consistent with drag direction to avoid bouncing back.
+      // Keep deceleration direction consistent with drag direction.
       let verticalVelocity = velocity.y * dragResistance
-      if abs(verticalVelocity) > velocityThreshold {
-        startDeceleration(with: verticalVelocity)
+      let horizontalVelocity = isZoomedIn ? velocity.x * dragResistance : 0
+
+      // Start deceleration if velocity exceeds threshold in either direction.
+      if abs(verticalVelocity) > velocityThreshold || abs(horizontalVelocity) > velocityThreshold {
+        startDeceleration(
+          verticalVelocity: verticalVelocity, horizontalVelocity: horizontalVelocity)
       }
     }
     NotificationCenter.default.post(name: DisplayViewController.refreshNotification, object: nil)
+  }
+
+  // Handles pinch gesture for zooming. No momentum is applied since zooming
+  // should only occur while the user's fingers are on the screen.
+  func handlePinchGestureRecognizerAction(
+    scale: CGFloat, center: CGPoint, state: UIGestureRecognizer.State
+  ) {
+    guard let renderer = self.editor?.renderer else {
+      return
+    }
+
+    switch state {
+    case .began, .changed:
+      let currentScale = renderer.viewScale
+      let proposedScale = currentScale * Float(scale)
+
+      // Clamp to valid zoom range.
+      let clampedScale = min(max(proposedScale, minZoomScale), maxZoomScale)
+
+      // Only apply zoom if within bounds.
+      if clampedScale != currentScale {
+        // Calculate the actual factor to apply after clamping.
+        let actualFactor = clampedScale / currentScale
+        do {
+          try renderer.zoom(at: center, factor: actualFactor)
+
+          // Enforce viewport bounds after zoom to prevent drift.
+          // Zoom adjusts viewOffset internally to keep the center point fixed,
+          // but does not enforce document bounds, allowing progressive drift.
+          var currentOffset = renderer.viewOffset
+
+          // Store desired X before SDK clamping since clampViewOffset may reset X to 0.
+          let desiredXOffset = currentOffset.x
+
+          // Let SDK clamp vertical scrolling only.
+          if var clampedOffset = Optional(currentOffset) {
+            self.editor?.clampViewOffset(&clampedOffset)
+            currentOffset = clampedOffset
+          }
+
+          // Restore X and apply custom horizontal bounds.
+          currentOffset.x = desiredXOffset
+
+          // Enforce horizontal bounds: left edge at 0, right edge at maxXOffset.
+          if currentOffset.x < 0 {
+            currentOffset.x = 0
+          }
+          let maxXOffset = calculateMaxXOffset()
+          if currentOffset.x > maxXOffset {
+            currentOffset.x = maxXOffset
+          }
+          // Enforce top edge at 0.
+          if currentOffset.y < 0 {
+            currentOffset.y = 0
+          }
+          renderer.viewOffset = currentOffset
+        } catch {
+          appLog("❌ InputViewModel.handlePinchGestureRecognizerAction zoom error=\(error)")
+        }
+      }
+
+      NotificationCenter.default.post(
+        name: DisplayViewController.refreshNotification,
+        object: nil
+      )
+
+    case .ended, .cancelled:
+      // No momentum - zoom stops immediately when fingers lift.
+      break
+
+    default:
+      break
+    }
   }
 
   func setEditorViewSize(size: CGSize) {
@@ -224,8 +344,9 @@ class InputViewModel {
     }
   }
 
-  private func startDeceleration(with velocity: CGFloat) {
-    self.decelerationVelocity = velocity
+  private func startDeceleration(verticalVelocity: CGFloat, horizontalVelocity: CGFloat) {
+    self.decelerationVelocityY = verticalVelocity
+    self.decelerationVelocityX = horizontalVelocity
     self.lastDecelerationTimestamp = CACurrentMediaTime()
     self.decelerationLink?.invalidate()
     let displayLink = CADisplayLink(target: self, selector: #selector(applyDeceleration))
@@ -244,25 +365,43 @@ class InputViewModel {
 
     let rate = UIScrollView.DecelerationRate.normal.rawValue
     let decay = pow(rate, deltaTime * 1000)
-    self.decelerationVelocity *= decay
-    if abs(self.decelerationVelocity) < 8 {
+    self.decelerationVelocityY *= decay
+    self.decelerationVelocityX *= decay
+    if abs(self.decelerationVelocityY) < 8 && abs(self.decelerationVelocityX) < 8 {
       stopDeceleration()
       return
     }
 
     var nextOffset = editor.renderer.viewOffset
-    nextOffset.y -= CGFloat(self.decelerationVelocity) * CGFloat(deltaTime)
+    nextOffset.y -= CGFloat(self.decelerationVelocityY) * CGFloat(deltaTime)
+    nextOffset.x -= CGFloat(self.decelerationVelocityX) * CGFloat(deltaTime)
+
+    // Store desired X before SDK clamping since clampViewOffset may reset X to 0.
+    let desiredXOffset = nextOffset.x
+
+    // Let SDK clamp vertical scrolling only.
     if var clampedOffset = Optional(nextOffset) {
       editor.clampViewOffset(&clampedOffset)
       nextOffset = clampedOffset
     }
-    // Enforce minimum Y offset to prevent scrolling above document top.
-    // Drawing parts have undefined bounds, so MyScript clamping is ineffective.
-    // The document origin is at Y=0, so viewOffset.y must not go negative.
+
+    // Restore X and apply custom horizontal bounds.
+    nextOffset.x = desiredXOffset
+
+    // Enforce horizontal bounds: left edge at 0, right edge at maxXOffset.
+    if nextOffset.x < 0 {
+      nextOffset.x = 0
+      self.decelerationVelocityX = 0
+    }
+    let maxXOffset = calculateMaxXOffset()
+    if nextOffset.x > maxXOffset {
+      nextOffset.x = maxXOffset
+      self.decelerationVelocityX = 0
+    }
+    // Enforce top edge at 0, no bottom limit (document grows downward).
     if nextOffset.y < 0 {
       nextOffset.y = 0
-      // Stop deceleration when hitting the top boundary to avoid fighting the constraint.
-      stopDeceleration()
+      self.decelerationVelocityY = 0
     }
     editor.renderer.viewOffset = nextOffset
     self.originalViewOffset = nextOffset
@@ -273,12 +412,31 @@ class InputViewModel {
     self.decelerationLink?.invalidate()
     self.decelerationLink = nil
     self.lastDecelerationTimestamp = nil
-    self.decelerationVelocity = 0
+    self.decelerationVelocityY = 0
+    self.decelerationVelocityX = 0
   }
 
   // Stops inertial scrolling when the user touches down.
   func stopInertialScroll() {
     stopDeceleration()
+  }
+
+  // Calculates the maximum horizontal offset based on current zoom level.
+  // At zoom 1.0, maxXOffset = 0 (entire page visible, no right scrolling).
+  // At higher zoom, maxXOffset increases to allow viewing the rest of the page.
+  // viewOffset is in scaled view coordinates, so maxXOffset = pageWidth * (scale - 1).
+  private func calculateMaxXOffset() -> CGFloat {
+    guard let editor = self.editor else {
+      return 0
+    }
+    let pageWidth = editor.viewSize.width
+    let viewScale = CGFloat(editor.renderer.viewScale)
+    // At zoom 1.0: maxX = pageWidth * 0 = 0
+    // At zoom 2.0: maxX = pageWidth * 1 = pageWidth
+    // At zoom 4.0: maxX = pageWidth * 3
+    let maxXOffset = pageWidth * (viewScale - 1)
+    appLog("📐 maxXOffset pageWidth=\(pageWidth) viewScale=\(viewScale) maxXOffset=\(maxXOffset)")
+    return max(0, maxXOffset)
   }
 
   private func initEditor(with target: DisplayViewModel) {
@@ -313,3 +471,4 @@ class InputViewModel {
     self.editor?.addDelegate(self.editorDelegateTrampoline)
   }
 }
+// swiftlint:enable type_body_length
