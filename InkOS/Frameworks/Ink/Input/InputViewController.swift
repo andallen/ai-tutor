@@ -154,10 +154,11 @@ class InputViewController: UIViewController {
         self.view.addSubview(inputView)
         inputView.translatesAutoresizingMaskIntoConstraints = false
         inputView.backgroundColor = UIColor.clear
-        if let touchDownGestureRecognizer = self.touchDownGestureRecognizer,
-          inputView.gestureRecognizers?.contains(touchDownGestureRecognizer) == false
-        {
-          inputView.addGestureRecognizer(touchDownGestureRecognizer)
+        if let touchDownGestureRecognizer = self.touchDownGestureRecognizer {
+          let alreadyContains = inputView.gestureRecognizers?.contains(touchDownGestureRecognizer) ?? false
+          if !alreadyContains {
+            inputView.addGestureRecognizer(touchDownGestureRecognizer)
+          }
         }
       }
     }.store(in: &cancellables)
@@ -216,7 +217,8 @@ extension InputViewController: UIGestureRecognizerDelegate {
   }
 
   func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-    return self.viewModel.inputMode != .forcePen && self.viewModel.editor?.isScrollAllowed ?? false
+    let shouldBegin = self.viewModel.inputMode != .forcePen && self.viewModel.editor?.isScrollAllowed ?? false
+    return shouldBegin
   }
 
   func gestureRecognizer(
