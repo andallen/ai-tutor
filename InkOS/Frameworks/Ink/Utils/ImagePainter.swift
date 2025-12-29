@@ -51,8 +51,8 @@ extension ImagePainter: IINKIImagePainter {
     }
     do {
       try imageData?.write(to: URL(fileURLWithPath: path), options: .atomic)
-    } catch {  // Error not catched for now
-      print(error)
+    } catch {
+      // Silently ignore image save errors.
     }
   }
 }

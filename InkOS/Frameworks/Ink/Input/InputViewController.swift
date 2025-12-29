@@ -116,31 +116,20 @@ class InputViewController: UIViewController {
   func capturePreviewImage(maxPixelDimension: CGFloat) -> UIImage? {
     let bounds = containerView.bounds
     guard bounds.width > 0, bounds.height > 0 else {
-      addLog(
-        "🧪 EditorViewController.capturePreviewImage skip invalidBounds width=\(bounds.width) height=\(bounds.height)"
-      )
       return nil
     }
     guard maxPixelDimension > 0 else {
-      addLog(
-        "🧪 EditorViewController.capturePreviewImage skip invalidMaxPixelDimension value=\(maxPixelDimension)"
-      )
       return nil
     }
     containerView.layoutIfNeeded()
     let maxDimension = max(bounds.width, bounds.height)
     guard maxDimension > 0 else {
-      addLog("🧪 EditorViewController.capturePreviewImage skip invalidMaxDimension")
       return nil
     }
     let scale = min(UIScreen.main.scale, maxPixelDimension / maxDimension)
     guard scale > 0 else {
-      addLog("🧪 EditorViewController.capturePreviewImage skip invalidScale value=\(scale)")
       return nil
     }
-    addLog(
-      "🧪 EditorViewController.capturePreviewImage start size=\(bounds.size) scale=\(scale)"
-    )
     let format = UIGraphicsImageRendererFormat()
     format.scale = scale
     format.opaque = true
@@ -150,11 +139,6 @@ class InputViewController: UIViewController {
       context.fill(bounds)
       containerView.drawHierarchy(in: bounds, afterScreenUpdates: true)
     }
-    let pixelWidth = Int(image.size.width * image.scale)
-    let pixelHeight = Int(image.size.height * image.scale)
-    addLog(
-      "🧪 EditorViewController.capturePreviewImage end pixelSize=\(pixelWidth)x\(pixelHeight) scale=\(image.scale)"
-    )
     return image
   }
 

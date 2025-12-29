@@ -45,14 +45,12 @@ actor DocumentHandle {
 
     self.package = try await MainActor.run {
       guard let engine = EngineProvider.sharedInstance.engine else {
-        appLog("❌ DocumentHandle.init engine unavailable notebookID=\(notebookID)")
         throw DocumentHandleError.engineUnavailable
       }
       do {
         let openedPackage = try engine.openPackage(packagePath, openOption: openOption)
         return openedPackage
       } catch {
-        appLog("❌ DocumentHandle.init failed open package notebookID=\(notebookID) error=\(error)")
         throw DocumentHandleError.packageOpenFailed(underlyingError: error)
       }
     }
@@ -97,8 +95,6 @@ actor DocumentHandle {
         let part = try capturedPackage.part(at: index)
         return part
       } catch {
-        appLog(
-          "❌ DocumentHandle.getPart failed notebookID=\(notebookID) index=\(index) error=\(error)")
         return nil
       }
     }
@@ -107,7 +103,6 @@ actor DocumentHandle {
   // Ensures there is at least one part and returns the first part.
   func ensureInitialPart(type: String) async throws -> IINKContentPart {
     guard let capturedPackage = self.package else {
-      appLog("❌ DocumentHandle.ensureInitialPart missing package notebookID=\(notebookID)")
       throw DocumentHandleError.packageNotAvailable
     }
     return try await MainActor.run {
@@ -116,9 +111,6 @@ actor DocumentHandle {
           let part = try capturedPackage.createPart(with: type)
           return part
         } catch {
-          appLog(
-            "❌ DocumentHandle.ensureInitialPart create failed notebookID=\(notebookID) error=\(error)"
-          )
           throw DocumentHandleError.partCreationFailed(underlyingError: error)
         }
       }
@@ -126,9 +118,6 @@ actor DocumentHandle {
         let part = try capturedPackage.part(at: 0)
         return part
       } catch {
-        appLog(
-          "❌ DocumentHandle.ensureInitialPart load failed notebookID=\(notebookID) error=\(error)"
-        )
         throw DocumentHandleError.partLoadFailed(underlyingError: error)
       }
     }
@@ -137,7 +126,6 @@ actor DocumentHandle {
   // Saves the package into the compressed archive.
   func savePackage() async throws {
     guard let capturedPackage = self.package else {
-      appLog("❌ DocumentHandle.savePackage missing package notebookID=\(notebookID)")
       throw DocumentHandleError.packageNotAvailable
     }
     try await MainActor.run {
@@ -148,7 +136,6 @@ actor DocumentHandle {
   // Saves current in-memory changes to the temp folder.
   func savePackageToTemp() async throws {
     guard let capturedPackage = self.package else {
-      appLog("❌ DocumentHandle.savePackageToTemp missing package notebookID=\(notebookID)")
       throw DocumentHandleError.packageNotAvailable
     }
     try await MainActor.run {
@@ -162,7 +149,6 @@ actor DocumentHandle {
       do {
         try await savePackage()
       } catch {
-        appLog("⚠️ DocumentHandle.close save failed notebookID=\(notebookID) error=\(error)")
         // Ignore save errors during close.
       }
     }
@@ -174,16 +160,7 @@ actor DocumentHandle {
     let previewURL = bundleURL.appendingPathComponent(Self.previewImageFileName)
     do {
       try data.write(to: previewURL, options: [.atomic])
-      addLog(
-        """
-        🧪 DocumentHandle.savePreviewImageData saved notebookID=\(notebookID) \
-        bytes=\(data.count) path=\(previewURL.lastPathComponent)
-        """
-      )
     } catch {
-      addLog(
-        "🧪 DocumentHandle.savePreviewImageData failed notebookID=\(notebookID) error=\(error)"
-      )
       throw DocumentHandleError.previewSaveFailed(underlyingError: error)
     }
   }
@@ -209,16 +186,7 @@ actor DocumentHandle {
       encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
       let data = try encoder.encode(currentManifest)
       try data.write(to: manifestURL, options: [.atomic])
-      addLog(
-        """
-        🧪 DocumentHandle.updateViewportState saved notebookID=\(notebookID) \
-        offset=(\(state.offsetX),\(state.offsetY)) scale=\(state.scale)
-        """
-      )
     } catch {
-      appLog(
-        "⚠️ DocumentHandle.updateViewportState failed notebookID=\(notebookID) error=\(error)"
-      )
       // Non-fatal error - viewport state is a convenience feature.
       // Document content is still safe.
     }

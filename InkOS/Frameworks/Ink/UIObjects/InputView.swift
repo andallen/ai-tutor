@@ -130,8 +130,8 @@ class InputView: UIView {
       pointerEvent.initialize(from: &events, count: events.count)
       do {
         try self.editor?.pointerEvents(pointerEvent, count: events.count, doProcessGestures: true)
-      } catch {  // Error not catched for now
-        print(error)
+      } catch {
+        // Silently ignore pointer event errors.
       }
     } else {
       let pointerEvent: IINKPointerEvent = self.pointerMoveEvent(from: touch)
@@ -143,8 +143,8 @@ class InputView: UIView {
           type: pointerEvent.pointerType,
           pointerId: Int(pointerEvent.pointerId)
         )
-      } catch {  // Error not catched for now
-        print(error)
+      } catch {
+        // Silently ignore pointer move errors.
       }
     }
   }
@@ -161,8 +161,8 @@ class InputView: UIView {
         type: pointerEvent.pointerType,
         pointerId: Int(pointerEvent.pointerId)
       )
-    } catch {  // Error not catched for now
-      print(error)
+    } catch {
+      // Silently ignore pointer up errors.
     }
     self.touchesBegan = false
   }
@@ -171,8 +171,8 @@ class InputView: UIView {
     super.touchesCancelled(touches, with: event)
     do {
       try self.editor?.pointerCancel(0)
-    } catch {  // Error not catched for now
-      print(error)
+    } catch {
+      // Silently ignore pointer cancel errors.
     }
     self.cancelled = true
     self.touchesBegan = false
