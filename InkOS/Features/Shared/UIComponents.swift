@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // Shared UI components used across multiple features.
 
@@ -139,3 +140,4 @@ struct RoundedCornerShape: Shape {
     return path
   }
 }
+
