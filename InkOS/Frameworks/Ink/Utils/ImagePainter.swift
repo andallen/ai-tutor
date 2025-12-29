@@ -44,10 +44,8 @@ extension ImagePainter: IINKIImagePainter {
     switch mime {
     case .JPEG:
       imageData = image.jpegData(compressionQuality: 1)
-      break
     case .PNG:
       imageData = image.pngData()
-      break
     default:
       break
     }

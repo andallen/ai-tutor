@@ -175,7 +175,10 @@ actor DocumentHandle {
     do {
       try data.write(to: previewURL, options: [.atomic])
       addLog(
-        "🧪 DocumentHandle.savePreviewImageData saved notebookID=\(notebookID) bytes=\(data.count) path=\(previewURL.lastPathComponent)"
+        """
+        🧪 DocumentHandle.savePreviewImageData saved notebookID=\(notebookID) \
+        bytes=\(data.count) path=\(previewURL.lastPathComponent)
+        """
       )
     } catch {
       addLog(
@@ -207,7 +210,10 @@ actor DocumentHandle {
       let data = try encoder.encode(currentManifest)
       try data.write(to: manifestURL, options: [.atomic])
       addLog(
-        "🧪 DocumentHandle.updateViewportState saved notebookID=\(notebookID) offset=(\(state.offsetX),\(state.offsetY)) scale=\(state.scale)"
+        """
+        🧪 DocumentHandle.updateViewportState saved notebookID=\(notebookID) \
+        offset=(\(state.offsetX),\(state.offsetY)) scale=\(state.scale)
+        """
       )
     } catch {
       appLog(

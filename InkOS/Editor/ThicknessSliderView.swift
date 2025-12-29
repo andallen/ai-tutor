@@ -1,6 +1,8 @@
 import UIKit
 
 // Presents a glass pill with a draggable thickness slider.
+// ThicknessSliderView is large due to detailed UI configuration for custom slider implementation
+// swiftlint:disable type_body_length
 final class ThicknessSliderView: UIView {
 
   // Notifies when the slider value changes.
@@ -67,6 +69,8 @@ final class ThicknessSliderView: UIView {
   }
 
   // Updates the slider visuals and range.
+  // All parameters are essential for configuring the thickness slider appearance
+  // swiftlint:disable function_parameter_count
   func updateAppearance(
     color: UIColor,
     minValue: CGFloat,
@@ -76,6 +80,7 @@ final class ThicknessSliderView: UIView {
     displayMaxWidth: CGFloat,
     animated: Bool
   ) {
+    // swiftlint:enable function_parameter_count
     sampleColor = color
     self.minValue = minValue
     self.maxValue = maxValue
@@ -396,3 +401,4 @@ private final class StrokeSampleView: UIView {
     lineLayer.path = path.cgPath
   }
 }
+// swiftlint:enable type_body_length

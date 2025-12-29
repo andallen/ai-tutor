@@ -2,7 +2,8 @@
 
 import Foundation
 
-/// Extension for NSAttributedString to create an Instance of NSAttributedString with an IINKText and a collection of IINKTextSpan
+/// Extension for NSAttributedString to create an Instance of NSAttributedString with an IINKText
+/// and a collection of IINKTextSpan
 
 extension NSAttributedString {
 
@@ -12,14 +13,14 @@ extension NSAttributedString {
     for span in spans {
       let begin = text.getGlyphUtf16Begin(at: span.beginPosition, error: nil)
       let end = text.getGlyphUtf16End(at: span.endPosition - 1, error: nil)
-      let range = NSMakeRange(Int(begin), Int(end - begin))
+      let range = NSRange(location: Int(begin), length: Int(end - begin))
       if let newFont = UIFont.fontFromStyle(
         style: span.style,
-        string: text.label)
-      {
+        string: text.label
+      ) {
         let dict: [Key: Any] = [
           .font: newFont,
-          .ligature: NSNumber(value: 0),
+          .ligature: NSNumber(value: 0)
         ]
         completeAttributedString.setAttributes(dict, range: range)
       }

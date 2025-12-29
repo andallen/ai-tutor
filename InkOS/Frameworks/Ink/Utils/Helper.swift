@@ -78,7 +78,8 @@ class Helper {
 }
 
 extension UIDevice {
-  // All cases of model names are not covered for purpose, we just cover the needs of the Helper. Feel free to add more model names if needed.
+  // All cases of model names are not covered for purpose, we just cover the needs of the Helper.
+  // Feel free to add more model names if needed.
   var modelName: ModelName {
     var systemInfo = utsname()
     uname(&systemInfo)

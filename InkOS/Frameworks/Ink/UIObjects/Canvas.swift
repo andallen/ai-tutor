@@ -3,7 +3,8 @@
 import Foundation
 import UIKit
 
-/// The Canvas is the tool used by the RenderView to display a stroke. It handles all the settings of the CGContext, and the drawing commands.
+/// The Canvas is the tool used by the RenderView to display a stroke. It handles all the
+/// settings of the CGContext, and the drawing commands.
 
 @objcMembers class Canvas: NSObject {
 
@@ -32,7 +33,7 @@ extension Canvas: IINKICanvas {
     self.aTransform = .identity
     self.fontAttributeDict.removeAll()
     self.context?.saveGState()
-    //Enforce defaults
+    // Enforce defaults
     self.style.setAllChangeFlags()
     self.style.apply(to: self)
     self.style.clearChangeFlags()
@@ -80,13 +81,10 @@ extension Canvas: IINKICanvas {
     switch lineCap {
     case .butt:
       self.context?.setLineCap(.butt)
-      break
     case .round:
       self.context?.setLineCap(.round)
-      break
     case .square:
       self.context?.setLineCap(.square)
-      break
     default:
       break
     }
@@ -97,13 +95,10 @@ extension Canvas: IINKICanvas {
     switch lineJoin {
     case .miter:
       self.context?.setLineJoin(.miter)
-      break
     case .round:
       self.context?.setLineJoin(.round)
-      break
     case .bevel:
       self.context?.setLineJoin(.bevel)
-      break
     default:
       break
     }
@@ -167,10 +162,13 @@ extension Canvas: IINKICanvas {
 
   // MARK: - Font Properties
 
+  // Required by MyScript IINKICanvas protocol interface
+  // swiftlint:disable function_parameter_count
   func setFontProperties(
     _ family: String, height lineHeight: Float, size: Float, style: String, variant: String,
     weight: Int32
   ) {
+    // swiftlint:enable function_parameter_count
     self.style.fontFamily = family
     self.style.fontLineHeight = lineHeight
     self.style.fontSize = size

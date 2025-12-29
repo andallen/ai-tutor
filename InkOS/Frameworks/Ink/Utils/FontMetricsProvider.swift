@@ -3,7 +3,8 @@
 import CoreText
 import Foundation
 
-/// The FontMetricsProvider class implements IINKIFontMetricsProvider protocol. It permits to get metrics in order to render glyphs correctly
+/// The FontMetricsProvider class implements IINKIFontMetricsProvider protocol. It permits to get
+/// metrics in order to render glyphs correctly
 
 class FontMetricsProvider: NSObject {
 
