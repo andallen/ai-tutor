@@ -90,11 +90,55 @@ class EditorViewModel {
     do {
       let part = try await documentHandle.ensureInitialPart(type: defaultPartType)
       try editor.set(part: part)
+
+      // Restore viewport after part is loaded.
+      let manifest = await documentHandle.manifest
+      if let viewportState = manifest.viewportState {
+        restoreViewportState(viewportState)
+      }
+      // If no saved state, editor uses MyScript defaults at origin with scale 1.0.
+
     } catch {
       createNonFatalAlert(title: "Error", message: error.localizedDescription)
       appLog("❌ EditorViewModel.loadNotebookPart failed error=\(error)")
     }
     isLoadingPart = false
+  }
+
+  // Restores the viewport to a previously saved state.
+  // Must be called on MainActor after the part is loaded.
+  // Clamps the offset to valid document bounds to handle content size changes.
+  @MainActor
+  private func restoreViewportState(_ state: ViewportState) {
+    guard let editor = self.editor else {
+      return
+    }
+
+    let renderer = editor.renderer
+
+    // Validate state before applying.
+    guard state.isValid() else {
+      appLog("⚠️ EditorViewModel.restoreViewportState invalid state, using defaults")
+      return
+    }
+
+    // Set the zoom scale first.
+    renderer.viewScale = state.scale
+
+    // Set the offset, clamping to valid document bounds.
+    var requestedOffset = CGPoint(x: CGFloat(state.offsetX), y: CGFloat(state.offsetY))
+    editor.clampViewOffset(&requestedOffset)
+    renderer.viewOffset = requestedOffset
+
+    // Force a display refresh to show the new viewport.
+    NotificationCenter.default.post(
+      name: DisplayViewController.refreshNotification,
+      object: nil
+    )
+
+    addLog(
+      "🧪 EditorViewModel.restoreViewportState restored offset=(\(state.offsetX),\(state.offsetY)) scale=\(state.scale)"
+    )
   }
 
   // MARK: Actions
@@ -245,8 +289,34 @@ class EditorViewModel {
     }
   }
 
+  // Captures the current viewport configuration from the editor.
+  // Must be called on MainActor since it accesses IINKRenderer.
+  // Returns nil if editor is not available.
+  @MainActor
+  private func captureViewportState() -> ViewportState? {
+    guard let editor = self.editor else {
+      return nil
+    }
+
+    let renderer = editor.renderer
+    let offset = renderer.viewOffset
+    let scale = renderer.viewScale
+
+    let state = ViewportState(
+      offsetX: Float(offset.x),
+      offsetY: Float(offset.y),
+      scale: scale
+    )
+
+    // Only return valid states to prevent persisting corrupted data.
+    return state.isValid() ? state : nil
+  }
+
   // Releases the editor binding to avoid keeping the part locked.
   func releaseEditor(previewImage: UIImage? = nil) {
+    // Capture viewport state before releasing editor.
+    let viewportState = captureViewportState()
+
     autoSaveTask?.cancel()
     fullSaveTask?.cancel()
     do {
@@ -266,6 +336,12 @@ class EditorViewModel {
       guard let handle = handle else {
         return
       }
+
+      // Save viewport state if captured.
+      if let state = viewportState {
+        await handle.updateViewportState(state)
+      }
+
       if let previewData {
         do {
           try await handle.savePreviewImageData(previewData)

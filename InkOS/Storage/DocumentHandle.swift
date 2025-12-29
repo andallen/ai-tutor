@@ -10,6 +10,9 @@ actor DocumentHandle {
   // Stores the manifest loaded at open time.
   let initialManifest: Manifest
 
+  // Tracks the current manifest state including any updates.
+  private var currentManifest: Manifest
+
   // Stores the notebook folder URL.
   private let bundleURL: URL
 
@@ -37,6 +40,7 @@ actor DocumentHandle {
     self.notebookID = notebookID
     self.bundleURL = bundleURL
     self.initialManifest = manifest
+    self.currentManifest = manifest
     self.packagePath = packagePath
 
     self.package = try await MainActor.run {
@@ -178,6 +182,39 @@ actor DocumentHandle {
         "🧪 DocumentHandle.savePreviewImageData failed notebookID=\(notebookID) error=\(error)"
       )
       throw DocumentHandleError.previewSaveFailed(underlyingError: error)
+    }
+  }
+
+  // Exposes the current manifest state.
+  var manifest: Manifest {
+    currentManifest
+  }
+
+  // Updates the viewport state in the manifest and persists it to disk.
+  // This allows incremental updates without a full package save.
+  // Errors are logged but not thrown as viewport persistence is a convenience feature.
+  func updateViewportState(_ state: ViewportState) async {
+    // Update the in-memory manifest.
+    currentManifest.viewportState = state
+    currentManifest.modifiedAt = Date()
+
+    // Persist to disk.
+    let manifestURL = bundleURL.appendingPathComponent(Self.manifestFileName)
+    do {
+      let encoder = JSONEncoder()
+      encoder.dateEncodingStrategy = .iso8601
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      let data = try encoder.encode(currentManifest)
+      try data.write(to: manifestURL, options: [.atomic])
+      addLog(
+        "🧪 DocumentHandle.updateViewportState saved notebookID=\(notebookID) offset=(\(state.offsetX),\(state.offsetY)) scale=\(state.scale)"
+      )
+    } catch {
+      appLog(
+        "⚠️ DocumentHandle.updateViewportState failed notebookID=\(notebookID) error=\(error)"
+      )
+      // Non-fatal error - viewport state is a convenience feature.
+      // Document content is still safe.
     }
   }
 }
