@@ -7,6 +7,7 @@ import UIKit
 /// This is the Main ViewController of the project.
 /// It Encapsulates the InputViewController, and permits editing actions (such as undo/redo)
 
+// swiftlint:disable type_body_length
 class EditorViewController: UIViewController {
 
   // MARK: Properties
@@ -335,8 +336,7 @@ extension EditorViewController: UIGestureRecognizerDelegate {
 
   // Allows the tap recognizer only when the palette is open and the touch is outside it.
   func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch)
-    -> Bool
-  {
+    -> Bool {
     guard isTouchModeEnabled else {
       return false
     }

@@ -296,7 +296,7 @@ private struct NotebookCardButton: View {
                   .init(color: Color.white.opacity(0.0), location: 0.0),
                   .init(color: Color.white.opacity(0.45), location: 0.45),
                   .init(color: Color.white.opacity(0.75), location: 0.55),
-                  .init(color: Color.white.opacity(0.0), location: 1.0),
+                  .init(color: Color.white.opacity(0.0), location: 1.0)
                 ],
                 startPoint: .leading,
                 endPoint: .trailing
@@ -400,7 +400,7 @@ private struct NotebookTitleBand: View {
             stops: [
               .init(color: Color.white.opacity(1.0), location: 0.0),
               .init(color: Color.white.opacity(1.0), location: 0.28),
-              .init(color: Color.white.opacity(0.2), location: 0.3),
+              .init(color: Color.white.opacity(0.2), location: 0.3)
               // .init(color: Color.white.opacity(0.0), location: 0.45),
               // .init(color: Color.white.opacity(0.0), location: 0.7),
             ],

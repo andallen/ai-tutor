@@ -116,7 +116,7 @@ extension Canvas: IINKICanvas {
 
   private func setLineDash() {
     let dashes: [CGFloat] = self.style.strokeDashArray.map { CGFloat($0.floatValue) }
-    let offSet: CGFloat = dashes.count > 0 ? CGFloat(self.style.strokeDashOffset) : 0
+    let offSet: CGFloat = !dashes.isEmpty ? CGFloat(self.style.strokeDashOffset) : 0
     self.context?.setLineDash(phase: offSet, lengths: dashes)
   }
 
@@ -291,13 +291,13 @@ extension Canvas: IINKICanvas {
     self.context?.clip(to: dest)
     let alpha: CGFloat = CGFloat(color & 0xff) / 255.0
     self.context?.setAlpha(alpha)
-    let src_ = CGRect(
+    let sourceRect = CGRect(
       x: src.origin.x * scale, y: src.origin.y * scale, width: src.width * scale,
       height: src.height * scale)
-    let x: CGFloat = dest.origin.x - src_.origin.x / src_.size.width * dest.size.width
-    let y: CGFloat = dest.origin.y - src_.origin.y / src_.size.height * dest.size.height
-    let width: CGFloat = size.width / src_.size.width * dest.size.width
-    let height: CGFloat = size.height / src_.size.height * dest.size.height
+    let x: CGFloat = dest.origin.x - sourceRect.origin.x / sourceRect.size.width * dest.size.width
+    let y: CGFloat = dest.origin.y - sourceRect.origin.y / sourceRect.size.height * dest.size.height
+    let width: CGFloat = size.width / sourceRect.size.width * dest.size.width
+    let height: CGFloat = size.height / sourceRect.size.height * dest.size.height
     self.context?.draw(buffer, in: CGRect(x: x, y: y, width: width, height: height))
     self.context?.restoreGState()
   }

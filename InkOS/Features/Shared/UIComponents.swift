@@ -140,4 +140,3 @@ struct RoundedCornerShape: Shape {
     return path
   }
 }
-

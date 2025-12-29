@@ -4,10 +4,14 @@ import Combine
 import Foundation
 import UIKit
 
-/// This class is the ViewModel of the EditorViewController. It handles all its business logic.
+// File length exceeds default limit due to comprehensive editor state management,
+// viewport restoration logic, save coordination, and tool configuration.
+// This centralization is intentional to maintain clear ownership of editor lifecycle.
+// swiftlint:disable file_length
 
+/// This class is the ViewModel of the EditorViewController. It handles all its business logic.
 @MainActor
-class EditorViewModel {
+class EditorViewModel {  // swiftlint:disable:this type_body_length
 
   // MARK: Published Properties
 
@@ -95,8 +99,11 @@ class EditorViewModel {
       let manifest = await documentHandle.manifest
       if let viewportState = manifest.viewportState {
         restoreViewportState(viewportState)
+      } else {
+        // No saved state exists, so explicitly initialize viewport to document top.
+        // This ensures consistent behavior instead of relying on undefined MyScript defaults.
+        initializeDefaultViewport()
       }
-      // If no saved state, editor uses MyScript defaults at origin with scale 1.0.
 
     } catch {
       createNonFatalAlert(title: "Error", message: error.localizedDescription)
@@ -118,7 +125,8 @@ class EditorViewModel {
 
     // Validate state before applying.
     guard state.isValid() else {
-      appLog("⚠️ EditorViewModel.restoreViewportState invalid state, using defaults")
+      appLog("⚠️ EditorViewModel.restoreViewportState invalid state, initializing to defaults")
+      initializeDefaultViewport()
       return
     }
 
@@ -138,6 +146,37 @@ class EditorViewModel {
 
     addLog(
       "🧪 EditorViewModel.restoreViewportState restored offset=(\(state.offsetX),\(state.offsetY)) scale=\(state.scale)"
+    )
+  }
+
+  // Initializes the viewport to the default position at the document origin.
+  // Must be called on MainActor after the part is loaded.
+  // Used when no saved viewport state exists for the notebook.
+  @MainActor
+  private func initializeDefaultViewport() {
+    guard let editor = self.editor else {
+      return
+    }
+
+    let renderer = editor.renderer
+
+    // Set scale to 1.0 for 100 percent zoom.
+    renderer.viewScale = 1.0
+
+    // Set offset to origin, then clamp to ensure it is within valid bounds.
+    // This accounts for any document constraints while still starting at the top.
+    var initialOffset = CGPoint.zero
+    editor.clampViewOffset(&initialOffset)
+    renderer.viewOffset = initialOffset
+
+    // Force a display refresh to show the initialized viewport.
+    NotificationCenter.default.post(
+      name: DisplayViewController.refreshNotification,
+      object: nil
+    )
+
+    addLog(
+      "🧪 EditorViewModel.initializeDefaultViewport initialized offset=(\(initialOffset.x),\(initialOffset.y)) scale=1.0"
     )
   }
 

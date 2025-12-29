@@ -4,19 +4,21 @@ import Combine
 import Foundation
 import UIKit
 
-/// The DisplayViewController role is to display all the strokes. It contains the capture RenderView (which displays live capturing stroke), and the model RenderView (which displays the recorded strokes).
+/// The DisplayViewController role is to display all the strokes.
+/// It contains the capture RenderView (which displays live capturing stroke), and the model RenderView
+/// (which displays the recorded strokes).
 
 class DisplayViewController: UIViewController {
 
   static let keyPathObserved = "view.layer.bounds"
   static let refreshNotification = Notification.Name("refreshNotification")
 
-  //MARK: - Properties
+  // MARK: - Properties
 
   private var viewModel: DisplayViewModel
   private var cancellables: Set<AnyCancellable> = []
 
-  //MARK: - Life cycle
+  // MARK: - Life cycle
 
   init(viewModel: DisplayViewModel) {
     self.viewModel = viewModel
@@ -45,7 +47,7 @@ class DisplayViewController: UIViewController {
       object: nil)
   }
 
-  //MARK: - UI settings
+  // MARK: - UI settings
 
   private func configureRenderView(renderView: RenderView) {
     self.view.addSubview(renderView)
@@ -63,7 +65,7 @@ class DisplayViewController: UIViewController {
     self.viewModel.refreshDisplay()
   }
 
-  //MARK: - KVO
+  // MARK: - KVO
 
   override func observeValue(
     forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?,
@@ -74,7 +76,7 @@ class DisplayViewController: UIViewController {
     }
   }
 
-  //MARK: - Data Binding
+  // MARK: - Data Binding
 
   private func bindViewModel() {
     self.viewModel.$renderView.sink { [weak self] renderView in
