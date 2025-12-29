@@ -107,7 +107,6 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
 
     } catch {
       createNonFatalAlert(title: "Error", message: error.localizedDescription)
-      appLog("❌ EditorViewModel.loadNotebookPart failed error=\(error)")
     }
     isLoadingPart = false
   }
@@ -125,7 +124,6 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
 
     // Validate state before applying.
     guard state.isValid() else {
-      appLog("⚠️ EditorViewModel.restoreViewportState invalid state, initializing to defaults")
       initializeDefaultViewport()
       return
     }
@@ -142,10 +140,6 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
     NotificationCenter.default.post(
       name: DisplayViewController.refreshNotification,
       object: nil
-    )
-
-    addLog(
-      "🧪 EditorViewModel.restoreViewportState restored offset=(\(state.offsetX),\(state.offsetY)) scale=\(state.scale)"
     )
   }
 
@@ -174,10 +168,6 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
       name: DisplayViewController.refreshNotification,
       object: nil
     )
-
-    addLog(
-      "🧪 EditorViewModel.initializeDefaultViewport initialized offset=(\(initialOffset.x),\(initialOffset.y)) scale=1.0"
-    )
   }
 
   // MARK: Actions
@@ -187,7 +177,6 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
       try self.editor?.clear()
     } catch {
       createAlert(title: "Error", message: "An error occurred while clearing the page")
-      print("Error while clearing : " + error.localizedDescription)
     }
   }
 
@@ -278,9 +267,7 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
     do {
       try editor.toolController.set(style: styleString, forTool: tool)
     } catch {
-      appLog(
-        "❌ EditorViewModel.applyInkStyle failed color=\(colorHex) width=\(width) tool=\(tool) error=\(error)"
-      )
+      // Silently ignore style setting errors.
     }
   }
 
@@ -313,7 +300,7 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
       try configuration.set(boolean: true, forKey: "text-document.eraser.erase-precisely")
       try configuration.set(number: width, forKey: "text-document.eraser.radius")
     } catch {
-      appLog("❌ EditorViewModel.applyEraserRadius failed width=\(width) error=\(error)")
+      // Silently ignore eraser radius configuration errors.
     }
   }
 
@@ -324,7 +311,7 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
       try editor.toolController.set(tool: tool, forType: .pen)
       try applyTouchTool(tool: tool, editor: editor)
     } catch {
-      appLog("❌ EditorViewModel.applyTool failed tool=\(tool) error=\(error)")
+      // Silently ignore tool setting errors.
     }
   }
 
@@ -361,15 +348,10 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
     do {
       try self.editor?.set(part: nil)
     } catch {
-      appLog("❌ EditorViewModel.releaseEditor failed error=\(error.localizedDescription)")
+      // Silently ignore errors when releasing the part binding.
     }
     let handle = documentHandle
     let previewData = previewImage?.pngData()
-    let hasPreviewImage = previewImage != nil
-    let previewBytes = previewData?.count ?? 0
-    addLog(
-      "🧪 EditorViewModel.releaseEditor previewImage=\(hasPreviewImage) previewBytes=\(previewBytes)"
-    )
     documentHandle = nil
     Task { [weak self] in
       guard let handle = handle else {
@@ -385,19 +367,14 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
         do {
           try await handle.savePreviewImageData(previewData)
           await MainActor.run {
-            addLog(
-              "🧪 EditorViewModel.releaseEditor previewSaved notification notebookID=\(handle.notebookID)"
-            )
             NotificationCenter.default.post(
               name: .notebookPreviewUpdated,
               object: handle.notebookID
             )
           }
         } catch {
-          addLog("🧪 EditorViewModel.releaseEditor previewSaveFailed error=\(error)")
+          // Silently ignore preview save errors.
         }
-      } else {
-        addLog("🧪 EditorViewModel.releaseEditor previewSaveSkipped")
       }
       do {
         try await handle.savePackage()
@@ -446,7 +423,6 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
     }
     do {
       try await documentHandle.savePackageToTemp()
-      appLog("✅ EditorViewModel.performAutoSave saved temp")
     } catch {
       presentSaveError(message: error.localizedDescription)
     }
@@ -463,7 +439,6 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
       try await documentHandle.savePackage()
       hasPendingFullSave = false
       hasPresentedSaveError = false
-      appLog("✅ EditorViewModel.performFullSave saved full reason=\(reason)")
     } catch {
       presentSaveError(message: error.localizedDescription)
     }
@@ -517,9 +492,7 @@ extension EditorViewModel: EditorDelegate {
       try editor.toolController.set(tool: tool, forType: .pen)
       try applyTouchTool(tool: tool, editor: editor)
     } catch {
-      appLog(
-        "❌ EditorViewModel.applyToolSelectionIfPossible failed selection=\(selectedTool) error=\(error)"
-      )
+      // Silently ignore tool setting errors.
     }
   }
 

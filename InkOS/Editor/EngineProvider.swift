@@ -39,7 +39,6 @@ class EngineProvider {
         stringArray: [configurationPath],
         forKey: "configuration-manager.search-path")  // Tells the engine where to load the recognition assets from.
     } catch {
-      print("Should not happen, please check your resources assets : " + error.localizedDescription)
       return nil
     }
 
@@ -49,7 +48,6 @@ class EngineProvider {
         string: NSTemporaryDirectory(),
         forKey: "content-package.temp-folder")
     } catch {
-      print("Failed to set temporary folder: " + error.localizedDescription)
       return nil
     }
 

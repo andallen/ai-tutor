@@ -8,9 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		41A37C58D9454AC24022BC08 /* libPods-InkOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FAE72E6CE6B665ECB4F183CE /* libPods-InkOS.a */; };
-		AE1AC11F2EFB584300E6E4BA /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1AC11E2EFB584300E6E4BA /* Logging.swift */; };
-		AE1AC1202EFB584300E6E4BA /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1AC11E2EFB584300E6E4BA /* Logging.swift */; };
 		AE4C26BF2EF84C9A0089CC3C /* me.andy.allen.Trivial.c in Sources */ = {isa = PBXBuildFile; fileRef = AE4C26BE2EF84C9A0089CC3C /* me.andy.allen.Trivial.c */; };
+		DC020180631A0C08B2049EAE /* libPods-InkOSTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D15461011C3C1A3022313DC2 /* libPods-InkOSTests.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -21,16 +20,26 @@
 			remoteGlobalIDString = AEAFC2382EF4B85B00811728;
 			remoteInfo = InkOS;
 		};
+		AECB52352F022B2B007CACA0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AEAFC2312EF4B85B00811728 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AEAFC2382EF4B85B00811728;
+			remoteInfo = InkOS;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		3C72F6D8DDA74BAAB09FB025 /* Pods-InkOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InkOS.release.xcconfig"; path = "Target Support Files/Pods-InkOS/Pods-InkOS.release.xcconfig"; sourceTree = "<group>"; };
+		3D1AAC0C313519CAE29AE659 /* Pods-InkOSTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InkOSTests.release.xcconfig"; path = "Target Support Files/Pods-InkOSTests/Pods-InkOSTests.release.xcconfig"; sourceTree = "<group>"; };
 		AE1AC10D2EFB3B9E00E6E4BA /* InkOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = InkOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AE1AC11E2EFB584300E6E4BA /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
 		AE4C26BE2EF84C9A0089CC3C /* me.andy.allen.Trivial.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = me.andy.allen.Trivial.c; path = /Users/andrewallen/Downloads/me.andy.allen.Trivial.c; sourceTree = "<absolute>"; };
 		AEAB2C832EF7BD3300424068 /* MyCertificate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MyCertificate.h; sourceTree = "<group>"; };
 		AEAFC2392EF4B85B00811728 /* InkOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InkOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AECB52312F022B2A007CACA0 /* InkOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = InkOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B95CC48760412B82842147D7 /* Pods-InkOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InkOS.debug.xcconfig"; path = "Target Support Files/Pods-InkOS/Pods-InkOS.debug.xcconfig"; sourceTree = "<group>"; };
+		D15461011C3C1A3022313DC2 /* libPods-InkOSTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-InkOSTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EC99239A781B4BA5738A93B7 /* Pods-InkOSTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InkOSTests.debug.xcconfig"; path = "Target Support Files/Pods-InkOSTests/Pods-InkOSTests.debug.xcconfig"; sourceTree = "<group>"; };
 		FAE72E6CE6B665ECB4F183CE /* libPods-InkOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-InkOS.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -65,6 +74,11 @@
 			path = InkOS;
 			sourceTree = "<group>";
 		};
+		AECB52322F022B2B007CACA0 /* InkOSTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = InkOSTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,6 +97,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AECB522E2F022B2A007CACA0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DC020180631A0C08B2049EAE /* libPods-InkOSTests.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -91,6 +113,8 @@
 			children = (
 				B95CC48760412B82842147D7 /* Pods-InkOS.debug.xcconfig */,
 				3C72F6D8DDA74BAAB09FB025 /* Pods-InkOS.release.xcconfig */,
+				EC99239A781B4BA5738A93B7 /* Pods-InkOSTests.debug.xcconfig */,
+				3D1AAC0C313519CAE29AE659 /* Pods-InkOSTests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -107,10 +131,10 @@
 		AEAFC2302EF4B85B00811728 = {
 			isa = PBXGroup;
 			children = (
-				AE1AC11E2EFB584300E6E4BA /* Logging.swift */,
 				AEAB2C852EF7BD3300424068 /* MyScriptCertificate */,
 				AEAFC23B2EF4B85B00811728 /* InkOS */,
 				AE1AC10E2EFB3B9E00E6E4BA /* InkOSUITests */,
+				AECB52322F022B2B007CACA0 /* InkOSTests */,
 				AEAFC23A2EF4B85B00811728 /* Products */,
 				7D21902157F5C13C106A1960 /* Pods */,
 				AEA6BC452EF8643800D18138 /* recognition-assets */,
@@ -123,6 +147,7 @@
 			children = (
 				AEAFC2392EF4B85B00811728 /* InkOS.app */,
 				AE1AC10D2EFB3B9E00E6E4BA /* InkOSUITests.xctest */,
+				AECB52312F022B2A007CACA0 /* InkOSTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -131,6 +156,7 @@
 			isa = PBXGroup;
 			children = (
 				FAE72E6CE6B665ECB4F183CE /* libPods-InkOS.a */,
+				D15461011C3C1A3022313DC2 /* libPods-InkOSTests.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -155,8 +181,6 @@
 				AE1AC10E2EFB3B9E00E6E4BA /* InkOSUITests */,
 			);
 			name = InkOSUITests;
-			packageProductDependencies = (
-			);
 			productName = InkOSUITests;
 			productReference = AE1AC10D2EFB3B9E00E6E4BA /* InkOSUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -183,6 +207,28 @@
 			productReference = AEAFC2392EF4B85B00811728 /* InkOS.app */;
 			productType = "com.apple.product-type.application";
 		};
+		AECB52302F022B2A007CACA0 /* InkOSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AECB52392F022B2B007CACA0 /* Build configuration list for PBXNativeTarget "InkOSTests" */;
+			buildPhases = (
+				12CB4D4CBD5D64C8E35D38B7 /* [CP] Check Pods Manifest.lock */,
+				AECB522D2F022B2A007CACA0 /* Sources */,
+				AECB522E2F022B2A007CACA0 /* Frameworks */,
+				AECB522F2F022B2A007CACA0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AECB52362F022B2B007CACA0 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AECB52322F022B2B007CACA0 /* InkOSTests */,
+			);
+			name = InkOSTests;
+			productName = InkOSTests;
+			productReference = AECB52312F022B2A007CACA0 /* InkOSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -199,6 +245,10 @@
 					};
 					AEAFC2382EF4B85B00811728 = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					AECB52302F022B2A007CACA0 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = AEAFC2382EF4B85B00811728;
 					};
 				};
 			};
@@ -218,6 +268,7 @@
 			targets = (
 				AEAFC2382EF4B85B00811728 /* InkOS */,
 				AE1AC10C2EFB3B9E00E6E4BA /* InkOSUITests */,
+				AECB52302F022B2A007CACA0 /* InkOSTests */,
 			);
 		};
 /* End PBXProject section */
@@ -237,9 +288,38 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AECB522F2F022B2A007CACA0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		12CB4D4CBD5D64C8E35D38B7 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-InkOSTests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
 		89BBA18F5E78F49FCF8CC369 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -288,7 +368,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AE1AC1202EFB584300E6E4BA /* Logging.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -297,7 +376,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				AE4C26BF2EF84C9A0089CC3C /* me.andy.allen.Trivial.c in Sources */,
-				AE1AC11F2EFB584300E6E4BA /* Logging.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AECB522D2F022B2A007CACA0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -308,6 +393,11 @@
 			isa = PBXTargetDependency;
 			target = AEAFC2382EF4B85B00811728 /* InkOS */;
 			targetProxy = AE1AC1132EFB3B9E00E6E4BA /* PBXContainerItemProxy */;
+		};
+		AECB52362F022B2B007CACA0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AEAFC2382EF4B85B00811728 /* InkOS */;
+			targetProxy = AECB52352F022B2B007CACA0 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -510,7 +600,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = me.andy.allen.Trivial;
-				PRODUCT_MODULE_NAME = GetStarted;
+				PRODUCT_MODULE_NAME = InkOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -561,7 +651,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = me.andy.allen.Trivial;
-				PRODUCT_MODULE_NAME = GetStarted;
+				PRODUCT_MODULE_NAME = InkOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -572,6 +662,60 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				"USER_HEADER_SEARCH_PATHS[arch=*]" = "\"${PODS_ROOT}/MyScriptInteractiveInk-Runtime/Frameworks/iink.framework/Headers\"/**";
+			};
+			name = Release;
+		};
+		AECB52372F022B2B007CACA0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = EC99239A781B4BA5738A93B7 /* Pods-InkOSTests.debug.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8LSA357AU5;
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"${SRCROOT}/InkOS/Frameworks\"",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = me.andy.allen.InkOSTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/InkOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/InkOS";
+			};
+			name = Debug;
+		};
+		AECB52382F022B2B007CACA0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 3D1AAC0C313519CAE29AE659 /* Pods-InkOSTests.release.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8LSA357AU5;
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"${SRCROOT}/InkOS/Frameworks\"",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = me.andy.allen.InkOSTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/InkOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/InkOS";
 			};
 			name = Release;
 		};
@@ -601,6 +745,15 @@
 			buildConfigurations = (
 				AEAFC2452EF4B85D00811728 /* Debug */,
 				AEAFC2462EF4B85D00811728 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AECB52392F022B2B007CACA0 /* Build configuration list for PBXNativeTarget "InkOSTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AECB52372F022B2B007CACA0 /* Debug */,
+				AECB52382F022B2B007CACA0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

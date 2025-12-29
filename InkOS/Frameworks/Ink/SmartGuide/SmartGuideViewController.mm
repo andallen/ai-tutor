@@ -4,7 +4,7 @@
 #if DEMO
 #import "Demo-Swift.h"
 #elif GET_STARTED
-#import "GetStarted-Swift.h"
+#import "InkOS-Swift.h"
 #endif
 #import <iink/IINKRenderer.h>
 #import <iink/IINKEngine.h>

@@ -312,18 +312,11 @@ class EditorViewController: UIViewController {
   // Captures a preview and releases the editor once per exit.
   private func prepareForExit() {
     guard hasPreparedForExit == false else {
-      addLog("🧪 EditorViewController.prepareForExit skip alreadyPrepared")
       return
     }
     hasPreparedForExit = true
-    addLog(
-      "🧪 EditorViewController.prepareForExit start dismissed=\(isBeingDismissed) movingFromParent=\(isMovingFromParent)"
-    )
     let previewImage = editorViewController?.capturePreviewImage(
       maxPixelDimension: previewMaxPixelDimension)
-    addLog(
-      "🧪 EditorViewController.prepareForExit capturedPreview=\(previewImage != nil)"
-    )
     viewModel.releaseEditor(previewImage: previewImage)
   }
 

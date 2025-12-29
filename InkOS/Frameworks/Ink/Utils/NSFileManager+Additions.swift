@@ -12,11 +12,8 @@ extension FileManager {
       do {
         try self.createDirectory(
           atPath: iinkFilesDirectory, withIntermediateDirectories: false, attributes: nil)
-      } catch {  // Error not catched for now
-        print(
-          String(
-            format: "Cannot create dir %@, error %@", iinkFilesDirectory, error.localizedDescription
-          ))
+      } catch {
+        // Silently ignore directory creation errors.
       }
     }
   }

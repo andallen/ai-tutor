@@ -190,8 +190,6 @@ class InputViewModel {
     // Check if user is zoomed in to enable 360-degree panning.
     let currentScale = self.editor?.renderer.viewScale ?? 1.0
     let isZoomedIn = currentScale > 1.0
-    let currentOffset = self.editor?.renderer.viewOffset ?? .zero
-    appLog("📐 pan state scale=\(currentScale) isZoomedIn=\(isZoomedIn) currentOffset=\(currentOffset) translation=\(translation)")
 
     // Reduce translation to avoid 1:1 tracking and match iOS scrolling cadence.
     let adjustedTranslationY = translation.y * dragResistance
@@ -218,7 +216,6 @@ class InputViewModel {
       proposedOffset.x = 0
     }
     let maxXOffset = calculateMaxXOffset()
-    appLog("📐 pan desiredX=\(desiredXOffset) maxXOffset=\(maxXOffset) clamped=\(proposedOffset.x > maxXOffset)")
     if proposedOffset.x > maxXOffset {
       proposedOffset.x = maxXOffset
     }
@@ -297,7 +294,7 @@ class InputViewModel {
           }
           renderer.viewOffset = currentOffset
         } catch {
-          appLog("❌ InputViewModel.handlePinchGestureRecognizerAction zoom error=\(error)")
+          // Silently ignore zoom errors.
         }
       }
 
@@ -339,8 +336,7 @@ class InputViewModel {
     do {
       try toolController?.set(tool: tool, forType: .pen)
     } catch {
-      appLog(
-        "❌ InputViewModel.setPointerTool failed tool=\(tool) error=\(error.localizedDescription)")
+      // Silently ignore tool setting errors.
     }
   }
 
@@ -435,7 +431,6 @@ class InputViewModel {
     // At zoom 2.0: maxX = pageWidth * 1 = pageWidth
     // At zoom 4.0: maxX = pageWidth * 3
     let maxXOffset = pageWidth * (viewScale - 1)
-    appLog("📐 maxXOffset pageWidth=\(pageWidth) viewScale=\(viewScale) maxXOffset=\(maxXOffset)")
     return max(0, maxXOffset)
   }
 

@@ -147,7 +147,6 @@ struct DashboardView: View {
       }
     )
     .onReceive(NotificationCenter.default.publisher(for: .notebookPreviewUpdated)) { _ in
-      addLog("🧪 DashboardView previewUpdated reload")
       Task {
         isLoadingNotebooks = true
         await library.loadBundles()
