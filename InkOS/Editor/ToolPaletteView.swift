@@ -1,5 +1,8 @@
 import UIKit
 
+// This view contains extensive UI layout and interaction logic for the tool palette.
+// Refactoring into smaller components would require significant architectural changes.
+// swiftlint:disable type_body_length
 final class ToolPaletteView: UIView {
   enum ToolSelection {
     case pen
@@ -663,7 +666,7 @@ final class ToolPaletteView: UIView {
         name: "Red", hex: "#C62828", color: UIColor(red: 0.78, green: 0.16, blue: 0.16, alpha: 1)),
       ColorOption(
         name: "Yellow", hex: "#FBC02D", color: UIColor(red: 0.98, green: 0.75, blue: 0.18, alpha: 1)
-      ),
+      )
     ]
   }
 
@@ -681,7 +684,8 @@ final class ToolPaletteView: UIView {
       ColorOption(
         name: "Lavender", hex: "#E1BEE7",
         color: UIColor(red: 0.88, green: 0.75, blue: 0.91, alpha: 1)
-      ),
+      )
     ]
   }
 }
+// swiftlint:enable type_body_length

@@ -37,9 +37,9 @@ class InputView: UIView {
   private func ownInit() {
     self.isMultipleTouchEnabled = false
     self.trackPressure = self.traitCollection.forceTouchCapability == .available
-    let rel_t: TimeInterval = ProcessInfo.processInfo.systemUptime
-    let abs_t: TimeInterval = NSTimeIntervalSince1970
-    self.eventTimeOffset = abs_t - rel_t
+    let relativeTime: TimeInterval = ProcessInfo.processInfo.systemUptime
+    let absoluteTime: TimeInterval = NSTimeIntervalSince1970
+    self.eventTimeOffset = absoluteTime - relativeTime
   }
 
   // MARK: - Touches

@@ -2,7 +2,7 @@
 
 import Foundation
 
-private let CACHE_MAX_BYTES = 200 * 1_000_000
+private let cacheMaxBytes = 200 * 1_000_000
 
 /// The ImageLoader role is to load Images from a path
 
@@ -13,7 +13,7 @@ class ImageLoader: NSObject {
   override init() {
     super.init()
     self.cache.name = String(format: "Image Loader (%p)", self)
-    self.cache.totalCostLimit = CACHE_MAX_BYTES
+    self.cache.totalCostLimit = cacheMaxBytes
   }
 
   func imageData(from url: String) -> NSData? {

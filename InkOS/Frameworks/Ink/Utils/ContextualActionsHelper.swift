@@ -45,14 +45,14 @@ struct ContextualActionsHelper {
     let blockIsEmpty: Bool = editor.isEmpty(block)
 
     let displayAddBlock: Bool =
-      editor.supportedAddBlockTypes.count > 0 && (!onTextDocument || isRootBlock)
+      !editor.supportedAddBlockTypes.isEmpty && (!onTextDocument || isRootBlock)
     let displayRemove: Bool = !isRootBlock
     let displayCopy: Bool = !isRootBlock || !onTextDocument
     let displayPaste: Bool = isRootBlock
     let displayConvert: Bool =
-      !blockIsEmpty && editor.supportedTargetConversionState(forSelection: block).count > 0
-    let displayExport: Bool = editor.supportedExportMimeTypes(forSelection: block).count > 0
-    let displayFormatText: Bool = editor.supportedTextFormats(forSelection: block).count > 0
+      !blockIsEmpty && !editor.supportedTargetConversionState(forSelection: block).isEmpty
+    let displayExport: Bool = !editor.supportedExportMimeTypes(forSelection: block).isEmpty
+    let displayFormatText: Bool = !editor.supportedTextFormats(forSelection: block).isEmpty
 
     var actions = [ContextualAction]()
     if displayAddBlock {
@@ -88,8 +88,8 @@ struct ContextualActionsHelper {
   {
 
     let displayConvert: Bool =
-      editor.supportedTargetConversionState(forSelection: selection).count > 0
-    let displayFormatText: Bool = editor.supportedTextFormats(forSelection: selection).count > 0
+      !editor.supportedTargetConversionState(forSelection: selection).isEmpty
+    let displayFormatText: Bool = !editor.supportedTextFormats(forSelection: selection).isEmpty
 
     var actions = [ContextualAction]()
     actions.append(.copy)

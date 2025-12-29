@@ -4,7 +4,9 @@ import Combine
 import Foundation
 import UIKit
 
-/// The InputViewController/ViewModel role is to instanciate all the properties and classes used to display the content of a page. It creates   "key" objects like the editor and renderer, and displays the DisplayViewController, the InputView and the SmartGuide (if enabled).
+/// The InputViewController/ViewModel role is to instantiate all the properties and classes used to display the
+/// content of a page. It creates "key" objects like the editor and renderer, and displays the
+/// DisplayViewController, the InputView and the SmartGuide (if enabled).
 
 class InputViewController: UIViewController {
 
@@ -155,7 +157,8 @@ class InputViewController: UIViewController {
         inputView.translatesAutoresizingMaskIntoConstraints = false
         inputView.backgroundColor = UIColor.clear
         if let touchDownGestureRecognizer = self.touchDownGestureRecognizer {
-          let alreadyContains = inputView.gestureRecognizers?.contains(touchDownGestureRecognizer) ?? false
+          let alreadyContains =
+            inputView.gestureRecognizers?.contains(touchDownGestureRecognizer) ?? false
           if !alreadyContains {
             inputView.addGestureRecognizer(touchDownGestureRecognizer)
           }
@@ -219,7 +222,8 @@ extension InputViewController: UIGestureRecognizerDelegate {
   }
 
   func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-    let shouldBegin = self.viewModel.inputMode != .forcePen && self.viewModel.editor?.isScrollAllowed ?? false
+    let shouldBegin =
+      self.viewModel.inputMode != .forcePen && self.viewModel.editor?.isScrollAllowed ?? false
     return shouldBegin
   }
 

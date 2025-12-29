@@ -36,14 +36,14 @@ private class EditorDelegateTrampoline: NSObject, IINKEditorDelegate {
 
 class InputViewModel {
 
-  //MARK: - Reactive Properties
+  // MARK: - Reactive Properties
 
   @Published var inputMode: InputMode = .forcePen
   @Published var displayViewController: DisplayViewController?
   @Published var smartGuideViewController: SmartGuideViewController?
   @Published var neboInputView: InputView?
 
-  //MARK: - Properties
+  // MARK: - Properties
 
   var editor: IINKEditor?
   private weak var engine: IINKEngine?
@@ -130,7 +130,7 @@ class InputViewModel {
     self.didSetConstraints = true
     let views: [String: Any] = [
       "containerView": containerView, "displayViewControllerView": displayViewControllerView,
-      "inputView": inputView,
+      "inputView": inputView
     ]
     view.addConstraints(
       NSLayoutConstraint.constraints(
@@ -175,7 +175,13 @@ class InputViewModel {
       x: originalViewOffset.x, y: originalViewOffset.y - adjustedTranslationY)
     if var clampedOffset = Optional(proposedOffset) {
       self.editor?.clampViewOffset(&clampedOffset)
-      proposedOffset.x = clampedOffset.x
+      proposedOffset = clampedOffset
+    }
+    // Enforce minimum Y offset to prevent scrolling above document top.
+    // Drawing parts have undefined bounds, so MyScript clamping is ineffective.
+    // The document origin is at Y=0, so viewOffset.y must not go negative.
+    if proposedOffset.y < 0 {
+      proposedOffset.y = 0
     }
     self.editor?.renderer.viewOffset = proposedOffset
     if state == UIGestureRecognizer.State.ended {
@@ -248,7 +254,15 @@ class InputViewModel {
     nextOffset.y -= CGFloat(self.decelerationVelocity) * CGFloat(deltaTime)
     if var clampedOffset = Optional(nextOffset) {
       editor.clampViewOffset(&clampedOffset)
-      nextOffset.x = clampedOffset.x
+      nextOffset = clampedOffset
+    }
+    // Enforce minimum Y offset to prevent scrolling above document top.
+    // Drawing parts have undefined bounds, so MyScript clamping is ineffective.
+    // The document origin is at Y=0, so viewOffset.y must not go negative.
+    if nextOffset.y < 0 {
+      nextOffset.y = 0
+      // Stop deceleration when hitting the top boundary to avoid fighting the constraint.
+      stopDeceleration()
     }
     editor.renderer.viewOffset = nextOffset
     self.originalViewOffset = nextOffset
@@ -285,14 +299,13 @@ class InputViewModel {
     // Apply theme from css file if any
     if let path = Bundle.main.path(forResource: "theme", ofType: "css"),
       let cssString = try? String(contentsOfFile: path).trimmingCharacters(
-        in: .whitespacesAndNewlines)
-    {
+        in: .whitespacesAndNewlines) {
       try? self.editor?.set(theme: cssString)
     }
 
     self.editor?.set(fontMetricsProvider: FontMetricsProvider())
-    if self.editor != nil {
-      self.editorDelegate?.didCreateEditor(editor: self.editor!)
+    if let editor = self.editor {
+      self.editorDelegate?.didCreateEditor(editor: editor)
     }
     target.renderer = renderer
     target.imageLoader = ImageLoader()

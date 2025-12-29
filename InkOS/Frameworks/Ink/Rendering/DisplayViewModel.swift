@@ -8,11 +8,11 @@ import UIKit
 
 class DisplayViewModel: NSObject {
 
-  //MARK: - Reactive Properties
+  // MARK: - Reactive Properties
 
   @Published var renderView: RenderView?
 
-  //MARK: - Properties
+  // MARK: - Properties
 
   var renderer: IINKRenderer?
   var imageLoader: ImageLoader?
@@ -75,8 +75,7 @@ extension DisplayViewModel: IINKIRenderTarget {
     let size = CGSize(width: scale * CGFloat(width), height: scale * CGFloat(height))
     UIGraphicsBeginImageContextWithOptions(size, false, 1)
     if let context = UIGraphicsGetCurrentContext(),
-      let buffer = CGLayer(context, size: size, auxiliaryInfo: nil)
-    {
+      let buffer = CGLayer(context, size: size, auxiliaryInfo: nil) {
       context.scaleBy(x: size.width, y: size.height)
       return self.offscreenRenderSurfaces.addSurface(with: buffer)
     }
