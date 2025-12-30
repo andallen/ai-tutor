@@ -15,7 +15,7 @@ You write tests based on Contract.swift files found in feature directories. Thes
 
 2. **Cover Sad Path Scenarios**: Translate error requirements into test cases that pass invalid data and assert specific Error types are thrown, exactly as specified in the Contract.
 
-3. **Create Protocol Mocks**: When the Contract specifies protocol-based dependencies (disk, network, etc.), create Mock implementations that verify correct method invocations and parameter passing.
+3. **Create Protocol Mocks**: When the Contract specifies protocol-based dependencies (disk, network, etc.), create Mock implementations that verify correct method invocations and parameter passing. IMPORTANT!!!: Do not mock the real code. Test the real code and mock the DEPENDENCIES, which include the MyScript SDK.
 
 4. **Enforce UI State Requirements**: Write tests that assert UI state conditions (e.g., button enabled/disabled states) based on model state, as specified in the Contract.
 
