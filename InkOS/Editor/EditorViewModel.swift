@@ -15,15 +15,20 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
 
   // MARK: Published Properties
 
-  @Published var editorViewController: InputViewController?
+  // Uses protocol type to allow dependency injection for testing.
+  @Published var editorViewController: (any InputViewControllerProtocol)?
   @Published var title: String? = ""
   @Published var alert: UIAlertController?
 
   // MARK: Properties
 
   private let defaultPartType: String = "Drawing"
+  // Uses concrete IINKEditor for production, protocol for test injection.
   weak var editor: IINKEditor?
-  private var documentHandle: DocumentHandle?
+  // Uses protocol type to allow dependency injection for testing.
+  private var documentHandle: (any DocumentHandleProtocol)?
+  // Holds a reference to the protocol-based editor for test injection.
+  private var testEditor: (any EditorProtocol)?
   private var autoSaveTask: Task<Void, Never>?
   private var fullSaveTask: Task<Void, Never>?
   private var hasPendingFullSave = false
@@ -77,7 +82,7 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
   // MARK: Editor Business Logic
 
   private func loadNotebookPartIfReady() {
-    guard isLoadingPart == false, documentHandle != nil, editor != nil else {
+    guard isLoadingPart == false, documentHandle != nil, activeEditor != nil else {
       return
     }
     isLoadingPart = true
@@ -87,13 +92,14 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
   }
 
   private func loadNotebookPart() async {
-    guard let documentHandle = documentHandle, let editor = editor else {
+    guard let documentHandle = documentHandle, let editor = activeEditor else {
       isLoadingPart = false
       return
     }
     do {
       let part = try await documentHandle.ensureInitialPart(type: defaultPartType)
-      try editor.set(part: part)
+      // Cast from protocol type to SDK type for editor compatibility.
+      try editor.setEditorPart(part as? IINKContentPart)
 
       // Restore viewport after part is loaded.
       let manifest = await documentHandle.manifest
@@ -116,11 +122,11 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
   // Clamps the offset to valid document bounds to handle content size changes.
   @MainActor
   private func restoreViewportState(_ state: ViewportState) {
-    guard let editor = self.editor else {
+    guard let editor = activeEditor else {
       return
     }
 
-    let renderer = editor.renderer
+    let renderer = editor.editorRenderer
 
     // Validate state before applying.
     guard state.isValid() else {
@@ -133,7 +139,7 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
 
     // Set the offset, clamping to valid document bounds.
     var requestedOffset = CGPoint(x: CGFloat(state.offsetX), y: CGFloat(state.offsetY))
-    editor.clampViewOffset(&requestedOffset)
+    editor.clampEditorViewOffset(&requestedOffset)
     renderer.viewOffset = requestedOffset
 
     // Force a display refresh to show the new viewport.
@@ -148,11 +154,11 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
   // Used when no saved viewport state exists for the notebook.
   @MainActor
   private func initializeDefaultViewport() {
-    guard let editor = self.editor else {
+    guard let editor = activeEditor else {
       return
     }
 
-    let renderer = editor.renderer
+    let renderer = editor.editorRenderer
 
     // Set scale to 1.0 for 100 percent zoom.
     renderer.viewScale = 1.0
@@ -160,7 +166,7 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
     // Set offset to origin, then clamp to ensure it is within valid bounds.
     // This accounts for any document constraints while still starting at the top.
     var initialOffset = CGPoint.zero
-    editor.clampViewOffset(&initialOffset)
+    editor.clampEditorViewOffset(&initialOffset)
     renderer.viewOffset = initialOffset
 
     // Force a display refresh to show the initialized viewport.
@@ -172,20 +178,25 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
 
   // MARK: Actions
 
+  // Returns the active editor protocol, preferring testEditor if set.
+  private var activeEditor: (any EditorProtocol)? {
+    return testEditor ?? editor
+  }
+
   func clear() {
     do {
-      try self.editor?.clear()
+      try activeEditor?.performClear()
     } catch {
       createAlert(title: "Error", message: "An error occurred while clearing the page")
     }
   }
 
   func undo() {
-    self.editor?.undo()
+    activeEditor?.performUndo()
   }
 
   func redo() {
-    self.editor?.redo()
+    activeEditor?.performRedo()
   }
 
   // Applies the requested tool selection to the editor.
@@ -224,7 +235,7 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
   // Switches the active tool to match the palette selection.
   func updateTool(selection: ToolPaletteView.ToolSelection) {
     selectedTool = selection
-    guard let editor = editor else {
+    guard let editor = activeEditor else {
       return
     }
     applyTool(selection: selection, editor: editor)
@@ -260,12 +271,12 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
 
   // Applies the selected ink style to the requested tool.
   private func applyInkStyle(colorHex: String, width: CGFloat, tool: IINKPointerTool) {
-    guard let editor = editor else {
+    guard let editor = activeEditor else {
       return
     }
     let styleString = String(format: "color:%@;-myscript-pen-width:%.3f", colorHex, width)
     do {
-      try editor.toolController.set(style: styleString, forTool: tool)
+      try editor.editorToolController.setStyleForTool(style: styleString, tool: tool)
     } catch {
       // Silently ignore style setting errors.
     }
@@ -273,42 +284,42 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
 
   // Applies the eraser radius across supported part types.
   private func applyEraserRadius(width: CGFloat) {
-    guard let editor = editor else {
+    guard let editor = activeEditor else {
       return
     }
-    let configuration = editor.configuration
+    let configuration = editor.editorConfiguration
     do {
       // Shows the eraser halo and keeps the radius consistent across strokes.
-      try configuration.set(boolean: true, forKey: "raw-content.eraser.show")
-      try configuration.set(boolean: false, forKey: "raw-content.eraser.dynamic-radius")
-      try configuration.set(boolean: true, forKey: "raw-content.eraser.erase-precisely")
-      try configuration.set(number: width, forKey: "raw-content.eraser.radius")
-      try configuration.set(boolean: true, forKey: "text.eraser.show")
-      try configuration.set(boolean: false, forKey: "text.eraser.dynamic-radius")
-      try configuration.set(boolean: true, forKey: "text.eraser.erase-precisely")
-      try configuration.set(number: width, forKey: "text.eraser.radius")
-      try configuration.set(boolean: true, forKey: "math.eraser.show")
-      try configuration.set(boolean: false, forKey: "math.eraser.dynamic-radius")
-      try configuration.set(boolean: true, forKey: "math.eraser.erase-precisely")
-      try configuration.set(number: width, forKey: "math.eraser.radius")
-      try configuration.set(boolean: true, forKey: "diagram.eraser.show")
-      try configuration.set(boolean: false, forKey: "diagram.eraser.dynamic-radius")
-      try configuration.set(boolean: true, forKey: "diagram.eraser.erase-precisely")
-      try configuration.set(number: width, forKey: "diagram.eraser.radius")
-      try configuration.set(boolean: true, forKey: "text-document.eraser.show")
-      try configuration.set(boolean: false, forKey: "text-document.eraser.dynamic-radius")
-      try configuration.set(boolean: true, forKey: "text-document.eraser.erase-precisely")
-      try configuration.set(number: width, forKey: "text-document.eraser.radius")
+      try configuration.setConfigBoolean(true, forKey: "raw-content.eraser.show")
+      try configuration.setConfigBoolean(false, forKey: "raw-content.eraser.dynamic-radius")
+      try configuration.setConfigBoolean(true, forKey: "raw-content.eraser.erase-precisely")
+      try configuration.setConfigNumber(width, forKey: "raw-content.eraser.radius")
+      try configuration.setConfigBoolean(true, forKey: "text.eraser.show")
+      try configuration.setConfigBoolean(false, forKey: "text.eraser.dynamic-radius")
+      try configuration.setConfigBoolean(true, forKey: "text.eraser.erase-precisely")
+      try configuration.setConfigNumber(width, forKey: "text.eraser.radius")
+      try configuration.setConfigBoolean(true, forKey: "math.eraser.show")
+      try configuration.setConfigBoolean(false, forKey: "math.eraser.dynamic-radius")
+      try configuration.setConfigBoolean(true, forKey: "math.eraser.erase-precisely")
+      try configuration.setConfigNumber(width, forKey: "math.eraser.radius")
+      try configuration.setConfigBoolean(true, forKey: "diagram.eraser.show")
+      try configuration.setConfigBoolean(false, forKey: "diagram.eraser.dynamic-radius")
+      try configuration.setConfigBoolean(true, forKey: "diagram.eraser.erase-precisely")
+      try configuration.setConfigNumber(width, forKey: "diagram.eraser.radius")
+      try configuration.setConfigBoolean(true, forKey: "text-document.eraser.show")
+      try configuration.setConfigBoolean(false, forKey: "text-document.eraser.dynamic-radius")
+      try configuration.setConfigBoolean(true, forKey: "text-document.eraser.erase-precisely")
+      try configuration.setConfigNumber(width, forKey: "text-document.eraser.radius")
     } catch {
       // Silently ignore eraser radius configuration errors.
     }
   }
 
   // Sets the active tool on the editor for pen input and updates touch to follow the current mode.
-  private func applyTool(selection: ToolPaletteView.ToolSelection, editor: IINKEditor) {
+  private func applyTool(selection: ToolPaletteView.ToolSelection, editor: any EditorProtocol) {
     let tool = tool(for: selection)
     do {
-      try editor.toolController.set(tool: tool, forType: .pen)
+      try editor.editorToolController.setToolForPointerType(tool: tool, pointerType: .pen)
       try applyTouchTool(tool: tool, editor: editor)
     } catch {
       // Silently ignore tool setting errors.
@@ -320,11 +331,11 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
   // Returns nil if editor is not available.
   @MainActor
   private func captureViewportState() -> ViewportState? {
-    guard let editor = self.editor else {
+    guard let editor = activeEditor else {
       return nil
     }
 
-    let renderer = editor.renderer
+    let renderer = editor.editorRenderer
     let offset = renderer.viewOffset
     let scale = renderer.viewScale
 
@@ -339,21 +350,23 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
   }
 
   // Releases the editor binding to avoid keeping the part locked.
-  func releaseEditor(previewImage: UIImage? = nil) {
+  // Returns a Task that completes when all cleanup is done.
+  @discardableResult
+  func releaseEditor(previewImage: UIImage? = nil) -> Task<Void, Never> {
     // Capture viewport state before releasing editor.
     let viewportState = captureViewportState()
 
     autoSaveTask?.cancel()
     fullSaveTask?.cancel()
     do {
-      try self.editor?.set(part: nil)
+      try activeEditor?.setEditorPart(nil)
     } catch {
       // Silently ignore errors when releasing the part binding.
     }
     let handle = documentHandle
     let previewData = previewImage?.pngData()
     documentHandle = nil
-    Task { [weak self] in
+    return Task { [weak self] in
       guard let handle = handle else {
         return
       }
@@ -452,6 +465,23 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
     createNonFatalAlert(title: "Save Failed", message: message)
   }
 
+  // MARK: Test Injection
+
+  // Internal method for test injection of mock dependencies.
+  // Allows tests to inject mock editor, view controller, and document handle.
+  func setTestDependencies(
+    editor: (any EditorProtocol)?,
+    viewController: (any InputViewControllerProtocol)?,
+    documentHandle: (any DocumentHandleProtocol)?
+  ) {
+    self.testEditor = editor
+    self.editorViewController = viewController
+    self.documentHandle = documentHandle
+    if let manifest = documentHandle?.initialManifest {
+      self.title = manifest.displayName
+    }
+  }
+
 }
 
 extension EditorViewModel: EditorDelegate {
@@ -484,12 +514,12 @@ extension EditorViewModel: EditorDelegate {
 
   // Applies the selected tool to the editor once the editor is available.
   private func applyToolSelectionIfPossible() {
-    guard let editor = editor else {
+    guard let editor = activeEditor else {
       return
     }
     do {
       let tool = tool(for: selectedTool)
-      try editor.toolController.set(tool: tool, forType: .pen)
+      try editor.editorToolController.setToolForPointerType(tool: tool, pointerType: .pen)
       try applyTouchTool(tool: tool, editor: editor)
     } catch {
       // Silently ignore tool setting errors.
@@ -497,11 +527,11 @@ extension EditorViewModel: EditorDelegate {
   }
 
   // Applies the correct touch tool based on the current input mode.
-  private func applyTouchTool(tool: IINKPointerTool, editor: IINKEditor) throws {
+  private func applyTouchTool(tool: IINKPointerTool, editor: any EditorProtocol) throws {
     if inputMode == .forcePen {
-      try editor.toolController.set(tool: tool, forType: .touch)
+      try editor.editorToolController.setToolForPointerType(tool: tool, pointerType: .touch)
     } else {
-      try editor.toolController.set(tool: .hand, forType: .touch)
+      try editor.editorToolController.setToolForPointerType(tool: .hand, pointerType: .touch)
     }
   }
 

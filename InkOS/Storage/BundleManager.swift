@@ -20,6 +20,9 @@ struct NotebookMetadata: Identifiable, Sendable {
 // The Bundle Manager is the only code allowed to perform direct file operations on Bundles.
 // All file system access for Notebooks must go through the Bundle Manager.
 actor BundleManager {
+  // Shared singleton instance for accessing the Bundle Manager.
+  static let shared = BundleManager()
+
   // The name of the Manifest file inside each Bundle.
   private static let manifestFileName = "manifest.json"
 
@@ -191,6 +194,11 @@ actor BundleManager {
   // Deletes a Bundle folder and all its contents including the iink package.
   // Throws if the Bundle doesn't exist or cannot be deleted.
   func deleteBundle(notebookID: String) async throws {
+    // Validate the notebookID is not empty.
+    guard !notebookID.isEmpty else {
+      throw BundleError.bundleNotFound(notebookID: notebookID)
+    }
+
     // Get the directory where Bundles are stored.
     let bundlesDirectory = try await BundleStorage.bundlesDirectory()
 

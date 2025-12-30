@@ -1,14 +1,13 @@
 #!/bin/bash
-set -euo pipefail
+set -uo pipefail
 
 # Navigate to the project root
 cd "$(dirname "$0")/.."
 
 mkdir -p ./Logs
 rm -f ./Logs/build_logs.txt
+rm -f ./Logs/test_logs_raw.txt
 
-# TRUNCATE LOGS: Wipes the file to 0 bytes so you catch only THIS run's logs
-# We use ': >' instead of 'rm' so the grablogs process keeps its file handle
 : > ./Logs/test_logs.txt
 
 echo "🧪 Building and Testing InkOS..."
@@ -16,12 +15,97 @@ echo "🧪 Building and Testing InkOS..."
 DESTINATION="platform=iOS Simulator,name=iPhone 17 Pro"
 DERIVED_DATA_PATH="./Logs/DerivedData"
 
+# Run tests and capture output - allow command to fail
+set +e
 xcodebuild test \
   -workspace InkOS.xcworkspace \
   -scheme InkOS \
   -destination "$DESTINATION" \
   -derivedDataPath "$DERIVED_DATA_PATH" \
+  -only-testing:InkOSTests \
   -allowProvisioningUpdates \
   COMPILER_INDEX_STORE_ENABLE=NO \
   CODE_SIGNING_ALLOWED=NO \
-  | xcbeautify --disable-colored-output | tee ./Logs/test_logs.txt
+  | xcbeautify --disable-colored-output | tee ./Logs/test_logs_raw.txt
+XCODEBUILD_EXIT_CODE=$?
+set -e
+
+# Process test results and create formatted output
+echo ""
+echo "================================================================================================"
+echo "                                    TEST RESULTS SUMMARY"
+echo "================================================================================================"
+echo ""
+
+# Check if test log file exists
+if [ ! -f ./Logs/test_logs_raw.txt ]; then
+  echo "❌ ERROR: Test log file not found!"
+  echo "Build may have failed before tests could run."
+  exit 1
+fi
+
+# Count test results
+# grep -c outputs 0 when no matches found, so no fallback needed
+TOTAL_TESTS=$(grep -c "^\s*[✔✖]" ./Logs/test_logs_raw.txt || true)
+PASSED_TESTS=$(grep -c "^\s*✔" ./Logs/test_logs_raw.txt || true)
+FAILED_TESTS=$(grep -c "^\s*✖" ./Logs/test_logs_raw.txt || true)
+
+# Display statistics
+echo "Total Tests:  $TOTAL_TESTS"
+echo "Passed:       $PASSED_TESTS"
+echo "Failed:       $FAILED_TESTS"
+echo ""
+
+# Check overall status
+if [ "$FAILED_TESTS" -eq 0 ]; then
+  echo "Status:       ✅ ALL TESTS PASSED"
+else
+  echo "Status:       ❌ SOME TESTS FAILED"
+  echo ""
+  echo "------------------------------------------------------------------------------------------------"
+  echo "                                      FAILED TESTS"
+  echo "------------------------------------------------------------------------------------------------"
+  echo ""
+  grep "^\s*✖" ./Logs/test_logs_raw.txt || echo "No failed tests found in log"
+fi
+
+echo ""
+echo "================================================================================================"
+echo ""
+
+# Create final formatted log file
+{
+  echo "================================================================================================"
+  echo "                                    TEST RESULTS SUMMARY"
+  echo "================================================================================================"
+  echo ""
+  echo "Total Tests:  $TOTAL_TESTS"
+  echo "Passed:       $PASSED_TESTS"
+  echo "Failed:       $FAILED_TESTS"
+  echo ""
+  if [ "$FAILED_TESTS" -eq 0 ]; then
+    echo "Status:       ✅ ALL TESTS PASSED"
+  else
+    echo "Status:       ❌ SOME TESTS FAILED"
+    echo ""
+    echo "------------------------------------------------------------------------------------------------"
+    echo "                                      FAILED TESTS"
+    echo "------------------------------------------------------------------------------------------------"
+    echo ""
+    grep "^\s*✖" ./Logs/test_logs_raw.txt || echo "No failed tests found in log"
+  fi
+  echo ""
+  echo "================================================================================================"
+  echo "                                   DETAILED TEST OUTPUT"
+  echo "================================================================================================"
+  echo ""
+  cat ./Logs/test_logs_raw.txt
+} > ./Logs/test_logs.txt
+
+# Clean up temporary file
+rm -f ./Logs/test_logs_raw.txt
+
+echo "Full test output saved to ./Logs/test_logs.txt"
+
+# Exit with the original xcodebuild exit code
+exit $XCODEBUILD_EXIT_CODE
