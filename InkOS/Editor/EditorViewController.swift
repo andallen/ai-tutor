@@ -87,7 +87,8 @@ class EditorViewController: UIViewController {
 
   private func bindViewModel() {
     self.viewModel.$editorViewController.sink { [weak self] editorViewController in
-      if let editorViewController = editorViewController {
+      // Cast to InputViewController since child VC management requires concrete type.
+      if let editorViewController = editorViewController as? InputViewController {
         self?.injectEditor(editor: editorViewController)
       }
     }.store(in: &cancellables)

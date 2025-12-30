@@ -7,8 +7,11 @@ target 'InkOS' do
 
   # Pods for InkOS
   pod 'MyScriptInteractiveInk-Runtime', '4.2.1'
+end
 
-  target 'InkOSTests' do
-    inherit! :search_paths
-  end
+# Test target needs access to the same pods for compilation.
+# Tests use mocks so they don't call MyScript at runtime, but need headers for @testable import InkOS.
+target 'InkOSTests' do
+  # Inherit pods from main target
+  pod 'MyScriptInteractiveInk-Runtime', '4.2.1'
 end

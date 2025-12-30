@@ -16,8 +16,17 @@ class DisplayViewModel: NSObject {
 
   var renderer: IINKRenderer?
   var imageLoader: ImageLoader?
-  private(set) var offscreenRenderSurfaces: OffscreenRenderSurfaces = OffscreenRenderSurfaces()
+  // Uses protocol type to allow dependency injection for testing.
+  private(set) var offscreenRenderSurfaces: OffscreenRenderSurfacesProtocol
   private var didSetConstraints: Bool = false
+
+  // MARK: - Initialization
+
+  // Accepts an offscreenRenderSurfaces dependency. Defaults to production implementation.
+  init(offscreenRenderSurfaces: OffscreenRenderSurfacesProtocol = OffscreenRenderSurfaces()) {
+    self.offscreenRenderSurfaces = offscreenRenderSurfaces
+    super.init()
+  }
 
   func setupModel() {
     let renderView = RenderView(frame: CGRect.zero)
@@ -68,6 +77,10 @@ extension DisplayViewModel: IINKIRenderTarget {
   }
 
   func createOffscreenRenderSurface(width: Int32, height: Int32, alphaMask: Bool) -> UInt32 {
+    // Guard against zero or negative dimensions to prevent UIKit crash.
+    guard width > 0, height > 0 else {
+      return 0
+    }
     defer {
       UIGraphicsEndImageContext()
     }
