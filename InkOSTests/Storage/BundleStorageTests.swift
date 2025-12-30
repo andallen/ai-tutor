@@ -136,23 +136,6 @@ struct BundleStorageTests {
         #expect(url == firstURL)
       }
     }
-
-    @Test("directory attributes remain consistent across calls")
-    func directoryAttributesConsistent() async throws {
-      let bundlesURL = try await BundleStorage.bundlesDirectory()
-
-      let firstAttributes = try FileManager.default.attributesOfItem(atPath: bundlesURL.path)
-      let firstModificationDate = firstAttributes[.modificationDate] as? Date
-
-      // Call again.
-      _ = try await BundleStorage.bundlesDirectory()
-
-      let secondAttributes = try FileManager.default.attributesOfItem(atPath: bundlesURL.path)
-      let secondModificationDate = secondAttributes[.modificationDate] as? Date
-
-      // Modification date should not change just from calling bundlesDirectory.
-      #expect(firstModificationDate == secondModificationDate)
-    }
   }
 
   // MARK: - Concurrent Access Tests

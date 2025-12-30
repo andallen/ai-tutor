@@ -350,7 +350,9 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
   }
 
   // Releases the editor binding to avoid keeping the part locked.
-  func releaseEditor(previewImage: UIImage? = nil) {
+  // Returns a Task that completes when all cleanup is done.
+  @discardableResult
+  func releaseEditor(previewImage: UIImage? = nil) -> Task<Void, Never> {
     // Capture viewport state before releasing editor.
     let viewportState = captureViewportState()
 
@@ -364,7 +366,7 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
     let handle = documentHandle
     let previewData = previewImage?.pngData()
     documentHandle = nil
-    Task { [weak self] in
+    return Task { [weak self] in
       guard let handle = handle else {
         return
       }
