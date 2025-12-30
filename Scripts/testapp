@@ -7,8 +7,6 @@ cd "$(dirname "$0")/.."
 mkdir -p ./Logs
 rm -f ./Logs/build_logs.txt
 
-# TRUNCATE LOGS: Wipes the file to 0 bytes so you catch only THIS run's logs
-# We use ': >' instead of 'rm' so the grablogs process keeps its file handle
 : > ./Logs/test_logs.txt
 
 echo "🧪 Building and Testing InkOS..."
@@ -21,6 +19,7 @@ xcodebuild test \
   -scheme InkOS \
   -destination "$DESTINATION" \
   -derivedDataPath "$DERIVED_DATA_PATH" \
+  -only-testing:InkOSTests \
   -allowProvisioningUpdates \
   COMPILER_INDEX_STORE_ENABLE=NO \
   CODE_SIGNING_ALLOWED=NO \

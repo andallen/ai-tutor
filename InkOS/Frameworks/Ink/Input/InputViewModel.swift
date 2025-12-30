@@ -50,10 +50,12 @@ class InputViewModel {
 
   // MARK: - Properties
 
-  var editor: IINKEditor?
+  // Uses protocol type to allow dependency injection for testing.
+  var editor: (any EditorProtocol)?
   private weak var engine: IINKEngine?
   // Stores the tool controller so tools can be switched from the Notebook toolbar.
-  private var toolController: IINKToolController?
+  // Uses protocol type to allow dependency injection for testing.
+  private var toolController: (any ToolControllerProtocol)?
   private(set) var originalViewOffset: CGPoint = CGPoint.zero
   private weak var editorDelegate: EditorDelegate?
   private var editorDelegateTrampoline: EditorDelegateTrampoline
@@ -99,12 +101,14 @@ class InputViewModel {
     self.displayViewController = DisplayViewController(viewModel: displayViewModel)
     if self.smartGuideDisabled == false {
       self.smartGuideViewController = SmartGuideViewController()
-      self.smartGuideViewController?.editor = self.editor
+      // Cast to IINKEditor since SmartGuideViewController expects concrete SDK type.
+      self.smartGuideViewController?.editor = self.editor as? IINKEditor
       self.smartGuideViewController?.delegate = self.smartGuideDelegate
     }
     self.neboInputView = InputView(frame: CGRect.zero)
     self.neboInputView?.inputMode = self.inputMode
-    self.neboInputView?.editor = self.editor
+    // Cast to IINKEditor since InputView expects concrete SDK type.
+    self.neboInputView?.editor = self.editor as? IINKEditor
     if let panGesture = panGesture {
       self.neboInputView?.addGestureRecognizer(panGesture)
     }
@@ -122,18 +126,18 @@ class InputViewModel {
     guard let editor = self.editor else {
       return
     }
-    try? editor.set(viewSize: viewSize)
-    let conf: IINKConfiguration = editor.configuration
+    try? editor.setEditorViewSize(viewSize)
+    let conf = editor.editorConfiguration
     let horizontalMarginMM: Double = 5
     let verticalMarginMM: Double = 15
 
-    try? conf.set(number: verticalMarginMM, forKey: "text.margin.top")
-    try? conf.set(number: horizontalMarginMM, forKey: "text.margin.left")
-    try? conf.set(number: horizontalMarginMM, forKey: "text.margin.right")
-    try? conf.set(number: verticalMarginMM, forKey: "math.margin.top")
-    try? conf.set(number: verticalMarginMM, forKey: "math.margin.bottom")
-    try? conf.set(number: horizontalMarginMM, forKey: "math.margin.left")
-    try? conf.set(number: horizontalMarginMM, forKey: "math.margin.right")
+    try? conf.setConfigNumber(verticalMarginMM, forKey: "text.margin.top")
+    try? conf.setConfigNumber(horizontalMarginMM, forKey: "text.margin.left")
+    try? conf.setConfigNumber(horizontalMarginMM, forKey: "text.margin.right")
+    try? conf.setConfigNumber(verticalMarginMM, forKey: "math.margin.top")
+    try? conf.setConfigNumber(verticalMarginMM, forKey: "math.margin.bottom")
+    try? conf.setConfigNumber(horizontalMarginMM, forKey: "math.margin.left")
+    try? conf.setConfigNumber(horizontalMarginMM, forKey: "math.margin.right")
   }
 
   func initModelViewConstraints(view: UIView, containerView: UIView) {
@@ -184,11 +188,11 @@ class InputViewModel {
       stopDeceleration()
     }
     if state == UIGestureRecognizer.State.began {
-      self.originalViewOffset = self.editor?.renderer.viewOffset ?? CGPoint.zero
+      self.originalViewOffset = self.editor?.editorRenderer.viewOffset ?? CGPoint.zero
     }
 
     // Check if user is zoomed in to enable 360-degree panning.
-    let currentScale = self.editor?.renderer.viewScale ?? 1.0
+    let currentScale = self.editor?.editorRenderer.viewScale ?? 1.0
     let isZoomedIn = currentScale > 1.0
 
     // Reduce translation to avoid 1:1 tracking and match iOS scrolling cadence.
@@ -204,7 +208,7 @@ class InputViewModel {
 
     // Let SDK clamp vertical scrolling only.
     if var clampedOffset = Optional(proposedOffset) {
-      self.editor?.clampViewOffset(&clampedOffset)
+      self.editor?.clampEditorViewOffset(&clampedOffset)
       proposedOffset = clampedOffset
     }
 
@@ -223,9 +227,9 @@ class InputViewModel {
     if proposedOffset.y < 0 {
       proposedOffset.y = 0
     }
-    self.editor?.renderer.viewOffset = proposedOffset
+    self.editor?.editorRenderer.viewOffset = proposedOffset
     if state == UIGestureRecognizer.State.ended {
-      self.originalViewOffset = self.editor?.renderer.viewOffset ?? CGPoint.zero
+      self.originalViewOffset = self.editor?.editorRenderer.viewOffset ?? CGPoint.zero
       // Keep deceleration direction consistent with drag direction.
       let verticalVelocity = velocity.y * dragResistance
       let horizontalVelocity = isZoomedIn ? velocity.x * dragResistance : 0
@@ -244,7 +248,7 @@ class InputViewModel {
   func handlePinchGestureRecognizerAction(
     scale: CGFloat, center: CGPoint, state: UIGestureRecognizer.State
   ) {
-    guard let renderer = self.editor?.renderer else {
+    guard let renderer = self.editor?.editorRenderer else {
       return
     }
 
@@ -261,7 +265,7 @@ class InputViewModel {
         // Calculate the actual factor to apply after clamping.
         let actualFactor = clampedScale / currentScale
         do {
-          try renderer.zoom(at: center, factor: actualFactor)
+          try renderer.performZoom(at: center, by: actualFactor)
 
           // Enforce viewport bounds after zoom to prevent drift.
           // Zoom adjusts viewOffset internally to keep the center point fixed,
@@ -273,7 +277,7 @@ class InputViewModel {
 
           // Let SDK clamp vertical scrolling only.
           if var clampedOffset = Optional(currentOffset) {
-            self.editor?.clampViewOffset(&clampedOffset)
+            self.editor?.clampEditorViewOffset(&clampedOffset)
             currentOffset = clampedOffset
           }
 
@@ -313,7 +317,7 @@ class InputViewModel {
   }
 
   func setEditorViewSize(size: CGSize) {
-    try? self.editor?.set(viewSize: size)
+    try? self.editor?.setEditorViewSize(size)
   }
 
   // Select pen tool.
@@ -334,7 +338,7 @@ class InputViewModel {
   // Apply tool to the pen pointer type.
   private func setPointerTool(_ tool: IINKPointerTool) {
     do {
-      try toolController?.set(tool: tool, forType: .pen)
+      try toolController?.setToolForPointerType(tool: tool, pointerType: .pen)
     } catch {
       // Silently ignore tool setting errors.
     }
@@ -368,7 +372,7 @@ class InputViewModel {
       return
     }
 
-    var nextOffset = editor.renderer.viewOffset
+    var nextOffset = editor.editorRenderer.viewOffset
     nextOffset.y -= CGFloat(self.decelerationVelocityY) * CGFloat(deltaTime)
     nextOffset.x -= CGFloat(self.decelerationVelocityX) * CGFloat(deltaTime)
 
@@ -377,7 +381,7 @@ class InputViewModel {
 
     // Let SDK clamp vertical scrolling only.
     if var clampedOffset = Optional(nextOffset) {
-      editor.clampViewOffset(&clampedOffset)
+      editor.clampEditorViewOffset(&clampedOffset)
       nextOffset = clampedOffset
     }
 
@@ -399,7 +403,7 @@ class InputViewModel {
       nextOffset.y = 0
       self.decelerationVelocityY = 0
     }
-    editor.renderer.viewOffset = nextOffset
+    editor.editorRenderer.viewOffset = nextOffset
     self.originalViewOffset = nextOffset
     NotificationCenter.default.post(name: DisplayViewController.refreshNotification, object: nil)
   }
@@ -426,7 +430,7 @@ class InputViewModel {
       return 0
     }
     let pageWidth = editor.viewSize.width
-    let viewScale = CGFloat(editor.renderer.viewScale)
+    let viewScale = CGFloat(editor.editorRenderer.viewScale)
     // At zoom 1.0: maxX = pageWidth * 0 = 0
     // At zoom 2.0: maxX = pageWidth * 1 = pageWidth
     // At zoom 4.0: maxX = pageWidth * 3
@@ -443,27 +447,36 @@ class InputViewModel {
     else {
       return
     }
-    let toolController: IINKToolController = engine.createToolController()
-    self.editor = self.engine?.createEditor(
+    let newToolController: IINKToolController = engine.createToolController()
+    let newEditor = self.engine?.createEditor(
       renderer: renderer,
-      toolController: toolController)
-    self.toolController = toolController
+      toolController: newToolController)
+    self.editor = newEditor
+    self.toolController = newToolController
 
-    // Apply theme from css file if any
+    // Apply theme from css file if any.
     if let path = Bundle.main.path(forResource: "theme", ofType: "css"),
       let cssString = try? String(contentsOfFile: path).trimmingCharacters(
         in: .whitespacesAndNewlines) {
-      try? self.editor?.set(theme: cssString)
+      try? self.editor?.setEditorTheme(cssString)
     }
 
-    self.editor?.set(fontMetricsProvider: FontMetricsProvider())
-    if let editor = self.editor {
-      self.editorDelegate?.didCreateEditor(editor: editor)
+    self.editor?.setEditorFontMetricsProvider(FontMetricsProvider())
+    // Cast to IINKEditor for delegate callback since EditorDelegate expects concrete SDK type.
+    if let iinkEditor = newEditor {
+      self.editorDelegate?.didCreateEditor(editor: iinkEditor)
     }
     target.renderer = renderer
     target.imageLoader = ImageLoader()
 
-    self.editor?.addDelegate(self.editorDelegateTrampoline)
+    self.editor?.addEditorDelegate(self.editorDelegateTrampoline)
+  }
+
+  // Internal method for test injection of mock dependencies.
+  // Allows tests to set editor and tool controller without going through SDK initialization.
+  func setTestDependencies(editor: (any EditorProtocol)?, toolController: (any ToolControllerProtocol)?) {
+    self.editor = editor
+    self.toolController = toolController
   }
 }
 // swiftlint:enable type_body_length

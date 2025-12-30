@@ -17,7 +17,8 @@ class RenderView: UIView {
       self.canvas.imageLoader = self.imageLoader
     }
   }
-  weak var offscreenRenderSurfaces: OffscreenRenderSurfaces? {
+  // Uses protocol type to allow dependency injection for testing.
+  weak var offscreenRenderSurfaces: (any OffscreenRenderSurfacesProtocol)? {
     didSet {
       self.canvas.offscreenRenderSurfaces = self.offscreenRenderSurfaces
     }

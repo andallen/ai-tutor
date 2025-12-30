@@ -14,7 +14,8 @@ import UIKit
   var size: CGSize = CGSize.zero
   var clearAtStartDraw: Bool = true
   weak var imageLoader: ImageLoader?
-  weak var offscreenRenderSurfaces: OffscreenRenderSurfaces?
+  // Uses protocol type to allow dependency injection for testing.
+  weak var offscreenRenderSurfaces: (any OffscreenRenderSurfacesProtocol)?
   private var aTransform: CGAffineTransform = .identity
   private var style: IINKStyle = IINKStyle()
   private var clippedGroupIdentifier: [String] = []

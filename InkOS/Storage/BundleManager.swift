@@ -20,6 +20,9 @@ struct NotebookMetadata: Identifiable, Sendable {
 // The Bundle Manager is the only code allowed to perform direct file operations on Bundles.
 // All file system access for Notebooks must go through the Bundle Manager.
 actor BundleManager {
+  // Shared singleton instance for accessing the Bundle Manager.
+  static let shared = BundleManager()
+
   // The name of the Manifest file inside each Bundle.
   private static let manifestFileName = "manifest.json"
 

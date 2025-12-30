@@ -20,8 +20,9 @@ actor DocumentHandle {
   let packagePath: String
 
   // Stores the opened package for the lifetime of the handle.
+  // Uses protocol type to allow dependency injection for testing.
   // Uses MainActor access because the SDK objects are not thread-safe.
-  private var package: IINKContentPackage?
+  private var package: (any ContentPackageProtocol)?
 
   // Stores the manifest file name inside the notebook folder.
   private static let manifestFileName = "manifest.json"
@@ -30,12 +31,15 @@ actor DocumentHandle {
 
   // Creates a handle and opens the iink package.
   // Opens on the main actor because the engine is used on the main actor in this project.
+  // Accepts an optional engineProvider dependency; defaults to the shared singleton for production use.
+  // Pass nil to use the default EngineProvider.sharedInstance (avoids MainActor isolation issues with default parameter).
   init(
     notebookID: String,
     bundleURL: URL,
     manifest: Manifest,
     packagePath: String,
-    openOption: IINKPackageOpenOption
+    openOption: IINKPackageOpenOption,
+    engineProvider: (any EngineProviderProtocol)? = nil
   ) async throws {
     self.notebookID = notebookID
     self.bundleURL = bundleURL
@@ -44,11 +48,13 @@ actor DocumentHandle {
     self.packagePath = packagePath
 
     self.package = try await MainActor.run {
-      guard let engine = EngineProvider.sharedInstance.engine else {
+      // Use provided engine provider or fall back to the shared singleton.
+      let provider = engineProvider ?? EngineProvider.sharedInstance
+      guard let engine = provider.engineInstance else {
         throw DocumentHandleError.engineUnavailable
       }
       do {
-        let openedPackage = try engine.openPackage(packagePath, openOption: openOption)
+        let openedPackage = try engine.openContentPackage(packagePath, openOption: openOption)
         return openedPackage
       } catch {
         throw DocumentHandleError.packageOpenFailed(underlyingError: error)
@@ -68,7 +74,7 @@ actor DocumentHandle {
   }
 
   // Returns the package if it was opened successfully.
-  func getPackage() async -> IINKContentPackage? {
+  func getPackage() async -> (any ContentPackageProtocol)? {
     let capturedPackage = self.package
     return await MainActor.run {
       capturedPackage
@@ -79,20 +85,20 @@ actor DocumentHandle {
   func getPartCount() async -> Int {
     guard let capturedPackage = self.package else { return 0 }
     let count = await MainActor.run {
-      capturedPackage.partCount()
+      capturedPackage.getPartCount()
     }
     return count
   }
 
   // Returns a part by index.
-  func getPart(at index: Int) async -> IINKContentPart? {
+  func getPart(at index: Int) async -> (any ContentPartProtocol)? {
     guard let capturedPackage = self.package else { return nil }
     guard index >= 0 else { return nil }
 
     return await MainActor.run {
-      guard index < capturedPackage.partCount() else { return nil }
+      guard index < capturedPackage.getPartCount() else { return nil }
       do {
-        let part = try capturedPackage.part(at: index)
+        let part = try capturedPackage.getPart(at: index)
         return part
       } catch {
         return nil
@@ -101,21 +107,21 @@ actor DocumentHandle {
   }
 
   // Ensures there is at least one part and returns the first part.
-  func ensureInitialPart(type: String) async throws -> IINKContentPart {
+  func ensureInitialPart(type: String) async throws -> any ContentPartProtocol {
     guard let capturedPackage = self.package else {
       throw DocumentHandleError.packageNotAvailable
     }
     return try await MainActor.run {
-      if capturedPackage.partCount() == 0 {
+      if capturedPackage.getPartCount() == 0 {
         do {
-          let part = try capturedPackage.createPart(with: type)
+          let part = try capturedPackage.createNewPart(with: type)
           return part
         } catch {
           throw DocumentHandleError.partCreationFailed(underlyingError: error)
         }
       }
       do {
-        let part = try capturedPackage.part(at: 0)
+        let part = try capturedPackage.getPart(at: 0)
         return part
       } catch {
         throw DocumentHandleError.partLoadFailed(underlyingError: error)
@@ -129,7 +135,7 @@ actor DocumentHandle {
       throw DocumentHandleError.packageNotAvailable
     }
     try await MainActor.run {
-      try capturedPackage.save()
+      try capturedPackage.savePackage()
     }
   }
 
@@ -139,7 +145,7 @@ actor DocumentHandle {
       throw DocumentHandleError.packageNotAvailable
     }
     try await MainActor.run {
-      try capturedPackage.saveToTemp()
+      try capturedPackage.savePackageToTemp()
     }
   }
 
