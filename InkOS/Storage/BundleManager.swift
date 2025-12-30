@@ -194,6 +194,11 @@ actor BundleManager {
   // Deletes a Bundle folder and all its contents including the iink package.
   // Throws if the Bundle doesn't exist or cannot be deleted.
   func deleteBundle(notebookID: String) async throws {
+    // Validate the notebookID is not empty.
+    guard !notebookID.isEmpty else {
+      throw BundleError.bundleNotFound(notebookID: notebookID)
+    }
+
     // Get the directory where Bundles are stored.
     let bundlesDirectory = try await BundleStorage.bundlesDirectory()
 

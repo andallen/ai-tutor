@@ -764,9 +764,8 @@ struct EditorViewModelTests {
         documentHandle: mockHandle
       )
 
-      viewModel.releaseEditor(previewImage: nil)
-
-      try await Task.sleep(nanoseconds: 200_000_000)
+      let releaseTask = viewModel.releaseEditor(previewImage: nil)
+      await releaseTask.value
 
       let savedState = await mockHandle.savedViewportState
       #expect(savedState?.offsetX == 100)
@@ -788,7 +787,8 @@ struct EditorViewModelTests {
         documentHandle: mockHandle
       )
 
-      viewModel.releaseEditor(previewImage: nil)
+      let releaseTask = viewModel.releaseEditor(previewImage: nil)
+      await releaseTask.value
 
       #expect(mockEditor.setPartCallCount == 1)
     }
@@ -814,9 +814,8 @@ struct EditorViewModelTests {
         context.fill(CGRect(x: 0, y: 0, width: 100, height: 100))
       }
 
-      viewModel.releaseEditor(previewImage: testImage)
-
-      try await Task.sleep(nanoseconds: 200_000_000)
+      let releaseTask = viewModel.releaseEditor(previewImage: testImage)
+      await releaseTask.value
 
       let savedPreviewData = await mockHandle.savedPreviewData
       #expect(savedPreviewData != nil)
@@ -836,9 +835,8 @@ struct EditorViewModelTests {
         documentHandle: mockHandle
       )
 
-      viewModel.releaseEditor(previewImage: nil)
-
-      try await Task.sleep(nanoseconds: 200_000_000)
+      let releaseTask = viewModel.releaseEditor(previewImage: nil)
+      await releaseTask.value
 
       let closeCount = await mockHandle.closeCallCount
       #expect(closeCount == 1)
@@ -846,10 +844,11 @@ struct EditorViewModelTests {
 
     @Test("releaseEditor with nil editor does nothing")
     @MainActor
-    func releaseEditorWithNilEditor() {
+    func releaseEditorWithNilEditor() async {
       let viewModel = EditorViewModel()
 
-      viewModel.releaseEditor(previewImage: nil)
+      let releaseTask = viewModel.releaseEditor(previewImage: nil)
+      await releaseTask.value
 
       // Should not crash.
     }

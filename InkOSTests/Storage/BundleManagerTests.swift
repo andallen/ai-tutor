@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: - Test Suite
 
-@Suite("BundleManager Tests")
+@Suite("BundleManager Tests", .serialized)
 struct BundleManagerTests {
 
   // MARK: - listBundles Tests
@@ -39,16 +39,14 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       // Create a test bundle to ensure we have something to list.
       let created = try await manager.createBundle(displayName: "Test List Bundle")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let bundles = try await manager.listBundles()
       for metadata in bundles {
         #expect(!metadata.id.isEmpty, "Each notebook metadata should have a non-empty id")
       }
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("each metadata has non-empty displayName")
@@ -56,50 +54,44 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let testName = "Test Display Name Bundle"
       let created = try await manager.createBundle(displayName: testName)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let bundles = try await manager.listBundles()
       let found = bundles.first { $0.id == created.id }
       #expect(found != nil)
       #expect(found?.displayName == testName)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("metadata previewImageData can be nil for new bundles")
     func metadataPreviewCanBeNil() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "No Preview Bundle")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let bundles = try await manager.listBundles()
       let found = bundles.first { $0.id == created.id }
       #expect(found != nil)
       // New bundles should have nil preview data since no preview has been saved.
       #expect(found?.previewImageData == nil)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("metadata lastAccessedAt is set for created bundles")
     func metadataLastAccessedAtIsSet() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "Access Time Bundle")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let bundles = try await manager.listBundles()
       let found = bundles.first { $0.id == created.id }
       #expect(found != nil)
       // According to protocol, lastAccessedAt is set on creation.
       #expect(found?.lastAccessedAt != nil)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("lists multiple bundles when they exist")
@@ -108,19 +100,17 @@ struct BundleManagerTests {
       let bundle1 = try await manager.createBundle(displayName: "Multi Bundle 1")
       let bundle2 = try await manager.createBundle(displayName: "Multi Bundle 2")
       let bundle3 = try await manager.createBundle(displayName: "Multi Bundle 3")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: bundle1.id)
-          try? await manager.deleteBundle(notebookID: bundle2.id)
-          try? await manager.deleteBundle(notebookID: bundle3.id)
-        }
-      }
 
       let bundles = try await manager.listBundles()
       let ids = Set(bundles.map { $0.id })
       #expect(ids.contains(bundle1.id))
       #expect(ids.contains(bundle2.id))
       #expect(ids.contains(bundle3.id))
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: bundle1.id)
+      try? await manager.deleteBundle(notebookID: bundle2.id)
+      try? await manager.deleteBundle(notebookID: bundle3.id)
     }
 
     @Test("skips hidden directories starting with dot")
@@ -145,13 +135,11 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let testName = "My Test Notebook"
       let created = try await manager.createBundle(displayName: testName)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       #expect(created.displayName == testName)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("generates unique UUID for id")
@@ -159,30 +147,26 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let bundle1 = try await manager.createBundle(displayName: "Unique ID Test 1")
       let bundle2 = try await manager.createBundle(displayName: "Unique ID Test 2")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: bundle1.id)
-          try? await manager.deleteBundle(notebookID: bundle2.id)
-        }
-      }
 
       #expect(bundle1.id != bundle2.id, "Each bundle should have a unique ID")
       // Verify ID looks like a UUID.
       #expect(UUID(uuidString: bundle1.id) != nil, "ID should be a valid UUID")
       #expect(UUID(uuidString: bundle2.id) != nil, "ID should be a valid UUID")
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: bundle1.id)
+      try? await manager.deleteBundle(notebookID: bundle2.id)
     }
 
     @Test("returns metadata with nil preview for new bundle")
     func newBundleHasNilPreview() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "New Bundle Preview Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       #expect(created.previewImageData == nil, "New bundles should have nil preview")
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("returns metadata with lastAccessedAt set to creation time")
@@ -191,17 +175,15 @@ struct BundleManagerTests {
       let beforeCreate = Date()
       let created = try await manager.createBundle(displayName: "Access Time Test")
       let afterCreate = Date()
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       #expect(created.lastAccessedAt != nil, "lastAccessedAt should be set")
       if let accessedAt = created.lastAccessedAt {
         #expect(accessedAt >= beforeCreate, "lastAccessedAt should be at or after creation start")
         #expect(accessedAt <= afterCreate, "lastAccessedAt should be at or before creation end")
       }
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("creates bundle with unicode display name")
@@ -209,13 +191,11 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let unicodeName = "数学笔记 📝 Math Notes"
       let created = try await manager.createBundle(displayName: unicodeName)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       #expect(created.displayName == unicodeName)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("creates bundle with emoji in display name")
@@ -223,13 +203,11 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let emojiName = "🚀 Rocket Science 🧪"
       let created = try await manager.createBundle(displayName: emojiName)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       #expect(created.displayName == emojiName)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("creates bundle with very long display name")
@@ -237,13 +215,11 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let longName = String(repeating: "A", count: 1000)
       let created = try await manager.createBundle(displayName: longName)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       #expect(created.displayName == longName)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("creates bundle with whitespace in display name")
@@ -251,13 +227,11 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let whitespaceName = "  Notebook with   spaces  "
       let created = try await manager.createBundle(displayName: whitespaceName)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       #expect(created.displayName == whitespaceName)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("creates bundle with special characters in display name")
@@ -265,13 +239,11 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let specialName = "Test <notebook> & \"more\" 'stuff'"
       let created = try await manager.createBundle(displayName: specialName)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       #expect(created.displayName == specialName)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("created bundle appears in listBundles")
@@ -279,15 +251,13 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let testName = "List Appearance Test"
       let created = try await manager.createBundle(displayName: testName)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let bundles = try await manager.listBundles()
       let found = bundles.first { $0.id == created.id }
       #expect(found != nil, "Created bundle should appear in listBundles")
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("multiple creates do not overwrite each other")
@@ -295,12 +265,6 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let bundle1 = try await manager.createBundle(displayName: "Independent 1")
       let bundle2 = try await manager.createBundle(displayName: "Independent 2")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: bundle1.id)
-          try? await manager.deleteBundle(notebookID: bundle2.id)
-        }
-      }
 
       let bundles = try await manager.listBundles()
       let found1 = bundles.first { $0.id == bundle1.id }
@@ -308,6 +272,10 @@ struct BundleManagerTests {
 
       #expect(found1?.displayName == "Independent 1")
       #expect(found2?.displayName == "Independent 2")
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: bundle1.id)
+      try? await manager.deleteBundle(notebookID: bundle2.id)
     }
   }
 
@@ -322,17 +290,15 @@ struct BundleManagerTests {
       let originalName = "Original Name"
       let newName = "New Name"
       let created = try await manager.createBundle(displayName: originalName)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       try await manager.renameBundle(notebookID: created.id, newDisplayName: newName)
 
       let bundles = try await manager.listBundles()
       let found = bundles.first { $0.id == created.id }
       #expect(found?.displayName == newName)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("throws bundleNotFound for non-existent notebookID")
@@ -359,28 +325,21 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "ID Preservation Test")
       let originalId = created.id
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: originalId)
-        }
-      }
 
       try await manager.renameBundle(notebookID: originalId, newDisplayName: "Renamed")
 
       let bundles = try await manager.listBundles()
       let found = bundles.first { $0.id == originalId }
       #expect(found != nil, "Bundle should still be findable by original ID")
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: originalId)
     }
 
     @Test("rename with unicode characters")
     func renameWithUnicodeCharacters() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "Unicode Rename Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let unicodeName = "日本語ノート 🇯🇵"
       try await manager.renameBundle(notebookID: created.id, newDisplayName: unicodeName)
@@ -388,17 +347,15 @@ struct BundleManagerTests {
       let bundles = try await manager.listBundles()
       let found = bundles.first { $0.id == created.id }
       #expect(found?.displayName == unicodeName)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("rename with very long name")
     func renameWithVeryLongName() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "Long Rename Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let longName = String(repeating: "X", count: 2000)
       try await manager.renameBundle(notebookID: created.id, newDisplayName: longName)
@@ -406,6 +363,9 @@ struct BundleManagerTests {
       let bundles = try await manager.listBundles()
       let found = bundles.first { $0.id == created.id }
       #expect(found?.displayName == longName)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("rename to same name succeeds")
@@ -413,11 +373,6 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let name = "Same Name Test"
       let created = try await manager.createBundle(displayName: name)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       // Renaming to the same name should succeed without error.
       try await manager.renameBundle(notebookID: created.id, newDisplayName: name)
@@ -425,17 +380,15 @@ struct BundleManagerTests {
       let bundles = try await manager.listBundles()
       let found = bundles.first { $0.id == created.id }
       #expect(found?.displayName == name)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("rename multiple times")
     func renameMultipleTimes() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "Multiple Rename Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       try await manager.renameBundle(notebookID: created.id, newDisplayName: "First Rename")
       try await manager.renameBundle(notebookID: created.id, newDisplayName: "Second Rename")
@@ -444,17 +397,15 @@ struct BundleManagerTests {
       let bundles = try await manager.listBundles()
       let found = bundles.first { $0.id == created.id }
       #expect(found?.displayName == "Final Rename")
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("rename with whitespace only")
     func renameWithWhitespaceOnly() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "Whitespace Rename Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let whitespaceName = "   "
       try await manager.renameBundle(notebookID: created.id, newDisplayName: whitespaceName)
@@ -462,6 +413,9 @@ struct BundleManagerTests {
       let bundles = try await manager.listBundles()
       let found = bundles.first { $0.id == created.id }
       #expect(found?.displayName == whitespaceName)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
   }
 
@@ -522,12 +476,6 @@ struct BundleManagerTests {
       let bundle1 = try await manager.createBundle(displayName: "Keep Me 1")
       let bundle2 = try await manager.createBundle(displayName: "Delete Me")
       let bundle3 = try await manager.createBundle(displayName: "Keep Me 2")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: bundle1.id)
-          try? await manager.deleteBundle(notebookID: bundle3.id)
-        }
-      }
 
       try await manager.deleteBundle(notebookID: bundle2.id)
 
@@ -537,6 +485,10 @@ struct BundleManagerTests {
       #expect(ids.contains(bundle1.id), "Unrelated bundle 1 should still exist")
       #expect(!ids.contains(bundle2.id), "Deleted bundle should be gone")
       #expect(ids.contains(bundle3.id), "Unrelated bundle 3 should still exist")
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: bundle1.id)
+      try? await manager.deleteBundle(notebookID: bundle3.id)
     }
 
     @Test("delete with invalid UUID format")
@@ -579,15 +531,13 @@ struct BundleManagerTests {
     func opensExistingBundle() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "Open Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let handle = try await manager.openNotebook(id: created.id)
       #expect(handle is DocumentHandle)
       await handle.close(saveBeforeClose: false)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("throws bundleNotFound for non-existent notebookID")
@@ -613,52 +563,56 @@ struct BundleManagerTests {
     func returnedHandleHasCorrectId() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "Handle ID Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let handle = try await manager.openNotebook(id: created.id)
       let handleId = await handle.notebookID
       #expect(handleId == created.id)
       await handle.close(saveBeforeClose: false)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("opening updates lastAccessedAt")
     func openingUpdatesLastAccessedAt() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "Access Update Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
+      let originalAccessTime = created.lastAccessedAt
 
-      // Wait a bit to ensure time difference.
-      try await Task.sleep(nanoseconds: 100_000_000)
-      let beforeOpen = Date()
+      // Verify the manifest file was initially written.
+      let bundlesDir = try await BundleStorage.bundlesDirectory()
+      let manifestURL = bundlesDir.appendingPathComponent(created.id).appendingPathComponent("manifest.json")
+      let initialModTime = try FileManager.default.attributesOfItem(atPath: manifestURL.path)[.modificationDate] as? Date
+
+      // Wait at least 1 second to ensure different whole seconds.
+      // ISO8601 date encoding truncates to whole seconds, losing sub-second precision.
+      try await Task.sleep(nanoseconds: 1_100_000_000)
 
       let handle = try await manager.openNotebook(id: created.id)
       await handle.close(saveBeforeClose: false)
 
+      // Verify the manifest file was actually modified.
+      let updatedModTime = try FileManager.default.attributesOfItem(atPath: manifestURL.path)[.modificationDate] as? Date
+      #expect(updatedModTime != initialModTime, "Manifest file should have been modified")
+      if let initial = initialModTime, let updated = updatedModTime {
+        #expect(updated > initial, "Manifest file modification time should be newer")
+      }
+
       let bundles = try await manager.listBundles()
       let found = bundles.first { $0.id == created.id }
       #expect(found != nil)
-      if let accessedAt = found?.lastAccessedAt {
-        #expect(accessedAt >= beforeOpen, "lastAccessedAt should be updated on open")
+      if let accessedAt = found?.lastAccessedAt, let original = originalAccessTime {
+        #expect(accessedAt > original, "lastAccessedAt should be updated on open")
       }
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("can open same notebook multiple times sequentially")
     func canOpenSameNotebookMultipleTimes() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "Multiple Open Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let handle1 = try await manager.openNotebook(id: created.id)
       await handle1.close(saveBeforeClose: false)
@@ -671,6 +625,9 @@ struct BundleManagerTests {
 
       // All opens should succeed.
       #expect(true)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("handle manifest has correct displayName")
@@ -678,33 +635,29 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let testName = "Manifest Name Test"
       let created = try await manager.createBundle(displayName: testName)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let handle = try await manager.openNotebook(id: created.id)
       let manifest = await handle.manifest
       #expect(manifest.displayName == testName)
       await handle.close(saveBeforeClose: false)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("handle packagePath is valid")
     func handlePackagePathIsValid() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "Package Path Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let handle = try await manager.openNotebook(id: created.id)
       let packagePath = await handle.packagePath
       #expect(!packagePath.isEmpty)
       #expect(packagePath.hasSuffix(".iink"))
       await handle.close(saveBeforeClose: false)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
   }
 
@@ -717,42 +670,36 @@ struct BundleManagerTests {
     func returnsPathEndingWithContentIink() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "Path Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let path = try await manager.iinkPackagePath(forNotebookID: created.id)
       #expect(path.hasSuffix("content.iink"))
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("path contains notebookID")
     func pathContainsNotebookId() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "ID in Path Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let path = try await manager.iinkPackagePath(forNotebookID: created.id)
       #expect(path.contains(created.id))
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("path is absolute")
     func pathIsAbsolute() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "Absolute Path Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let path = try await manager.iinkPackagePath(forNotebookID: created.id)
       #expect(path.hasPrefix("/"), "Path should be absolute")
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("path does not validate existence")
@@ -770,31 +717,27 @@ struct BundleManagerTests {
     func pathUsesDecomposedNormalization() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "Unicode Path Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let path = try await manager.iinkPackagePath(forNotebookID: created.id)
       // The path should use decomposedStringWithCanonicalMapping.
       let normalizedPath = path.decomposedStringWithCanonicalMapping
       #expect(path == normalizedPath)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("path for existing bundle points to real file")
     func pathForExistingBundlePointsToRealFile() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "Real File Path Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let path = try await manager.iinkPackagePath(forNotebookID: created.id)
       let fileExists = FileManager.default.fileExists(atPath: path)
       #expect(fileExists, "Package file should exist for created bundle")
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
   }
 
@@ -945,13 +888,11 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let nameWithNewlines = "Line1\nLine2\nLine3"
       let created = try await manager.createBundle(displayName: nameWithNewlines)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       #expect(created.displayName == nameWithNewlines)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("create bundle with tabs in name")
@@ -959,13 +900,11 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let nameWithTabs = "Col1\tCol2\tCol3"
       let created = try await manager.createBundle(displayName: nameWithTabs)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       #expect(created.displayName == nameWithTabs)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("create bundle with null character in name")
@@ -973,14 +912,12 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let nameWithNull = "Before\0After"
       let created = try await manager.createBundle(displayName: nameWithNull)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       // The null character may or may not be preserved depending on JSON encoding.
       #expect(!created.displayName.isEmpty)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("create bundle with RTL text in name")
@@ -988,13 +925,11 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let rtlName = "مرحبا بالعالم"
       let created = try await manager.createBundle(displayName: rtlName)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       #expect(created.displayName == rtlName)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("create bundle with mixed direction text")
@@ -1002,13 +937,11 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let mixedName = "Hello مرحبا World عالم"
       let created = try await manager.createBundle(displayName: mixedName)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       #expect(created.displayName == mixedName)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("create bundle with combining characters")
@@ -1017,14 +950,12 @@ struct BundleManagerTests {
       // e + combining acute accent.
       let combiningName = "Cafe\u{0301}"
       let created = try await manager.createBundle(displayName: combiningName)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       // The combining character should be preserved or normalized.
       #expect(!created.displayName.isEmpty)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("create bundle with zero-width characters")
@@ -1032,13 +963,11 @@ struct BundleManagerTests {
       let manager = BundleManager.shared
       let zeroWidthName = "Hello\u{200B}World"
       let created = try await manager.createBundle(displayName: zeroWidthName)
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       #expect(!created.displayName.isEmpty)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("notebookID with path traversal characters is handled safely")
@@ -1110,11 +1039,6 @@ struct BundleManagerTests {
     func createModifyVerify() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "Modify Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       // Open and get part count (verifies package structure).
       let handle = try await manager.openNotebook(id: created.id)
@@ -1125,17 +1049,15 @@ struct BundleManagerTests {
       // Verify bundle still exists after modifications.
       let bundles = try await manager.listBundles()
       #expect(bundles.contains { $0.id == created.id })
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
 
     @Test("package path matches handle package path")
     func packagePathMatchesHandlePath() async throws {
       let manager = BundleManager.shared
       let created = try await manager.createBundle(displayName: "Path Match Test")
-      defer {
-        Task {
-          try? await manager.deleteBundle(notebookID: created.id)
-        }
-      }
 
       let managerPath = try await manager.iinkPackagePath(forNotebookID: created.id)
       let handle = try await manager.openNotebook(id: created.id)
@@ -1148,6 +1070,9 @@ struct BundleManagerTests {
       )
 
       await handle.close(saveBeforeClose: false)
+
+      // Cleanup after assertions complete.
+      try? await manager.deleteBundle(notebookID: created.id)
     }
   }
 }
