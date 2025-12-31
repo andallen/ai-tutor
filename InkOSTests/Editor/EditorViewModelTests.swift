@@ -155,7 +155,9 @@ final class MockEditorVMEditor: EditorProtocol {
 }
 
 // Mock content part for testing part operations.
-final class MockEditorVMContentPart: ContentPartProtocol {}
+final class MockEditorVMContentPart: ContentPartProtocol {
+  let identifier: String = "mock-part-id"
+}
 
 // Mock InputViewController for testing tool delegation.
 @MainActor
