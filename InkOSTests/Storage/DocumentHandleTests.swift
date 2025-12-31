@@ -76,9 +76,12 @@ final class MockDocumentHandlePackage: ContentPackageProtocol {
 @MainActor
 final class MockDocumentHandleEngine: EngineProtocol {
   var openCallCount = 0
+  var createCallCount = 0
   var lastOpenedPath: String?
+  var lastCreatedPath: String?
   var lastOpenOption: IINKPackageOpenOption?
   var shouldThrowOnOpen = false
+  var shouldThrowOnCreate = false
   var mockPackage: MockDocumentHandlePackage?
 
   func openContentPackage(_ path: String, openOption: IINKPackageOpenOption) throws -> any ContentPackageProtocol {
@@ -88,6 +91,19 @@ final class MockDocumentHandleEngine: EngineProtocol {
 
     if shouldThrowOnOpen {
       throw MockError.packageOpenFailed
+    }
+
+    let package = mockPackage ?? MockDocumentHandlePackage()
+    mockPackage = package
+    return package
+  }
+
+  func createContentPackage(_ path: String) throws -> any ContentPackageProtocol {
+    createCallCount += 1
+    lastCreatedPath = path
+
+    if shouldThrowOnCreate {
+      throw MockError.packageCreationFailed
     }
 
     let package = mockPackage ?? MockDocumentHandlePackage()
@@ -117,6 +133,7 @@ final class MockDocumentHandleEngineProvider: EngineProviderProtocol {
 enum MockError: Error, LocalizedError {
   case engineUnavailable
   case packageOpenFailed
+  case packageCreationFailed
   case packageSaveFailed
   case partCreationFailed
   case partAccessFailed
@@ -128,6 +145,8 @@ enum MockError: Error, LocalizedError {
       return "Mock engine is not available."
     case .packageOpenFailed:
       return "Mock package open failed."
+    case .packageCreationFailed:
+      return "Mock package creation failed."
     case .packageSaveFailed:
       return "Mock package save failed."
     case .partCreationFailed:
