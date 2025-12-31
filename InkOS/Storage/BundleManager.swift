@@ -134,8 +134,8 @@ actor BundleManager {
       do {
         // Create the package file.
         let package = try engine.createPackage(iinkPath)
-        // Create an initial "Drawing" part in the package.
-        _ = try package.createPart(with: "Drawing")
+        // Create an initial "Raw Content" part in the package.
+        _ = try package.createPart(with: "Raw Content")
         // Save the package to persist it to disk.
         try package.save()
         return true

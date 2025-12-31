@@ -1,0 +1,6 @@
+/* Theme to hide real-time recognition glyphs while preserving ink strokes. */
+/* Glyphs become visible after double-tap conversion replaces strokes. */
+
+.raw-content {
+  color: #00000000;
+}

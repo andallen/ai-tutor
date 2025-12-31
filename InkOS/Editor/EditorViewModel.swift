@@ -22,7 +22,11 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
 
   // MARK: Properties
 
-  private let defaultPartType: String = "Drawing"
+  private let defaultPartType: String = "Raw Content"
+  // Provides the default Raw Content configuration.
+  private let configurationProvider = DefaultRawContentConfigurationProvider()
+  // Applies configuration to the engine.
+  private let configurationApplier = RawContentConfigurationApplier()
   // Uses concrete IINKEditor for production, protocol for test injection.
   weak var editor: IINKEditor?
   // Uses protocol type to allow dependency injection for testing.
@@ -36,6 +40,8 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
   private var hasPresentedSaveError = false
   private let autoSaveDelayNanoseconds: UInt64 = 2_000_000_000
   private let fullSaveDelayNanoseconds: UInt64 = 20_000_000_000
+  // Manages periodic JIIX export for search indexing and LLM consumption.
+  private var jiixPersistenceService: JIIXPersistenceService?
   // Tracks the selected pen color so it can be applied when the editor is ready.
   private var selectedPenColorHex = "#000000"
   // Tracks the selected highlighter color so it can be applied when the editor is ready.
@@ -50,14 +56,16 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
   private var inputMode: InputMode = .forcePen
 
   func setupModel(engineProvider: EngineProvider, documentHandle: DocumentHandle) {
+    // Set documentHandle BEFORE creating the editor so it's available in didCreateEditor.
+    self.documentHandle = documentHandle
+    self.title = documentHandle.initialManifest.displayName
+
     // We want the Pen mode for this GetStarted sample code. It lets the user use either its mouse or fingers to draw.
     // If you have got an iPad Pro with an Apple Pencil, please set this value to InputModeAuto for a better experience.
     let inputViewModel: InputViewModel = InputViewModel(
       engine: engineProvider.engine, inputMode: .forcePen, editorDelegate: self,
-      smartGuideDelegate: nil)
+      smartGuideDelegate: nil, smartGuideDisabled: true)
     self.editorViewController = InputViewController(viewModel: inputViewModel)
-    self.title = documentHandle.initialManifest.displayName
-    self.documentHandle = documentHandle
     self.loadNotebookPartIfReady()
   }
 
@@ -358,6 +366,11 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
 
     autoSaveTask?.cancel()
     fullSaveTask?.cancel()
+
+    // Cancel any pending JIIX debounce operations.
+    let jiixService = jiixPersistenceService
+    jiixPersistenceService = nil
+
     do {
       try activeEditor?.setEditorPart(nil)
     } catch {
@@ -367,6 +380,8 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
     let previewData = previewImage?.pngData()
     documentHandle = nil
     return Task { [weak self] in
+      // Cancel JIIX persistence debounce timer.
+      await jiixService?.cancelPendingSave()
       guard let handle = handle else {
         return
       }
@@ -400,6 +415,8 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
 
   func handleAppBackground() {
     Task { [weak self] in
+      // Save JIIX content immediately when app enters background.
+      await self?.jiixPersistenceService?.handleAppBackground()
       await self?.performFullSave(reason: "background")
     }
   }
@@ -488,6 +505,32 @@ extension EditorViewModel: EditorDelegate {
 
   func didCreateEditor(editor: IINKEditor) {
     self.editor = editor
+
+    // Reset configuration to defaults before applying Raw Content settings.
+    // This is required by MyScript SDK to clear any cached configuration values.
+    editor.configuration.reset()
+
+    // Apply Raw Content configuration before loading the part.
+    do {
+      let configuration = configurationProvider.provideConfiguration()
+      try configurationApplier.applyConfiguration(configuration, to: editor.configuration)
+    } catch {
+      createNonFatalAlert(
+        title: "Configuration Warning",
+        message: "Failed to apply some Raw Content settings: \(error.localizedDescription)"
+      )
+    }
+
+    // Initialize JIIX persistence service for search indexing and LLM consumption.
+    // Requires both editor and documentHandle to be available.
+    if let handle = documentHandle {
+      jiixPersistenceService = JIIXPersistenceService(
+        editor: editor,
+        documentHandle: handle,
+        debounceDelaySeconds: JIIXPersistenceConfiguration.default.debounceDelaySeconds
+      )
+    }
+
     applyTool(selection: selectedTool, editor: editor)
     applyInkStyle(colorHex: selectedPenColorHex, width: selectedPenWidth, tool: .toolPen)
     applyInkStyle(
@@ -506,6 +549,12 @@ extension EditorViewModel: EditorDelegate {
     hasPendingFullSave = true
     scheduleAutoSave()
     scheduleFullSave()
+
+    // Notify JIIX persistence service of content changes.
+    // Service handles debouncing to avoid excessive exports.
+    Task { [weak self] in
+      await self?.jiixPersistenceService?.contentDidChange()
+    }
   }
 
   func onError(editor: IINKEditor, blockId: String, message: String) {
