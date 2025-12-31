@@ -5,9 +5,13 @@ import UIKit
 
 // Protocol abstracting IINKContentPart for testability.
 // Allows dependency injection of mock content parts in tests.
-protocol ContentPartProtocol: AnyObject {}
+protocol ContentPartProtocol: AnyObject {
+  // Unique identifier for this part within the package.
+  var identifier: String { get }
+}
 
 // Makes the real IINKContentPart conform to the protocol.
+// IINKContentPart already has an identifier property.
 extension IINKContentPart: ContentPartProtocol {}
 
 // MARK: - ContentPackageProtocol
@@ -49,16 +53,21 @@ extension IINKContentPackage: ContentPackageProtocol {
 // MARK: - EngineProtocol
 
 // Protocol abstracting IINKEngine for testability.
-// Covers the package opening method used by DocumentHandle.
+// Covers the package operations used by DocumentHandle and ImportCoordinator.
 protocol EngineProtocol: AnyObject {
   func openContentPackage(_ path: String, openOption: IINKPackageOpenOption) throws -> any ContentPackageProtocol
+  func createContentPackage(_ path: String) throws -> any ContentPackageProtocol
 }
 
 // Makes the real IINKEngine conform to the protocol.
-// Uses a distinct method name to avoid ambiguity with SDK method.
+// Uses distinct method names to avoid ambiguity with SDK methods.
 extension IINKEngine: EngineProtocol {
   func openContentPackage(_ path: String, openOption: IINKPackageOpenOption) throws -> any ContentPackageProtocol {
     return try self.openPackage(path, openOption: openOption)
+  }
+
+  func createContentPackage(_ path: String) throws -> any ContentPackageProtocol {
+    return try self.createPackage(path)
   }
 }
 
