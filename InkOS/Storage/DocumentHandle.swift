@@ -28,11 +28,14 @@ actor DocumentHandle {
   private static let manifestFileName = "manifest.json"
   // Stores the preview image file name inside the notebook folder.
   private static let previewImageFileName = "preview.png"
+  // Stores the JIIX file name inside the notebook folder.
+  private static let jiixFileName = "content.jiix"
 
   // Creates a handle and opens the iink package.
   // Opens on the main actor because the engine is used on the main actor in this project.
   // Accepts an optional engineProvider dependency; defaults to the shared singleton for production use.
-  // Pass nil to use the default EngineProvider.sharedInstance (avoids MainActor isolation issues with default parameter).
+  // Pass nil to use the default EngineProvider.sharedInstance.
+  // This avoids MainActor isolation issues with default parameter.
   init(
     notebookID: String,
     bundleURL: URL,
@@ -197,7 +200,39 @@ actor DocumentHandle {
       // Document content is still safe.
     }
   }
+
+  // Saves JIIX data to the content.jiix file in the notebook bundle.
+  // Uses atomic write to prevent corruption if interrupted.
+  func saveJIIXData(_ data: Data) async throws {
+    let jiixURL = bundleURL.appendingPathComponent(Self.jiixFileName)
+    do {
+      try data.write(to: jiixURL, options: [.atomic])
+    } catch {
+      throw JIIXPersistenceError.saveFailed(reason: error.localizedDescription)
+    }
+  }
+
+  // Loads JIIX data from the content.jiix file in the notebook bundle.
+  // Returns nil if the file does not exist.
+  func loadJIIXData() async throws -> Data? {
+    let jiixURL = bundleURL.appendingPathComponent(Self.jiixFileName)
+    let fileManager = FileManager.default
+
+    // Return nil if file does not exist.
+    guard fileManager.fileExists(atPath: jiixURL.path) else {
+      return nil
+    }
+
+    do {
+      return try Data(contentsOf: jiixURL)
+    } catch {
+      throw JIIXPersistenceError.loadFailed(reason: error.localizedDescription)
+    }
+  }
 }
+
+// DocumentHandle conforms to JIIXDocumentHandleProtocol for JIIX persistence.
+extension DocumentHandle: JIIXDocumentHandleProtocol {}
 
 // Represents errors for package access.
 enum DocumentHandleError: LocalizedError {

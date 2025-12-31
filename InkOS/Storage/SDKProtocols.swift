@@ -51,13 +51,15 @@ extension IINKContentPackage: ContentPackageProtocol {
 // Protocol abstracting IINKEngine for testability.
 // Covers the package opening method used by DocumentHandle.
 protocol EngineProtocol: AnyObject {
-  func openContentPackage(_ path: String, openOption: IINKPackageOpenOption) throws -> any ContentPackageProtocol
+  func openContentPackage(_ path: String, openOption: IINKPackageOpenOption) throws
+    -> any ContentPackageProtocol
 }
 
 // Makes the real IINKEngine conform to the protocol.
 // Uses a distinct method name to avoid ambiguity with SDK method.
 extension IINKEngine: EngineProtocol {
-  func openContentPackage(_ path: String, openOption: IINKPackageOpenOption) throws -> any ContentPackageProtocol {
+  func openContentPackage(_ path: String, openOption: IINKPackageOpenOption) throws
+    -> any ContentPackageProtocol {
     return try self.openPackage(path, openOption: openOption)
   }
 }
@@ -113,6 +115,27 @@ extension IINKConfiguration: ConfigurationProtocol {
 
   func setConfigBoolean(_ value: Bool, forKey key: String) throws {
     try self.set(boolean: value, forKey: key)
+  }
+}
+
+// MARK: - ExtendedConfigurationProtocol
+
+// Protocol extending ConfigurationProtocol to support string and string array operations.
+// These additional methods are required for Raw Content configuration beyond the existing
+// boolean and number setters already defined in ConfigurationProtocol.
+protocol ExtendedConfigurationProtocol: ConfigurationProtocol {
+  func setConfigString(_ value: String, forKey key: String) throws
+  func setConfigStringArray(_ value: [String], forKey key: String) throws
+}
+
+// Makes the real IINKConfiguration conform to ExtendedConfigurationProtocol.
+extension IINKConfiguration: ExtendedConfigurationProtocol {
+  func setConfigString(_ value: String, forKey key: String) throws {
+    try self.set(string: value, forKey: key)
+  }
+
+  func setConfigStringArray(_ value: [String], forKey key: String) throws {
+    try self.set(stringArray: value, forKey: key)
   }
 }
 
@@ -228,7 +251,8 @@ extension InputViewController: InputViewControllerProtocol {}
 
 // Protocol abstracting DocumentHandle for testability.
 // Covers the properties and methods used by EditorViewModel for document operations.
-protocol DocumentHandleProtocol: AnyObject, Sendable {
+// Inherits JIIXDocumentHandleProtocol to support JIIX persistence.
+protocol DocumentHandleProtocol: AnyObject, Sendable, JIIXDocumentHandleProtocol {
   var notebookID: String { get }
   var initialManifest: Manifest { get }
   var manifest: Manifest { get async }

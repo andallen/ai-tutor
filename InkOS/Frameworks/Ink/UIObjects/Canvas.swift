@@ -21,6 +21,11 @@ import UIKit
   private var clippedGroupIdentifier: [String] = []
   private var fontAttributeDict: [NSAttributedString.Key: Any] = [NSAttributedString.Key: Any]()
   private var cgRule: CGPathFillRule = .evenOdd
+
+  // Controls whether recognized text glyphs are rendered on the canvas.
+  // Set to false to hide real-time recognition overlay while keeping strokes visible.
+  // Recognition still runs and JIIX export still contains recognized text.
+  var shouldDrawText: Bool = false
 }
 
 extension Canvas: IINKICanvas {

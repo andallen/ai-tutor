@@ -237,6 +237,16 @@ final actor MockEditorVMDocumentHandle: DocumentHandleProtocol {
     savedViewportState = state
   }
 
+  // JIIX persistence protocol conformance for testing.
+  func saveJIIXData(_ data: Data) async throws {
+    // No-op for testing.
+  }
+
+  func loadJIIXData() async throws -> Data? {
+    // Return nil for testing.
+    return nil
+  }
+
   func close(saveBeforeClose: Bool) async {
     closeCallCount += 1
   }

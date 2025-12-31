@@ -35,6 +35,113 @@ private class EditorDelegateTrampoline: NSObject, IINKEditorDelegate {
   }
 }
 
+// Bridges gesture callbacks from MyScript SDK to the Swift EditorDelegate protocol.
+// IINKGestureDelegate is a separate protocol from IINKEditorDelegate and must be set
+// separately on the editor via the gestureDelegate property.
+private class GestureDelegateTrampoline: NSObject, IINKGestureDelegate {
+
+  private weak var editorDelegate: EditorDelegate?
+
+  init(editorDelegate: EditorDelegate?) {
+    self.editorDelegate = editorDelegate
+  }
+
+  func onTap(
+    _ editor: IINKEditor,
+    tool: IINKPointerTool,
+    gestureStrokeId: String,
+    x: Float,
+    y: Float
+  ) -> IINKGestureAction {
+    // Let MyScript handle tap behavior (selection, etc.) by default.
+    return .apply
+  }
+
+  func onDoubleTap(
+    _ editor: IINKEditor,
+    tool: IINKPointerTool,
+    gestureStrokeIds: [String],
+    x: Float,
+    y: Float
+  ) -> IINKGestureAction {
+    // Let MyScript handle double-tap conversion by default.
+    return .apply
+  }
+
+  func onLongPress(
+    _ editor: IINKEditor,
+    tool: IINKPointerTool,
+    gestureStrokeId: String,
+    x: Float,
+    y: Float
+  ) -> IINKGestureAction {
+    // Let MyScript handle long-press behavior by default.
+    return .apply
+  }
+
+  func onUnderline(
+    _ editor: IINKEditor,
+    tool: IINKPointerTool,
+    gestureStrokeId: String,
+    selection: any NSObjectProtocol & IINKIContentSelection
+  ) -> IINKGestureAction {
+    // Let MyScript apply the underline decoration.
+    return .apply
+  }
+
+  func onSurround(
+    _ editor: IINKEditor,
+    tool: IINKPointerTool,
+    gestureStrokeId: String,
+    selection: any NSObjectProtocol & IINKIContentSelection
+  ) -> IINKGestureAction {
+    // Surround gesture not used - treat as regular ink.
+    return .add
+  }
+
+  func onJoin(
+    _ editor: IINKEditor,
+    tool: IINKPointerTool,
+    gestureStrokeId: String,
+    before: any NSObjectProtocol & IINKIContentSelection,
+    after: any NSObjectProtocol & IINKIContentSelection
+  ) -> IINKGestureAction {
+    // Let MyScript handle join behavior.
+    return .apply
+  }
+
+  func onInsert(
+    _ editor: IINKEditor,
+    tool: IINKPointerTool,
+    gestureStrokeId: String,
+    before: any NSObjectProtocol & IINKIContentSelection,
+    after: any NSObjectProtocol & IINKIContentSelection
+  ) -> IINKGestureAction {
+    // Let MyScript handle insert behavior.
+    return .apply
+  }
+
+  func onStrikethrough(
+    _ editor: IINKEditor,
+    tool: IINKPointerTool,
+    gestureStrokeId: String,
+    selection: any NSObjectProtocol & IINKIContentSelection
+  ) -> IINKGestureAction {
+    // Let MyScript apply the strikethrough decoration.
+    return .apply
+  }
+
+  func onScratch(
+    _ editor: IINKEditor,
+    tool: IINKPointerTool,
+    gestureStrokeId: String,
+    selection: any NSObjectProtocol & IINKIContentSelection
+  ) -> IINKGestureAction {
+    // Let MyScript delete the scratched content.
+    return .apply
+  }
+}
+
 // swiftlint:disable type_body_length
 // InputViewModel manages editor setup, gesture handling, inertial scrolling, and zoom logic.
 // Splitting this into separate classes would break cohesion of related gesture state management.
@@ -59,6 +166,7 @@ class InputViewModel {
   private(set) var originalViewOffset: CGPoint = CGPoint.zero
   private weak var editorDelegate: EditorDelegate?
   private var editorDelegateTrampoline: EditorDelegateTrampoline
+  private var gestureDelegateTrampoline: GestureDelegateTrampoline
   private weak var smartGuideDelegate: SmartGuideViewControllerDelegate?
   private var smartGuideDisabled: Bool = false
   private var didSetConstraints: Bool = false
@@ -89,7 +197,9 @@ class InputViewModel {
     self.inputMode = inputMode
     self.editorDelegate = editorDelegate
     self.editorDelegateTrampoline = EditorDelegateTrampoline(editorDelegate: editorDelegate)
+    self.gestureDelegateTrampoline = GestureDelegateTrampoline(editorDelegate: editorDelegate)
     self.smartGuideDelegate = smartGuideDelegate
+    self.smartGuideDisabled = smartGuideDisabled
   }
 
   func setupModel(
@@ -470,11 +580,17 @@ class InputViewModel {
     target.imageLoader = ImageLoader()
 
     self.editor?.addEditorDelegate(self.editorDelegateTrampoline)
+
+    // Set the gesture delegate for scratch-out, underline, and other gestures.
+    // This is a separate delegate from the editor delegate.
+    newEditor?.gestureDelegate = self.gestureDelegateTrampoline
   }
 
   // Internal method for test injection of mock dependencies.
   // Allows tests to set editor and tool controller without going through SDK initialization.
-  func setTestDependencies(editor: (any EditorProtocol)?, toolController: (any ToolControllerProtocol)?) {
+  func setTestDependencies(
+    editor: (any EditorProtocol)?, toolController: (any ToolControllerProtocol)?
+  ) {
     self.editor = editor
     self.toolController = toolController
   }
