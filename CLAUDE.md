@@ -2,19 +2,42 @@
 
 InkOS/
 ├── InkOS/                                # App source root
-│   ├── InkOSApp.swift                    # App Entry Point
+│   ├── InkOSApp.swift                    # App entry point
 │   ├── InkOS-Bridging-Header.h           # Exposes MyScript Obj-C headers to Swift
+│   ├── Info.plist                        # App configuration
+│   ├── theme.css                         # Styling for text rendering
 │   │
 │   ├── App/                              # High-level navigation & integration
 │   │   ├── AppRootView.swift             # Root view (Loading -> Dashboard)
-│   │   └── EditorHostView.swift          # SwiftUI bridge for the Editor (EditorViewController)
+│   │   └── EditorHostView.swift          # SwiftUI bridge for EditorViewController
 │   │
 │   ├── Features/                         # SwiftUI Feature Modules
-│   │   ├── Dashboard/                    # Notebook management UI
-│   │   │   ├── DashboardView.swift
-│   │   │   └── NotebookLibrary.swift
+│   │   ├── Dashboard/                    # Notebook library and management UI
+│   │   │   ├── DashboardView.swift       # Main dashboard view
+│   │   │   ├── DashboardItem.swift       # Dashboard item model
+│   │   │   ├── DashboardComponents.swift # Reusable dashboard UI components
+│   │   │   ├── DashboardAlerts.swift     # Alert dialogs for dashboard actions
+│   │   │   ├── NotebookLibrary.swift     # Notebook data source
+│   │   │   ├── FolderCard.swift          # Folder display card
+│   │   │   ├── FolderOverlay.swift       # Folder contents overlay
+│   │   │   ├── FolderDropDelegate.swift  # Drag-and-drop folder handling
+│   │   │   └── MoveToFolderSheet.swift   # Move notebook to folder UI
+│   │   │
 │   │   ├── Notebook/                     # Notebook metadata models
 │   │   │   └── NotebookModel.swift
+│   │   │
+│   │   ├── PDFImport/                    # PDF import functionality
+│   │   │   ├── PDFImport.swift           # PDF import logic
+│   │   │   └── Contract.swift            # Import contract definitions
+│   │   │
+│   │   ├── PDFDisplay/                   # PDF viewing and annotation
+│   │   │   ├── PDFCollectionViewController.swift  # Collection view controller
+│   │   │   ├── PDFCollectionLayout.swift # Custom collection layout
+│   │   │   ├── PDFPageCell.swift         # PDF page cell
+│   │   │   ├── SpacerCell.swift          # Spacer between pages
+│   │   │   ├── DottedGridView.swift      # Grid overlay for annotation
+│   │   │   └── PDFDisplayContract.swift  # Display contract definitions
+│   │   │
 │   │   └── Shared/                       # Shared UI components & utilities
 │   │       ├── NotebookNotifications.swift
 │   │       └── UIComponents.swift
@@ -23,7 +46,14 @@ InkOS/
 │   │   ├── BundleManager.swift           # Central actor for file system operations
 │   │   ├── BundleStorage.swift           # Helper for directory paths
 │   │   ├── DocumentHandle.swift          # Safe handle for open notebook operations
-│   │   └── Manifest.swift                # JSON metadata structure
+│   │   ├── Manifest.swift                # JSON metadata structure
+│   │   ├── FolderManifest.swift          # Folder metadata structure
+│   │   ├── SDKProtocols.swift            # SDK protocol definitions
+│   │   │
+│   │   └── JIIXPersistence/              # JIIX format persistence
+│   │       ├── JIIXPersistenceService.swift       # Persistence service
+│   │       ├── JIIXPersistenceContract.swift      # Persistence contract
+│   │       └── IINKEditorExportExtension.swift    # Editor export extension
 │   │
 │   ├── Editor/                           # EDITOR IMPLEMENTATION (Core Logic)
 │   │   ├── EditorViewController.swift    # The main Editor Canvas UI
@@ -32,42 +62,99 @@ InkOS/
 │   │   ├── ToolPaletteView.swift         # Floating custom toolbar
 │   │   ├── EditingToolbarView.swift      # Undo/Redo/Clear toolbar
 │   │   ├── ColorPaletteView.swift        # Color selection UI
-│   │   └── ThicknessSliderView.swift     # Brush thickness control
+│   │   ├── ThicknessSliderView.swift     # Brush thickness control
+│   │   │
+│   │   └── RawContentConfiguration/      # Raw content data structures
+│   │       └── RawContentContract.swift
 │   │
 │   └── Frameworks/
 │       └── Ink/                          # Low-level MyScript Wrappers
+│           ├── IInkUIReferenceImplementation-Bridging-Header.h
+│           │
 │           ├── Input/                    # Touch/Pen input handling
 │           │   ├── InputViewController.swift
 │           │   └── InputViewModel.swift
+│           │
 │           ├── Rendering/                # Display & rendering logic
 │           │   ├── DisplayViewController.swift
 │           │   └── DisplayViewModel.swift
-│           ├── SmartGuide/               # Text conversion guide UI
-│           │   ├── SmartGuideViewController.h
-│           │   └── SmartGuideViewController.mm
+│           │
 │           ├── UIObjects/                # Core UI rendering components
 │           │   ├── Canvas.swift
 │           │   ├── InputView.swift
 │           │   ├── RenderView.swift
 │           │   └── OffscreenRenderSurfaces.swift
+│           │
+│           ├── SmartGuide/               # Text conversion guide UI
+│           │   ├── SmartGuideViewController.h
+│           │   └── SmartGuideViewController.mm
+│           │
 │           └── Utils/                    # Utility helpers
 │               ├── FontMetricsProvider.swift
 │               ├── ImageLoader.swift
 │               ├── ImagePainter.swift
 │               ├── TextFormatHelper.swift
-│               └── [other utilities]
+│               ├── IInkUIRefImplUtils.swift
+│               ├── ContextualActionsHelper.swift
+│               ├── Helper.swift
+│               ├── Path.swift
+│               ├── SynchronizedSwift.swift
+│               ├── UIFont+Helper.swift
+│               ├── NSFileManager+Additions.swift
+│               ├── NSAttributedString+Helper.swift
+│               └── CTRun+Metrics.swift
+│
+├── InkOSTests/                           # Unit test suite
+│   ├── Editor/
+│   │   ├── EditorViewModelTests.swift
+│   │   ├── EngineProviderTests.swift
+│   │   ├── InputViewModelTests.swift
+│   │   └── RawContentConfigurationTests.swift
+│   │
+│   ├── Features/
+│   │   ├── NotebookModelTests.swift
+│   │   ├── PDFImport/
+│   │   │   └── PDFImportTests.swift
+│   │   └── PDFDisplay/
+│   │       └── PDFDisplayTests.swift
+│   │
+│   ├── Rendering/
+│   │   ├── DisplayViewModelTests.swift
+│   │   └── OffscreenRenderSurfacesTests.swift
+│   │
+│   └── Storage/
+│       ├── BundleManagerTests.swift
+│       ├── BundleStorageTests.swift
+│       ├── DocumentHandleTests.swift
+│       ├── FolderSupportTests.swift
+│       ├── JIIXPersistenceTests.swift
+│       └── ManifestTests.swift
+│
+├── InkOSUITests/                         # UI test suite
+│   └── InkOSUITests.swift
 │
 ├── MyScriptCertificate/                  # License Key
 │   ├── MyCertificate.h
-│   └── MyCertificate.c
+│   └── me.andy.allen.Trivial.c
 │
 ├── Scripts/                              # Build & Utility Scripts
-│   ├── buildapp
-│   ├── testapp
-│   └── retrieve_recognition-assets.sh
+│   ├── buildapp                          # Build executable
+│   ├── testapp                           # Test executable
+│   ├── grablogs                          # Grab logs script
+│   └── retrieve_recognition-assets.sh    # Download recognition assets
+│
+├── Docs/                                 # Reference documentation
+│   ├── myscript_docs.md
+│   ├── myscript_headers.txt
+│   └── myscript-reference.txt
+│
+├── recognition-assets/                   # MyScript recognition data (binary)
+│   └── resources/
+│       ├── en_US/                        # English language resources
+│       ├── math/                         # Math recognition
+│       └── shape/                        # Shape recognition
 │
 └── Logs/                                 # Build artifacts & logs
-    └── build_logs.txt
 
 ## PROJECT RULES:
 
