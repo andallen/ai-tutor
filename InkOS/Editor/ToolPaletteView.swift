@@ -2,7 +2,7 @@ import UIKit
 
 // This view contains extensive UI layout and interaction logic for the tool palette.
 // Refactoring into smaller components would require significant architectural changes.
-// swiftlint:disable type_body_length
+// swiftlint:disable type_body_length file_length
 final class ToolPaletteView: UIView {
   enum ToolSelection {
     case pen
@@ -31,12 +31,8 @@ final class ToolPaletteView: UIView {
   private let toolbarSpacing: CGFloat = 12
   // Defines the point size for the SF Symbols used by the toolbar.
   private let symbolPointSize: CGFloat = 18
-  // Sets the gap between the toolbar and the color palette pill.
-  private let paletteSpacing: CGFloat = 8
-  // Sets the gap between the color palette and the thickness pill.
-  private let thicknessSpacing: CGFloat = 8
-  // Adds extra width so the thickness pill is longer than the color picker.
-  private let thicknessExtraWidth: CGFloat = 70
+  // Sets the gap between the toolbar and the combined accessory pill.
+  private let accessorySpacing: CGFloat = 8
   // Sets the size of the standalone pencil toolbar container.
   private let pencilButtonSize: CGFloat = 36
 
@@ -76,17 +72,13 @@ final class ToolPaletteView: UIView {
   private let penColorOptions: [ColorOption]
   // Stores the highlighter color selector.
   private let highlighterColorOptions: [ColorOption]
-  // Shows the active color options in a pill.
-  private let colorPaletteView: ColorPaletteView
-  // Shows the thickness slider in a pill.
-  private let thicknessSliderView = ThicknessSliderView()
+  // Shows the combined color and thickness controls in a single pill.
+  private let accessoryPillView: ColorThicknessPillView
 
   // Tracks whether the toolbar is currently visible.
   private var isToolbarVisible = false
-  // Tracks whether the color palette is currently visible.
-  private var isColorPaletteVisible = false
-  // Tracks whether the thickness slider is currently visible.
-  private var isThicknessVisible = false
+  // Tracks whether the accessory pill is currently visible.
+  private var isAccessoryPillVisible = false
   // Tracks which tool is currently selected.
   private var selectedTool: ToolSelection = .pen
   // Tracks which pen color is currently selected.
@@ -115,7 +107,7 @@ final class ToolPaletteView: UIView {
       ?? ColorOption(
         name: "Lemon", hex: "#FFF176", color: UIColor(red: 1, green: 0.95, blue: 0.46, alpha: 1))
     let maxOptionCount = max(penOptions.count, highlighterOptions.count)
-    self.colorPaletteView = ColorPaletteView(maxOptionCount: maxOptionCount)
+    self.accessoryPillView = ColorThicknessPillView(maxOptionCount: maxOptionCount)
     super.init(frame: .zero)
     configureView()
   }
@@ -133,7 +125,7 @@ final class ToolPaletteView: UIView {
       ?? ColorOption(
         name: "Lemon", hex: "#FFF176", color: UIColor(red: 1, green: 0.95, blue: 0.46, alpha: 1))
     let maxOptionCount = max(penOptions.count, highlighterOptions.count)
-    self.colorPaletteView = ColorPaletteView(maxOptionCount: maxOptionCount)
+    self.accessoryPillView = ColorThicknessPillView(maxOptionCount: maxOptionCount)
     super.init(coder: coder)
     configureView()
   }
@@ -149,15 +141,14 @@ final class ToolPaletteView: UIView {
     isToolbarVisible = visible
     expansionChanged?(visible)
     if visible == false {
-      setColorPaletteVisible(false, animated: animated)
-      setThicknessVisible(false, animated: animated)
+      setAccessoryPillVisible(false, animated: animated)
       animateToolbarVisibility(visible, animated: animated, completion: nil)
       return
     }
-    updateColorPaletteOptions(animated: false)
-    updateThicknessAppearance(animated: false)
+    updateAccessoryPillOptions(animated: false)
+    updateAccessoryPillSlider(animated: false)
     if animated {
-      showAccessoryPillsAfterToolbar(animated: true)
+      showAccessoryPillAfterToolbar(animated: true)
     } else {
       updateAccessoryVisibilityForSelection(animated: false)
     }
@@ -178,11 +169,8 @@ final class ToolPaletteView: UIView {
     if toolbarView.isHidden == false {
       hitFrames.append(toolbarView.frame)
     }
-    if colorPaletteView.isHidden == false {
-      hitFrames.append(colorPaletteView.frame)
-    }
-    if thicknessSliderView.isHidden == false {
-      hitFrames.append(thicknessSliderView.frame)
+    if accessoryPillView.isHidden == false {
+      hitFrames.append(accessoryPillView.frame)
     }
     let unionFrame = hitFrames.reduce(CGRect.null) { current, frame in
       current.union(frame)
@@ -200,20 +188,18 @@ final class ToolPaletteView: UIView {
 
   // Computes the maximum size for the palette container.
   private var containerHeight: CGFloat {
-    toolbarHeight + paletteSpacing + colorPaletteView.paletteHeight
-      + thicknessSpacing + thicknessSliderView.sliderHeight
+    toolbarHeight + accessorySpacing + accessoryPillView.pillHeight
   }
 
   // Builds the view hierarchy and initial layout.
   private func configureView() {
     translatesAutoresizingMaskIntoConstraints = false
     backgroundColor = UIColor.clear
-    // Keeps the container tall enough for the toolbar and palette.
+    // Keeps the container tall enough for the toolbar and accessory pill.
     configureSizingConstraints()
     configurePencilButton()
     configureToolbar()
-    configureColorPalette()
-    configureThicknessSlider()
+    configureAccessoryPill()
     applySelection(.pen)
     // Forces the initial hidden state for the toolbar even when default state matches.
     isToolbarVisible = true
@@ -303,37 +289,23 @@ final class ToolPaletteView: UIView {
     toolbarStackView.addArrangedSubview(eraserButton)
   }
 
-  // Configures the color palette pill shown above the toolbar.
-  private func configureColorPalette() {
-    colorPaletteView.translatesAutoresizingMaskIntoConstraints = false
-    colorPaletteView.isHidden = true
-    colorPaletteView.selectionChanged = { [weak self] option in
+  // Configures the combined color and thickness accessory pill shown above the toolbar.
+  private func configureAccessoryPill() {
+    accessoryPillView.translatesAutoresizingMaskIntoConstraints = false
+    accessoryPillView.isHidden = true
+    accessoryPillView.colorSelectionChanged = { [weak self] option in
       self?.handleColorSelection(option)
     }
-    addSubview(colorPaletteView)
-
-    // Aligns the palette with the centered toolbar.
-    colorPaletteView.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-    colorPaletteView.bottomAnchor.constraint(
-      equalTo: toolbarView.topAnchor,
-      constant: -paletteSpacing
-    )
-    .isActive = true
-  }
-
-  // Configures the thickness slider pill shown above the color palette.
-  private func configureThicknessSlider() {
-    thicknessSliderView.translatesAutoresizingMaskIntoConstraints = false
-    thicknessSliderView.isHidden = true
-    thicknessSliderView.valueChanged = { [weak self] value in
+    accessoryPillView.thicknessChanged = { [weak self] value in
       self?.handleThicknessChange(value)
     }
-    addSubview(thicknessSliderView)
+    addSubview(accessoryPillView)
 
-    thicknessSliderView.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-    thicknessSliderView.bottomAnchor.constraint(
-      equalTo: colorPaletteView.topAnchor,
-      constant: -thicknessSpacing
+    // Aligns the accessory pill with the centered toolbar.
+    accessoryPillView.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+    accessoryPillView.bottomAnchor.constraint(
+      equalTo: toolbarView.topAnchor,
+      constant: -accessorySpacing
     )
     .isActive = true
   }
@@ -365,17 +337,15 @@ final class ToolPaletteView: UIView {
   private func applySelection(_ selection: ToolSelection) {
     selectedTool = selection
     updateItemAppearance()
-    updateColorPaletteOptions(animated: isColorPaletteVisible)
-    updateThicknessAppearance(animated: isThicknessVisible)
+    updateAccessoryPillOptions(animated: isAccessoryPillVisible)
+    updateAccessoryPillSlider(animated: isAccessoryPillVisible)
     if isToolbarVisible {
       switch selection {
       case .pen, .highlighter:
-        // Keeps the palette fixed when switching between pen tools.
-        setColorPaletteVisible(true, animated: false)
-        setThicknessVisible(true, animated: false)
+        // Keeps the accessory pill visible when switching between pen tools.
+        setAccessoryPillVisible(true, animated: false)
       case .eraser:
-        setColorPaletteVisible(false, animated: true)
-        setThicknessVisible(false, animated: true)
+        setAccessoryPillVisible(false, animated: true)
       }
     }
     selectionChanged?(selection)
@@ -396,17 +366,17 @@ final class ToolPaletteView: UIView {
     return isSelected ? color : fadedColor
   }
 
-  // Updates the color palette options based on the active tool.
-  private func updateColorPaletteOptions(animated: Bool) {
+  // Updates the color options in the accessory pill based on the active tool.
+  private func updateAccessoryPillOptions(animated: Bool) {
     switch selectedTool {
     case .pen:
-      colorPaletteView.updateOptions(
+      accessoryPillView.updateColorOptions(
         penColorOptions,
         selectedHex: selectedPenColor.hex,
         animated: animated
       )
     case .highlighter:
-      colorPaletteView.updateOptions(
+      accessoryPillView.updateColorOptions(
         highlighterColorOptions,
         selectedHex: selectedHighlighterColor.hex,
         animated: animated
@@ -414,14 +384,13 @@ final class ToolPaletteView: UIView {
     case .eraser:
       break
     }
-    updateThicknessWidth(animated: animated)
   }
 
-  // Updates the thickness slider styling based on the active tool.
-  private func updateThicknessAppearance(animated: Bool) {
+  // Updates the slider styling in the accessory pill based on the active tool.
+  private func updateAccessoryPillSlider(animated: Bool) {
     switch selectedTool {
     case .pen:
-      thicknessSliderView.updateAppearance(
+      accessoryPillView.updateSliderAppearance(
         color: selectedPenColor.color,
         minValue: penWidthRange.lowerBound,
         maxValue: penWidthRange.upperBound,
@@ -431,7 +400,7 @@ final class ToolPaletteView: UIView {
         animated: animated
       )
     case .highlighter:
-      thicknessSliderView.updateAppearance(
+      accessoryPillView.updateSliderAppearance(
         color: selectedHighlighterColor.color,
         minValue: highlighterWidthRange.lowerBound,
         maxValue: highlighterWidthRange.upperBound,
@@ -443,13 +412,6 @@ final class ToolPaletteView: UIView {
     case .eraser:
       break
     }
-  }
-
-  // Updates the thickness pill width to stay slightly longer than the color picker.
-  private func updateThicknessWidth(animated: Bool) {
-    let baseWidth = max(colorPaletteView.currentWidth, colorPaletteView.maximumWidth)
-    let targetWidth = max(0, baseWidth + thicknessExtraWidth)
-    thicknessSliderView.updateWidth(targetWidth, animated: animated)
   }
 
   // Animates the toolbar in or out of view.
@@ -505,8 +467,8 @@ final class ToolPaletteView: UIView {
     }
   }
 
-  // Staggers the accessory pills so they slide out just after the toolbar appears.
-  private func showAccessoryPillsAfterToolbar(animated: Bool) {
+  // Staggers the accessory pill so it slides out just after the toolbar appears.
+  private func showAccessoryPillAfterToolbar(animated: Bool) {
     if animated {
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.10) { [weak self] in
         self?.updateAccessoryVisibilityForSelection(animated: animated)
@@ -520,73 +482,33 @@ final class ToolPaletteView: UIView {
   private func updateAccessoryVisibilityForSelection(animated: Bool) {
     switch selectedTool {
     case .pen, .highlighter:
-      setColorPaletteVisible(true, animated: animated)
-      setThicknessVisible(true, animated: animated)
+      setAccessoryPillVisible(true, animated: animated)
     case .eraser:
-      setColorPaletteVisible(false, animated: animated)
-      setThicknessVisible(false, animated: animated)
+      setAccessoryPillVisible(false, animated: animated)
     }
   }
 
-  // Shows or hides the color palette pill.
-  private func setColorPaletteVisible(_ visible: Bool, animated: Bool) {
-    guard visible != isColorPaletteVisible else { return }
-    isColorPaletteVisible = visible
+  // Shows or hides the combined accessory pill.
+  private func setAccessoryPillVisible(_ visible: Bool, animated: Bool) {
+    guard visible != isAccessoryPillVisible else { return }
+    isAccessoryPillVisible = visible
     if visible {
-      colorPaletteView.isHidden = false
-      colorPaletteView.alpha = 0
-      colorPaletteView.transform = CGAffineTransform(translationX: 0, y: paletteSpacing)
+      accessoryPillView.isHidden = false
+      accessoryPillView.alpha = 0
+      accessoryPillView.transform = CGAffineTransform(translationX: 0, y: accessorySpacing)
     }
 
     let animations = { [weak self] in
       guard let self = self else { return }
-      self.colorPaletteView.alpha = visible ? 1 : 0
-      self.colorPaletteView.transform =
-        visible ? .identity : CGAffineTransform(translationX: 0, y: self.paletteSpacing)
+      self.accessoryPillView.alpha = visible ? 1 : 0
+      self.accessoryPillView.transform =
+        visible ? .identity : CGAffineTransform(translationX: 0, y: self.accessorySpacing)
     }
 
     let completion: (Bool) -> Void = { [weak self] _ in
       guard let self = self else { return }
       if visible == false {
-        self.colorPaletteView.isHidden = true
-      }
-    }
-
-    if animated {
-      UIView.animate(
-        withDuration: 0.22,
-        delay: 0,
-        options: [.curveEaseInOut],
-        animations: animations,
-        completion: completion
-      )
-    } else {
-      animations()
-      completion(true)
-    }
-  }
-
-  // Shows or hides the thickness slider pill.
-  private func setThicknessVisible(_ visible: Bool, animated: Bool) {
-    guard visible != isThicknessVisible else { return }
-    isThicknessVisible = visible
-    if visible {
-      thicknessSliderView.isHidden = false
-      thicknessSliderView.alpha = 0
-      thicknessSliderView.transform = CGAffineTransform(translationX: 0, y: thicknessSpacing)
-    }
-
-    let animations = { [weak self] in
-      guard let self = self else { return }
-      self.thicknessSliderView.alpha = visible ? 1 : 0
-      self.thicknessSliderView.transform =
-        visible ? .identity : CGAffineTransform(translationX: 0, y: self.thicknessSpacing)
-    }
-
-    let completion: (Bool) -> Void = { [weak self] _ in
-      guard let self = self else { return }
-      if visible == false {
-        self.thicknessSliderView.isHidden = true
+        self.accessoryPillView.isHidden = true
       }
     }
 
@@ -624,7 +546,7 @@ final class ToolPaletteView: UIView {
     applySelection(.highlighter)
   }
 
-  // Updates palette state when a color is chosen.
+  // Updates state when a color is chosen.
   private func handleColorSelection(_ option: ColorOption) {
     switch selectedTool {
     case .pen:
@@ -637,7 +559,7 @@ final class ToolPaletteView: UIView {
       break
     }
     updateItemAppearance()
-    updateThicknessAppearance(animated: false)
+    updateAccessoryPillSlider(animated: false)
   }
 
   // Updates the current thickness and notifies the host.
@@ -666,7 +588,14 @@ final class ToolPaletteView: UIView {
         name: "Red", hex: "#C62828", color: UIColor(red: 0.78, green: 0.16, blue: 0.16, alpha: 1)),
       ColorOption(
         name: "Yellow", hex: "#FBC02D", color: UIColor(red: 0.98, green: 0.75, blue: 0.18, alpha: 1)
-      )
+      ),
+      ColorOption(
+        name: "Purple", hex: "#7B1FA2", color: UIColor(red: 0.48, green: 0.12, blue: 0.64, alpha: 1)
+      ),
+      ColorOption(
+        name: "Orange", hex: "#E65100", color: UIColor(red: 0.9, green: 0.32, blue: 0, alpha: 1)),
+      ColorOption(
+        name: "Brown", hex: "#5D4037", color: UIColor(red: 0.36, green: 0.25, blue: 0.22, alpha: 1))
     ]
   }
 
@@ -684,8 +613,14 @@ final class ToolPaletteView: UIView {
       ColorOption(
         name: "Lavender", hex: "#E1BEE7",
         color: UIColor(red: 0.88, green: 0.75, blue: 0.91, alpha: 1)
-      )
+      ),
+      ColorOption(
+        name: "Peach", hex: "#FFCCBC", color: UIColor(red: 1, green: 0.8, blue: 0.74, alpha: 1)),
+      ColorOption(
+        name: "Rose", hex: "#F8BBD9", color: UIColor(red: 0.97, green: 0.73, blue: 0.85, alpha: 1)),
+      ColorOption(
+        name: "Lime", hex: "#CCFF90", color: UIColor(red: 0.8, green: 1, blue: 0.56, alpha: 1))
     ]
   }
 }
-// swiftlint:enable type_body_length
+// swiftlint:enable type_body_length file_length

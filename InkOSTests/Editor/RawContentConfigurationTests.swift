@@ -284,7 +284,8 @@ struct CustomConfigurationTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     // Verify the custom values are set correctly.
@@ -327,7 +328,8 @@ struct CustomConfigurationTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     // Verify the French language is set.
@@ -370,7 +372,8 @@ struct CustomConfigurationTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     // Verify all gestures are set.
@@ -744,7 +747,8 @@ struct ValidationTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let validator = RawContentConfigurationValidator()
@@ -785,7 +789,8 @@ struct ValidationTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let validator = RawContentConfigurationValidator()
@@ -826,7 +831,8 @@ struct ValidationTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let validator = RawContentConfigurationValidator()
@@ -867,7 +873,8 @@ struct ValidationTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let validator = RawContentConfigurationValidator()
@@ -908,7 +915,8 @@ struct ValidationTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let validator = RawContentConfigurationValidator()
@@ -949,7 +957,8 @@ struct ValidationTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let validator = RawContentConfigurationValidator()
@@ -990,7 +999,8 @@ struct ValidationTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let validator = RawContentConfigurationValidator()
@@ -1034,7 +1044,8 @@ struct ValidationTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let validator = RawContentConfigurationValidator()
@@ -1078,7 +1089,8 @@ struct ValidationTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let validator = RawContentConfigurationValidator()
@@ -1119,7 +1131,8 @@ struct ValidationTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let validator = RawContentConfigurationValidator()
@@ -1307,7 +1320,8 @@ struct EdgeCaseTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let validator = RawContentConfigurationValidator()
@@ -1348,7 +1362,8 @@ struct EdgeCaseTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let mockTarget = MockExtendedConfiguration()
@@ -1392,7 +1407,8 @@ struct EdgeCaseTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let validator = RawContentConfigurationValidator()
@@ -1433,7 +1449,8 @@ struct EdgeCaseTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let mockTarget = MockExtendedConfiguration()
@@ -1484,7 +1501,8 @@ struct EdgeCaseTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let validator = RawContentConfigurationValidator()
@@ -1541,7 +1559,8 @@ struct EdgeCaseTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let mockTarget = MockExtendedConfiguration()
@@ -1592,7 +1611,8 @@ struct EdgeCaseTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let mockTarget = MockExtendedConfiguration()
@@ -1640,7 +1660,8 @@ struct EdgeCaseTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let mockTarget = MockExtendedConfiguration()
@@ -1683,7 +1704,8 @@ struct EdgeCaseTests {
         includeRanges: true,
         includeBoundingBoxes: true,
         includeMathLabels: true
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let mockTarget = MockExtendedConfiguration()
@@ -1752,7 +1774,8 @@ struct EdgeCaseTests {
         includeRanges: false,
         includeBoundingBoxes: false,
         includeMathLabels: false
-      )
+      ),
+      highlighter: RawContentConfiguration.Highlighter(highlightText: false)
     )
 
     let validator = RawContentConfigurationValidator()

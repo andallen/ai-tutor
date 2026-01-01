@@ -79,6 +79,14 @@ struct RawContentConfiguration: Equatable, Sendable {
     let includeMathLabels: Bool
   }
 
+  // Highlighter settings that control how the highlighter tool interacts with recognized content.
+  struct Highlighter: Equatable, Sendable {
+    // When true, highlighter acts semantically on recognized text, filling the bounding box
+    // of the text block. When false, highlighter strokes are drawn as regular ink without
+    // affecting recognized content boundaries.
+    let highlightText: Bool
+  }
+
   let analyzerBundle: AnalyzerBundle
   let contentTypes: ContentTypes
   let gestures: Gestures
@@ -87,6 +95,7 @@ struct RawContentConfiguration: Equatable, Sendable {
   let interactivity: Interactivity
   let guides: Guides
   let export: Export
+  let highlighter: Highlighter
 }
 
 // MARK: - Default Configuration Factory
@@ -131,6 +140,11 @@ struct DefaultRawContentConfigurationProvider: RawContentConfigurationProviding 
         includeRanges: true,
         includeBoundingBoxes: true,
         includeMathLabels: true
+      ),
+      highlighter: RawContentConfiguration.Highlighter(
+        // Disable semantic highlighter to prevent filling bounding boxes of recognized content.
+        // Highlighter strokes will be drawn as regular ink instead.
+        highlightText: false
       )
     )
   }
@@ -154,6 +168,7 @@ struct RawContentConfigurationApplier: RawContentConfigurationApplying {
     try applyInteractivity(configuration.interactivity, to: target)
     try applyGuides(configuration.guides, to: target)
     try applyExport(configuration.export, to: target)
+    try applyHighlighter(configuration.highlighter, to: target)
   }
 
   private func applyAnalyzerBundle(
@@ -274,6 +289,18 @@ struct RawContentConfigurationApplier: RawContentConfigurationApplying {
     try target.setConfigBoolean(
       export.includeMathLabels,
       forKey: "export.jiix.math.item.labels"
+    )
+  }
+
+  private func applyHighlighter(
+    _ highlighter: RawContentConfiguration.Highlighter,
+    to target: any ExtendedConfigurationProtocol
+  ) throws {
+    // Controls whether highlighter acts semantically on recognized text blocks.
+    // When false, highlighter strokes are drawn as regular ink without filling bounding boxes.
+    try target.setConfigBoolean(
+      highlighter.highlightText,
+      forKey: "raw-content.highlight-text"
     )
   }
 }
@@ -773,4 +800,7 @@ enum RawContentConfigurationKeys {
   static let exportRanges = "export.jiix.text.chars"
   static let exportBoundingBoxes = "export.jiix.bounding-box"
   static let exportMathLabels = "export.jiix.math.item.labels"
+
+  // Highlighter key
+  static let highlightText = "raw-content.highlight-text"
 }

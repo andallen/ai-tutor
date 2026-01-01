@@ -1,5 +1,6 @@
 // Copyright @ MyScript. All rights reserved.
 
+// swiftlint:disable file_length
 // InputViewModel manages editor setup, gesture handling, inertial scrolling, and zoom logic.
 // Splitting this into separate files would break cohesion of related gesture state management.
 
@@ -186,6 +187,18 @@ class InputViewModel {
   private let minZoomScale: Float = 1.0
   private let maxZoomScale: Float = 4.0
 
+  // Rubber-band overscroll constants.
+  // Maximum distance content can stretch past boundary before hitting hard limit.
+  private let maxOverscrollDistance: CGFloat = 180
+  // Controls how quickly resistance increases as user drags past boundary.
+  // Lower values mean more resistance. 0.55 matches iOS scroll view behavior.
+  private let rubberBandFactor: CGFloat = 0.55
+
+  // Current overscroll amounts (negative = past top/left, positive = past bottom/right).
+  // Used by deceleration loop to apply per-axis spring-back.
+  private var overscrollY: CGFloat = 0
+  private var overscrollX: CGFloat = 0
+
   init(
     engine: IINKEngine?,
     inputMode: InputMode,
@@ -287,6 +300,9 @@ class InputViewModel {
         views: views))
   }
 
+  // swiftlint:disable function_body_length
+  // Pan gesture handling requires comprehensive boundary checking, rubber-banding,
+  // and spring-back logic in a single cohesive function to maintain state consistency.
   func handlePanGestureRecognizerAction(
     with translation: CGPoint, velocity: CGPoint, state: UIGestureRecognizer.State
   ) {
@@ -296,61 +312,109 @@ class InputViewModel {
     // Restart inertia when a new pan begins.
     if state == UIGestureRecognizer.State.began {
       stopDeceleration()
-    }
-    if state == UIGestureRecognizer.State.began {
       self.originalViewOffset = self.editor?.editorRenderer.viewOffset ?? CGPoint.zero
+      // Reset overscroll tracking at pan start.
+      self.overscrollY = 0
+      self.overscrollX = 0
     }
-
-    // Check if user is zoomed in to enable 360-degree panning.
-    let currentScale = self.editor?.editorRenderer.viewScale ?? 1.0
-    let isZoomedIn = currentScale > 1.0
 
     // Reduce translation to avoid 1:1 tracking and match iOS scrolling cadence.
+    // Track both axes for rubber-band effect. Boundary clamping handles zoom-based limits.
     let adjustedTranslationY = translation.y * dragResistance
-    let adjustedTranslationX = isZoomedIn ? translation.x * dragResistance : 0
+    let adjustedTranslationX = translation.x * dragResistance
 
-    var proposedOffset = CGPoint(
+    // Calculate where the content would move without boundary clamping.
+    let rawProposedOffset = CGPoint(
       x: originalViewOffset.x - adjustedTranslationX,
       y: originalViewOffset.y - adjustedTranslationY)
 
-    // Store desired X before SDK clamping since clampViewOffset may reset X to 0.
-    let desiredXOffset = proposedOffset.x
-
-    // Let SDK clamp vertical scrolling only.
-    if var clampedOffset = Optional(proposedOffset) {
-      self.editor?.clampEditorViewOffset(&clampedOffset)
-      proposedOffset = clampedOffset
-    }
-
-    // Restore X and apply custom horizontal bounds.
-    proposedOffset.x = desiredXOffset
-
-    // Enforce horizontal bounds: left edge at 0, right edge at maxXOffset.
-    if proposedOffset.x < 0 {
-      proposedOffset.x = 0
-    }
+    // Calculate boundary limits.
     let maxXOffset = calculateMaxXOffset()
-    if proposedOffset.x > maxXOffset {
-      proposedOffset.x = maxXOffset
+    let minXOffset: CGFloat = 0
+    let minYOffset: CGFloat = 0
+
+    // Apply rubber-band physics if scrolling past boundaries.
+    var finalOffset = rawProposedOffset
+
+    // Horizontal rubber-banding (left boundary).
+    if rawProposedOffset.x < minXOffset {
+      let overscroll = minXOffset - rawProposedOffset.x
+      let rubberBandedOverscroll = applyRubberBandEffect(overscroll: overscroll)
+      finalOffset.x = minXOffset - rubberBandedOverscroll
+      self.overscrollX = -rubberBandedOverscroll
     }
-    // Enforce top edge at 0, no bottom limit (document grows downward).
-    if proposedOffset.y < 0 {
-      proposedOffset.y = 0
+    // Horizontal rubber-banding (right boundary).
+    else if rawProposedOffset.x > maxXOffset {
+      let overscroll = rawProposedOffset.x - maxXOffset
+      let rubberBandedOverscroll = applyRubberBandEffect(overscroll: overscroll)
+      finalOffset.x = maxXOffset + rubberBandedOverscroll
+      self.overscrollX = rubberBandedOverscroll
+    } else {
+      self.overscrollX = 0
     }
-    self.editor?.editorRenderer.viewOffset = proposedOffset
+
+    // Vertical rubber-banding (top boundary only).
+    if rawProposedOffset.y < minYOffset {
+      let overscroll = minYOffset - rawProposedOffset.y
+      let rubberBandedOverscroll = applyRubberBandEffect(overscroll: overscroll)
+      finalOffset.y = minYOffset - rubberBandedOverscroll
+      self.overscrollY = -rubberBandedOverscroll
+    } else {
+      self.overscrollY = 0
+    }
+
+    self.editor?.editorRenderer.viewOffset = finalOffset
+
     if state == UIGestureRecognizer.State.ended {
       self.originalViewOffset = self.editor?.editorRenderer.viewOffset ?? CGPoint.zero
-      // Keep deceleration direction consistent with drag direction.
-      let verticalVelocity = velocity.y * dragResistance
-      let horizontalVelocity = isZoomedIn ? velocity.x * dragResistance : 0
 
-      // Start deceleration if velocity exceeds threshold in either direction.
-      if abs(verticalVelocity) > velocityThreshold || abs(horizontalVelocity) > velocityThreshold {
+      // Calculate velocities for both axes.
+      let verticalVelocity = velocity.y * dragResistance
+      let horizontalVelocity = velocity.x * dragResistance
+
+      // Check if currently in overscroll territory.
+      let isInOverscrollX = self.overscrollX != 0
+      let isInOverscrollY = self.overscrollY != 0
+
+      // Determine if we have meaningful velocity on non-overscrolled axes.
+      let hasXVelocity = abs(horizontalVelocity) > velocityThreshold && !isInOverscrollX
+      let hasYVelocity = abs(verticalVelocity) > velocityThreshold && !isInOverscrollY
+
+      if isInOverscrollX || isInOverscrollY || hasXVelocity || hasYVelocity {
+        // Start unified deceleration which handles both spring-back and momentum.
+        // Pass velocity for non-overscrolled axes; overscrolled axes will spring back.
         startDeceleration(
-          verticalVelocity: verticalVelocity, horizontalVelocity: horizontalVelocity)
+          verticalVelocity: isInOverscrollY ? 0 : verticalVelocity,
+          horizontalVelocity: isInOverscrollX ? 0 : horizontalVelocity)
       }
     }
     NotificationCenter.default.post(name: DisplayViewController.refreshNotification, object: nil)
+  }
+  // swiftlint:enable function_body_length
+
+  // Applies rubber-band physics to overscroll distance.
+  // Returns a diminished value that increases with resistance as the user drags further.
+  // Uses the iOS-style formula: x = c * (1 - (1 / (x / d * c + 1))) * d
+  // where x is the overscroll distance, c is the rubber band coefficient, d is the max distance.
+  private func applyRubberBandEffect(overscroll: CGFloat) -> CGFloat {
+    // Guard against division by zero or negative values.
+    guard overscroll > 0 else { return 0 }
+
+    // Scale max overscroll distance based on zoom level.
+    // At higher zoom, content appears larger so overscroll should be proportionally larger.
+    let currentScale = CGFloat(self.editor?.editorRenderer.viewScale ?? 1.0)
+    let scaledMaxDistance = maxOverscrollDistance * currentScale
+
+    // Simplified rubber-band formula matching UIScrollView behavior.
+    // As overscroll increases, the returned value approaches scaledMaxDistance asymptotically.
+    let coefficient = rubberBandFactor
+
+    // Formula: result = c * d * (1 - 1 / ((x / (c * d)) + 1))
+    // This produces a smooth curve that starts linear and flattens as it approaches max.
+    let normalizedOverscroll = overscroll / (coefficient * scaledMaxDistance)
+    let dampedValue = coefficient * scaledMaxDistance * (1 - 1 / (normalizedOverscroll + 1))
+
+    return min(dampedValue, scaledMaxDistance)
   }
 
   // Handles pinch gesture for zooming. No momentum is applied since zooming
@@ -475,46 +539,110 @@ class InputViewModel {
 
     let rate = UIScrollView.DecelerationRate.normal.rawValue
     let decay = pow(rate, deltaTime * 1000)
+
+    // Apply decay to velocities independently.
     self.decelerationVelocityY *= decay
     self.decelerationVelocityX *= decay
-    if abs(self.decelerationVelocityY) < 8 && abs(self.decelerationVelocityX) < 8 {
-      stopDeceleration()
-      return
-    }
 
     var nextOffset = editor.editorRenderer.viewOffset
-    nextOffset.y -= CGFloat(self.decelerationVelocityY) * CGFloat(deltaTime)
+    let maxXOffset = calculateMaxXOffset()
+
+    // Track whether each axis is still active (decelerating or in overscroll).
+    var xAxisActive = true
+    var yAxisActive = true
+
+    // Handle horizontal axis: apply velocity then check bounds.
     nextOffset.x -= CGFloat(self.decelerationVelocityX) * CGFloat(deltaTime)
 
-    // Store desired X before SDK clamping since clampViewOffset may reset X to 0.
-    let desiredXOffset = nextOffset.x
-
-    // Let SDK clamp vertical scrolling only.
-    if var clampedOffset = Optional(nextOffset) {
-      editor.clampEditorViewOffset(&clampedOffset)
-      nextOffset = clampedOffset
-    }
-
-    // Restore X and apply custom horizontal bounds.
-    nextOffset.x = desiredXOffset
-
-    // Enforce horizontal bounds: left edge at 0, right edge at maxXOffset.
     if nextOffset.x < 0 {
-      nextOffset.x = 0
+      // Hit left boundary. Use actual overshoot with rubber-band applied.
+      let overscrollDistance = applyRubberBandEffect(overscroll: abs(nextOffset.x))
+      nextOffset.x = -overscrollDistance
+      self.overscrollX = -overscrollDistance
+      // Zero X velocity but let Y continue.
+      self.decelerationVelocityX = 0
+    } else if nextOffset.x > maxXOffset {
+      // Hit right boundary.
+      let overscrollDistance = applyRubberBandEffect(overscroll: nextOffset.x - maxXOffset)
+      nextOffset.x = maxXOffset + overscrollDistance
+      self.overscrollX = overscrollDistance
       self.decelerationVelocityX = 0
     }
-    let maxXOffset = calculateMaxXOffset()
-    if nextOffset.x > maxXOffset {
-      nextOffset.x = maxXOffset
-      self.decelerationVelocityX = 0
+
+    // Check if X axis is done (velocity stopped and no overscroll).
+    if abs(self.decelerationVelocityX) < 8 && self.overscrollX == 0 {
+      xAxisActive = false
     }
-    // Enforce top edge at 0, no bottom limit (document grows downward).
+
+    // Handle vertical axis: apply velocity then check bounds.
+    nextOffset.y -= CGFloat(self.decelerationVelocityY) * CGFloat(deltaTime)
+
     if nextOffset.y < 0 {
-      nextOffset.y = 0
+      // Hit top boundary. Use actual overshoot with rubber-band applied.
+      let overscrollDistance = applyRubberBandEffect(overscroll: abs(nextOffset.y))
+      nextOffset.y = -overscrollDistance
+      self.overscrollY = -overscrollDistance
+      // Zero Y velocity but let X continue.
       self.decelerationVelocityY = 0
     }
+
+    // Check if Y axis is done (velocity stopped and no overscroll).
+    if abs(self.decelerationVelocityY) < 8 && self.overscrollY == 0 {
+      yAxisActive = false
+    }
+
+    // Apply spring-back to any axis currently in overscroll.
+    // This allows one axis to spring back while the other continues decelerating.
+    // Use a gentle spring factor for smooth, natural-feeling return to bounds.
+    // Factor of 0.008 at 60fps gives approximately 1.5-2 second return time.
+    let springFactor: CGFloat = 0.008
+
+    if self.overscrollX != 0 {
+      // Ease X back toward the boundary.
+      if self.overscrollX < 0 {
+        // Overscrolled past left (offset is negative).
+        nextOffset.x = nextOffset.x * (1 - springFactor)
+        self.overscrollX = nextOffset.x
+        if abs(nextOffset.x) < 0.3 {
+          nextOffset.x = 0
+          self.overscrollX = 0
+        }
+      } else {
+        // Overscrolled past right (offset is past maxXOffset).
+        let currentOverscroll = nextOffset.x - maxXOffset
+        let newOverscroll = currentOverscroll * (1 - springFactor)
+        nextOffset.x = maxXOffset + newOverscroll
+        self.overscrollX = newOverscroll
+        if abs(newOverscroll) < 0.3 {
+          nextOffset.x = maxXOffset
+          self.overscrollX = 0
+        }
+      }
+      xAxisActive = true
+    }
+
+    if self.overscrollY != 0 {
+      // Ease Y back toward the boundary (top only).
+      if self.overscrollY < 0 {
+        // Overscrolled past top (offset is negative).
+        nextOffset.y = nextOffset.y * (1 - springFactor)
+        self.overscrollY = nextOffset.y
+        if abs(nextOffset.y) < 0.3 {
+          nextOffset.y = 0
+          self.overscrollY = 0
+        }
+      }
+      yAxisActive = true
+    }
+
     editor.editorRenderer.viewOffset = nextOffset
     self.originalViewOffset = nextOffset
+
+    // Stop deceleration only when both axes are done.
+    if !xAxisActive && !yAxisActive {
+      stopDeceleration()
+    }
+
     NotificationCenter.default.post(name: DisplayViewController.refreshNotification, object: nil)
   }
 
@@ -529,6 +657,9 @@ class InputViewModel {
   // Stops inertial scrolling when the user touches down.
   func stopInertialScroll() {
     stopDeceleration()
+    // Reset overscroll state so content snaps to valid bounds.
+    self.overscrollX = 0
+    self.overscrollY = 0
   }
 
   // Calculates the maximum horizontal offset based on current zoom level.
