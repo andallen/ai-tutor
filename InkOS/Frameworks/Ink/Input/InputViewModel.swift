@@ -566,7 +566,7 @@ class InputViewModel {
 
     // Apply theme from css file if any.
     if let path = Bundle.main.path(forResource: "theme", ofType: "css"),
-      let cssString = try? String(contentsOfFile: path).trimmingCharacters(
+      let cssString = try? String(contentsOfFile: path, encoding: .utf8).trimmingCharacters(
         in: .whitespacesAndNewlines) {
       try? self.editor?.setEditorTheme(cssString)
     }
