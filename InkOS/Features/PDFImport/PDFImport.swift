@@ -14,8 +14,10 @@ extension PDFNoteStorage {
     let fileManager = FileManager.default
 
     // Get the Documents directory.
-    guard let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
-      throw ImportError.destinationDirectoryCreationFailed(underlyingError: "Could not access Documents directory")
+    guard let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first
+    else {
+      throw ImportError.destinationDirectoryCreationFailed(
+        underlyingError: "Could not access Documents directory")
     }
 
     // Build path to PDFNotes folder.
@@ -24,9 +26,11 @@ extension PDFNoteStorage {
     // Create directory if it doesn't exist.
     if !fileManager.fileExists(atPath: pdfNotesURL.path) {
       do {
-        try fileManager.createDirectory(at: pdfNotesURL, withIntermediateDirectories: true, attributes: nil)
+        try fileManager.createDirectory(
+          at: pdfNotesURL, withIntermediateDirectories: true, attributes: nil)
       } catch {
-        throw ImportError.destinationDirectoryCreationFailed(underlyingError: error.localizedDescription)
+        throw ImportError.destinationDirectoryCreationFailed(
+          underlyingError: error.localizedDescription)
       }
     }
 
@@ -67,6 +71,12 @@ final class PDFDocumentWrapper: PDFDocumentProtocol, @unchecked Sendable {
   func unlock(withPassword password: String) -> Bool {
     return pdfDocument.unlock(withPassword: password)
   }
+
+  // Retrieves a specific page from the PDF document.
+  // Used for preview image generation during import.
+  func getPage(at index: Int) -> PDFPage? {
+    return pdfDocument.page(at: index)
+  }
 }
 
 // MARK: - PDFDocumentFactory Implementation
@@ -80,4 +90,3 @@ extension PDFDocumentFactory {
     return PDFDocumentWrapper(pdfDocument)
   }
 }
-

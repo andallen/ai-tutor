@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import PDFKit
 import SwiftUI
 
 // The Notebook Library connects the Dashboard to the Bundle Manager.
@@ -7,6 +8,8 @@ import SwiftUI
 // and keeps the Dashboard list of Notebooks and Folders accurate.
 // The Notebook Library does not read or write files directly.
 // It treats the Bundle Manager as the one place that knows how items are stored.
+// swiftlint:disable type_body_length
+// Type body length exception: Centralized facade for notebook, folder, and PDF document operations.
 @MainActor
 class NotebookLibrary: ObservableObject {
   // The list of root-level Notebooks currently available.
@@ -21,6 +24,10 @@ class NotebookLibrary: ObservableObject {
   // Sorted by most recently accessed/modified first.
   @Published var items: [DashboardItem] = []
 
+  // The list of PDF documents currently available.
+  // Updated when loadPDFDocuments is called.
+  @Published var pdfDocuments: [PDFDocumentMetadata] = []
+
   // The Bundle Manager instance used to perform operations on Bundles.
   private let bundleManager: BundleManager
 
@@ -30,8 +37,8 @@ class NotebookLibrary: ObservableObject {
     self.bundleManager = bundleManager
   }
 
-  // Loads the list of Notebooks and Folders from the Bundle Manager.
-  // Updates the notebooks, folders, and combined items arrays.
+  // Loads the list of Notebooks, Folders, and PDF documents.
+  // Updates the notebooks, folders, pdfDocuments, and combined items arrays.
   // This should be called when the Dashboard appears to refresh the list.
   // Errors are silently ignored to keep the app usable.
   func loadBundles() async {
@@ -49,18 +56,86 @@ class NotebookLibrary: ObservableObject {
       // Silently ignore errors to keep the app usable.
     }
 
+    await loadPDFDocuments()
+
     combineItems()
   }
 
-  // Combines notebooks and folders into a single sorted list.
-  // Sorts by most recently accessed/modified first, with folders appearing before notebooks
+  // Loads PDF documents from the PDFNotes directory.
+  // Enumerates document directories and reads manifests to build metadata.
+  // Errors are silently ignored to keep the app usable.
+  func loadPDFDocuments() async {
+    do {
+      let pdfNotesDir = try await PDFNoteStorage.pdfNotesDirectory()
+      let fileManager = FileManager.default
+
+      // Check if directory exists.
+      guard fileManager.fileExists(atPath: pdfNotesDir.path) else {
+        pdfDocuments = []
+        return
+      }
+
+      // Enumerate subdirectories.
+      let contents = try fileManager.contentsOfDirectory(
+        at: pdfNotesDir,
+        includingPropertiesForKeys: [.isDirectoryKey],
+        options: [.skipsHiddenFiles]
+      )
+
+      var metadata: [PDFDocumentMetadata] = []
+
+      for url in contents {
+        // Skip non-directory items.
+        let isDir = try url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory ?? false
+        guard isDir else { continue }
+
+        // Check for manifest file.
+        let manifestURL = url.appendingPathComponent(ImportCoordinator.manifestFileName)
+        guard fileManager.fileExists(atPath: manifestURL.path) else { continue }
+
+        do {
+          // Read and decode manifest.
+          let data = try Data(contentsOf: manifestURL)
+          let decoder = JSONDecoder()
+          decoder.dateDecodingStrategy = .iso8601
+          let noteDoc = try decoder.decode(NoteDocument.self, from: data)
+
+          // Load preview image if available.
+          let previewURL = url.appendingPathComponent("preview.png")
+          let previewData: Data? =
+            fileManager.fileExists(atPath: previewURL.path)
+            ? try? Data(contentsOf: previewURL)
+            : nil
+
+          // Build metadata from NoteDocument.
+          let docMetadata = PDFDocumentMetadataBuilder.build(
+            from: noteDoc,
+            previewImageData: previewData
+          )
+          metadata.append(docMetadata)
+        } catch {
+          // Skip invalid documents.
+          continue
+        }
+      }
+
+      pdfDocuments = metadata
+    } catch {
+      // Silently ignore errors to keep the app usable.
+      pdfDocuments = []
+    }
+  }
+
+  // Combines notebooks, folders, and PDF documents into a single sorted list.
+  // Sorts by most recently accessed/modified first, with folders appearing before other types
   // when they have the same date.
   private func combineItems() {
     var combined: [DashboardItem] = []
     combined.append(contentsOf: notebooks.map { DashboardItem.notebook($0) })
     combined.append(contentsOf: folders.map { DashboardItem.folder($0) })
+    combined.append(contentsOf: pdfDocuments.map { DashboardItem.pdfDocument($0) })
 
-    // Sort by date, most recent first. Folders come before notebooks with same date.
+    // Sort by date, most recent first. Folders come before other types with same date.
     combined.sort { lhs, rhs in
       let lhsDate = lhs.sortDate ?? Date.distantPast
       let rhsDate = rhs.sortDate ?? Date.distantPast
@@ -143,6 +218,165 @@ class NotebookLibrary: ObservableObject {
   // Throws if the Notebook cannot be opened.
   func openNotebook(notebookID: String) async throws -> DocumentHandle {
     return try await bundleManager.openNotebook(id: notebookID)
+  }
+
+  // MARK: - PDF Document Operations
+
+  // Opens a PDF document for editing.
+  // Loads the manifest and PDF file from the document directory.
+  // Creates a PDFDocumentHandle for MyScript annotation access.
+  // documentID: The UUID of the PDF document to open.
+  // Returns: PDFDocumentOpenResult containing handle, noteDocument, and pdfDocument.
+  // Throws: PDFDocumentLifecycleError on failure.
+  func openPDFDocument(documentID: UUID) async throws -> PDFDocumentOpenResult {
+    let documentDirectory = try await getDocumentDirectory(for: documentID)
+    let noteDocument = try loadManifest(from: documentDirectory, documentID: documentID)
+    let pdfDocument = try loadPDFDocument(from: documentDirectory, documentID: documentID)
+    let handle = try await createDocumentHandle(
+      documentDirectory: documentDirectory,
+      noteDocument: noteDocument,
+      documentID: documentID
+    )
+    let package = try await loadMyScriptPackage(
+      from: documentDirectory,
+      documentID: documentID
+    )
+
+    return PDFDocumentOpenResult(
+      handle: handle,
+      noteDocument: noteDocument,
+      pdfDocument: pdfDocument,
+      package: package
+    )
+  }
+
+  // Retrieves and validates the document directory.
+  // documentID: The UUID of the document.
+  // Returns: The validated document directory URL.
+  // Throws: PDFDocumentLifecycleError if directory is not found or invalid.
+  private func getDocumentDirectory(for documentID: UUID) async throws -> URL {
+    let documentDirectory: URL
+    do {
+      documentDirectory = try await PDFNoteStorage.documentDirectory(for: documentID)
+    } catch {
+      throw PDFDocumentLifecycleError.documentDirectoryNotFound(documentID: documentID)
+    }
+
+    let fileManager = FileManager.default
+    guard fileManager.fileExists(atPath: documentDirectory.path) else {
+      throw PDFDocumentLifecycleError.documentDirectoryNotFound(documentID: documentID)
+    }
+
+    return documentDirectory
+  }
+
+  // Loads and decodes the manifest file.
+  // documentDirectory: The directory containing the manifest.
+  // documentID: The UUID of the document.
+  // Returns: The decoded NoteDocument.
+  // Throws: PDFDocumentLifecycleError if manifest is not found or cannot be decoded.
+  private func loadManifest(
+    from documentDirectory: URL,
+    documentID: UUID
+  ) throws -> NoteDocument {
+    let manifestURL = documentDirectory.appendingPathComponent(ImportCoordinator.manifestFileName)
+    let fileManager = FileManager.default
+    guard fileManager.fileExists(atPath: manifestURL.path) else {
+      throw PDFDocumentLifecycleError.manifestNotFound(documentID: documentID)
+    }
+
+    do {
+      let manifestData = try Data(contentsOf: manifestURL)
+      let decoder = JSONDecoder()
+      decoder.dateDecodingStrategy = .iso8601
+      return try decoder.decode(NoteDocument.self, from: manifestData)
+    } catch {
+      throw PDFDocumentLifecycleError.manifestDecodingFailed(
+        documentID: documentID,
+        reason: error.localizedDescription
+      )
+    }
+  }
+
+  // Loads the PDF document from file.
+  // documentDirectory: The directory containing the PDF file.
+  // documentID: The UUID of the document.
+  // Returns: The loaded PDFDocument.
+  // Throws: PDFDocumentLifecycleError if PDF is not found or cannot be loaded.
+  private func loadPDFDocument(
+    from documentDirectory: URL,
+    documentID: UUID
+  ) throws -> PDFDocument {
+    let pdfURL = documentDirectory.appendingPathComponent(ImportCoordinator.pdfFileName)
+    let fileManager = FileManager.default
+    guard fileManager.fileExists(atPath: pdfURL.path) else {
+      throw PDFDocumentLifecycleError.pdfNotFound(documentID: documentID)
+    }
+
+    guard let pdfDocument = PDFDocument(url: pdfURL) else {
+      throw PDFDocumentLifecycleError.pdfLoadFailed(
+        documentID: documentID,
+        reason: "Could not load PDF file"
+      )
+    }
+
+    return pdfDocument
+  }
+
+  // Creates the PDF document handle.
+  // documentDirectory: The directory containing the document files.
+  // noteDocument: The decoded manifest.
+  // documentID: The UUID of the document.
+  // Returns: The created PDFDocumentHandle.
+  // Throws: PDFDocumentLifecycleError if handle creation fails.
+  private func createDocumentHandle(
+    documentDirectory: URL,
+    noteDocument: NoteDocument,
+    documentID: UUID
+  ) async throws -> PDFDocumentHandle {
+    do {
+      return try await PDFDocumentHandle(
+        documentDirectory: documentDirectory,
+        noteDocument: noteDocument
+      )
+    } catch {
+      throw PDFDocumentLifecycleError.handleCreationFailed(
+        documentID: documentID,
+        reason: error.localizedDescription
+      )
+    }
+  }
+
+  // Loads the MyScript package.
+  // documentDirectory: The directory containing the package file.
+  // documentID: The UUID of the document.
+  // Returns: The loaded MyScript package.
+  // Throws: PDFDocumentLifecycleError if package cannot be loaded.
+  private func loadMyScriptPackage(
+    from documentDirectory: URL,
+    documentID: UUID
+  ) async throws -> any ContentPackageProtocol {
+    let packageURL = documentDirectory.appendingPathComponent(ImportCoordinator.iinkFileName)
+    let fileManager = FileManager.default
+    guard fileManager.fileExists(atPath: packageURL.path) else {
+      throw PDFDocumentLifecycleError.packageNotFound(documentID: documentID)
+    }
+
+    do {
+      return try await MainActor.run {
+        guard let engine = EngineProvider.sharedInstance.engine else {
+          throw PDFDocumentLifecycleError.engineNotAvailable(documentID: documentID)
+        }
+        return try engine.openPackage(packageURL.path, openOption: .existing)
+      }
+    } catch let error as PDFDocumentLifecycleError {
+      throw error
+    } catch {
+      throw PDFDocumentLifecycleError.packageLoadFailed(
+        documentID: documentID,
+        reason: error.localizedDescription
+      )
+    }
   }
 
   // MARK: - Folder Operations
