@@ -150,15 +150,19 @@ class NotebookLibrary: ObservableObject {
   // Creates a new Folder by asking the Bundle Manager to create it.
   // After creation, refreshes the list to include the new Folder.
   // Uses a default display name if none is provided.
+  // Returns the folder ID on success, nil on failure.
   // Errors are silently ignored to keep the app usable.
-  func createFolder(displayName: String = "Untitled Folder") async {
+  @discardableResult
+  func createFolder(displayName: String = "Untitled Folder") async -> String? {
     do {
-      _ = try await bundleManager.createFolder(displayName: displayName)
+      let folder = try await bundleManager.createFolder(displayName: displayName)
       // Refresh the list to include the newly created Folder.
       await loadBundles()
+      return folder.id
     } catch {
       // Silently ignore errors to keep the app usable.
       // Later on, should show error message to the user.
+      return nil
     }
   }
 

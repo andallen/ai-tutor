@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 // MARK: - Card Frame Store
 
@@ -59,6 +60,26 @@ struct DashboardView: View {
 
   // Tracks which folder ID is currently being targeted for drop.
   @State private var dropTargetFolderID: String?
+
+  // MARK: - Custom Drag State
+
+  // The notebook currently being dragged (nil when not dragging).
+  @State private var draggedNotebook: NotebookMetadata?
+
+  // The source frame of the card being dragged (for sizing the overlay).
+  @State private var dragSourceFrame: CGRect = .zero
+
+  // The current position of the drag (finger position in global coordinates).
+  @State private var dragPosition: CGPoint = .zero
+
+  // Tracks which folder the drag is currently over (for drop targeting).
+  @State private var dragTargetFolderID: String?
+
+  // Tracks which notebook the drag is currently over (for folder creation).
+  @State private var dragTargetNotebookID: String?
+
+  // Stores folder frames for hit testing during drag.
+  @State private var folderFrames: [String: CGRect] = [:]
 
   // MARK: - Folder Expansion State
 
@@ -182,6 +203,12 @@ struct DashboardView: View {
             }
           )
           .zIndex(200)
+        }
+
+        // Drag overlay showing the notebook card following the finger.
+        if let notebook = draggedNotebook {
+          dragOverlay(for: notebook)
+            .zIndex(400)
         }
       }
       // Collect card frame preferences for hero transitions.
@@ -308,33 +335,58 @@ struct DashboardView: View {
   private func notebookCardView(notebook: NotebookMetadata) -> some View {
     // Check if this notebook's context menu is currently shown.
     let isContextMenuActive = contextMenuState?.matchesNotebook(notebook) == true
+    // Check if this notebook is currently being dragged.
+    let isBeingDragged = draggedNotebook?.id == notebook.id
+    // Check if another notebook is being dragged over this one.
+    let isDragTarget = dragTargetNotebookID == notebook.id && draggedNotebook?.id != notebook.id
 
-    NotebookCardButton(
-      notebook: notebook,
-      action: {
-        openNotebook(notebook)
-      },
-      onRename: {
-        renameText = notebook.displayName
-        renamingNotebook = notebook
-      },
-      onMoveToFolder: library.folders.isEmpty
-        ? nil
-        : {
-          movingNotebook = notebook
+    // ZStack to layer the underlay behind the card without scaling it.
+    ZStack {
+      // Grey underlay that stays at full size when the card contracts.
+      dropTargetUnderlay(isActive: isDragTarget)
+
+      // The notebook card that scales down when targeted.
+      NotebookCardButton(
+        notebook: notebook,
+        action: {
+          openNotebook(notebook)
         },
-      onDelete: {
-        deletingNotebook = notebook
-      },
-      onLongPress: { frame, cardHeight in
-        contextMenuState = ContextMenuState(
-          item: .notebook(notebook),
-          sourceFrame: frame,
-          cardHeight: cardHeight
-        )
-      }
-    )
-    // Capture the card's frame for hero animation positioning.
+        onRename: {
+          renameText = notebook.displayName
+          renamingNotebook = notebook
+        },
+        onMoveToFolder: library.folders.isEmpty
+          ? nil
+          : {
+            movingNotebook = notebook
+          },
+        onDelete: {
+          deletingNotebook = notebook
+        },
+        onLongPress: { frame, cardHeight in
+          contextMenuState = ContextMenuState(
+            item: .notebook(notebook),
+            sourceFrame: frame,
+            cardHeight: cardHeight
+          )
+        },
+        onDragStart: { notebook, frame, position in
+          handleDragStart(notebook: notebook, frame: frame, position: position)
+        },
+        onDragMove: { position in
+          handleDragMove(position: position)
+        },
+        onDragEnd: { position in
+          handleDragEnd(position: position)
+        },
+        titleOpacity: isDragTarget ? 0 : 1
+      )
+      // Scale up when context menu is active, scale DOWN when targeted for folder creation.
+      .scaleEffect(isContextMenuActive ? 1.08 : (isDragTarget ? 0.82 : 1.0), anchor: .center)
+      .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isContextMenuActive)
+      .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isDragTarget)
+    }
+    // Capture the card's frame for hero animation and drag hit testing via preferences.
     .background(
       GeometryReader { geometry in
         Color.clear
@@ -344,18 +396,33 @@ struct DashboardView: View {
           )
       }
     )
-    // Lift the card above the dim overlay when context menu is active.
+    // Hide the original card when it's being dragged.
+    .opacity(isBeingDragged ? 0 : 1)
+    // Lift the card above others when context menu is active.
     .zIndex(isContextMenuActive ? 300 : 0)
-    // Scale up when context menu is active.
-    .scaleEffect(isContextMenuActive ? 1.08 : 1.0, anchor: .top)
-    .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isContextMenuActive)
+  }
+
+  // Builds the grey underlay shown when a notebook is targeted for folder creation.
+  // The underlay stays at full size while the card scales down, creating a visible background.
+  @ViewBuilder
+  private func dropTargetUnderlay(isActive: Bool) -> some View {
+    GeometryReader { geometry in
+      let cardHeight = geometry.size.height - 36  // Subtract title area.
+
+      RoundedRectangle(cornerRadius: 10, style: .continuous)
+        .fill(Color(white: 0.88))
+        .frame(width: geometry.size.width, height: cardHeight)
+        .opacity(isActive ? 1 : 0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isActive)
+    }
   }
 
   // MARK: - Folder Card View
 
   @ViewBuilder
   private func folderCardView(folder: FolderMetadata) -> some View {
-    let isTargeted = dropTargetFolderID == folder.id
+    // Check if this folder is targeted by system drag-drop or custom drag.
+    let isTargeted = dropTargetFolderID == folder.id || dragTargetFolderID == folder.id
     let thumbnails = folderThumbnails[folder.id] ?? []
     let isExpanded = expandedFolder?.id == folder.id
     // Check if this folder's context menu is currently shown.
@@ -383,6 +450,18 @@ struct DashboardView: View {
         )
       }
     )
+    // Capture folder frame for custom drag hit testing.
+    .background(
+      GeometryReader { geometry in
+        Color.clear
+          .onAppear {
+            folderFrames[folder.id] = geometry.frame(in: .global)
+          }
+          .onChange(of: geometry.frame(in: .global)) { _, newFrame in
+            folderFrames[folder.id] = newFrame
+          }
+      }
+    )
     // Apply matchedGeometryEffect for folder expansion animation.
     .matchedGeometryEffect(
       id: "folder-\(folder.id)",
@@ -404,6 +483,7 @@ struct DashboardView: View {
   }
 
   // Creates a drop delegate for folder drag-and-drop operations.
+  // Used for system drag-and-drop (if notebooks are dragged from elsewhere).
   private func createFolderDropDelegate(for folder: FolderMetadata) -> FolderDropDelegate {
     FolderDropDelegate(
       folderID: folder.id,
@@ -446,7 +526,6 @@ struct DashboardView: View {
 
     // Capture reference to frame store for dismiss-time frame lookup.
     let frameStore = cardFrameStore
-    let notebookID = notebook.id
 
     Task {
       do {
@@ -621,6 +700,160 @@ struct DashboardView: View {
       thumbnails[folder.id] = images
     }
     folderThumbnails = thumbnails
+  }
+
+  // MARK: - Drag Overlay
+
+  // Builds the floating card overlay that follows the finger during drag.
+  @ViewBuilder
+  private func dragOverlay(for notebook: NotebookMetadata) -> some View {
+    let cardWidth = dragSourceFrame.width
+    let cardHeight = dragSourceFrame.height - 36  // Subtract title area height.
+
+    NotebookCardPreview(notebook: notebook, dimOpacity: 0)
+      .frame(width: cardWidth, height: cardHeight)
+      .background(Color.white)
+      .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+      .shadow(color: Color.black.opacity(0.25), radius: 12, x: 0, y: 8)
+      .scaleEffect(1.05)
+      // Position the card centered under the finger.
+      .position(x: dragPosition.x, y: dragPosition.y - cardHeight / 2 - 20)
+      .allowsHitTesting(false)
+  }
+
+  // MARK: - Drag Handlers
+
+  // Called when a drag starts after long press on a notebook card.
+  private func handleDragStart(notebook: NotebookMetadata, frame: CGRect, position: CGPoint) {
+    // Dismiss context menu when drag starts.
+    withAnimation(.easeOut(duration: 0.15)) {
+      contextMenuState = nil
+    }
+
+    // Set up drag state.
+    draggedNotebook = notebook
+    dragSourceFrame = frame
+    dragPosition = position
+  }
+
+  // Called during drag as the finger moves.
+  private func handleDragMove(position: CGPoint) {
+    dragPosition = position
+
+    // Check which folder (if any) the finger is over.
+    var foundFolderTarget: String?
+    for (folderID, frame) in folderFrames {
+      if frame.contains(position) {
+        foundFolderTarget = folderID
+        break
+      }
+    }
+
+    // Check which notebook (if any) the finger is over (excluding the dragged one).
+    // Uses cardFrameStore.frames (populated via preferences) which is more reliable than onAppear.
+    // Only consider notebooks that still exist in the library (not moved to folders).
+    var foundNotebookTarget: String?
+    if foundFolderTarget == nil, let draggedID = draggedNotebook?.id {
+      let existingNotebookIDs = Set(library.notebooks.map { $0.id })
+      for (notebookID, frame) in cardFrameStore.frames {
+        if notebookID != draggedID
+          && existingNotebookIDs.contains(notebookID)
+          && frame.contains(position) {
+          foundNotebookTarget = notebookID
+          break
+        }
+      }
+    }
+
+    // Update folder target with animation if changed.
+    if dragTargetFolderID != foundFolderTarget {
+      withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+        dragTargetFolderID = foundFolderTarget
+      }
+    }
+
+    // Update notebook target with animation if changed.
+    if dragTargetNotebookID != foundNotebookTarget {
+      withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+        dragTargetNotebookID = foundNotebookTarget
+      }
+    }
+  }
+
+  // Called when drag ends (finger released).
+  private func handleDragEnd(position: CGPoint) {
+    guard let notebook = draggedNotebook else {
+      resetDragState()
+      return
+    }
+
+    // Check if we're over a folder.
+    if let targetFolderID = dragTargetFolderID {
+      // Move notebook to the existing folder.
+      Task {
+        await library.moveNotebookToFolder(notebookID: notebook.id, folderID: targetFolderID)
+        await library.loadBundles()
+        await loadFolderThumbnails()
+      }
+      resetDragState()
+      return
+    }
+
+    // Check if we're over another notebook to create a folder.
+    if let targetNotebookID = dragTargetNotebookID,
+      let targetNotebook = library.notebooks.first(where: { $0.id == targetNotebookID }) {
+      // Create folder from the two notebooks.
+      createFolderFromNotebooks(
+        draggedNotebook: notebook,
+        targetNotebook: targetNotebook
+      )
+      return
+    }
+
+    // No valid target, just reset.
+    resetDragState()
+  }
+
+  // Resets all drag-related state.
+  private func resetDragState() {
+    withAnimation(.easeOut(duration: 0.2)) {
+      draggedNotebook = nil
+      dragTargetFolderID = nil
+      dragTargetNotebookID = nil
+    }
+    dragSourceFrame = .zero
+    dragPosition = .zero
+  }
+
+  // Creates a new folder from two notebooks.
+  private func createFolderFromNotebooks(
+    draggedNotebook: NotebookMetadata,
+    targetNotebook: NotebookMetadata
+  ) {
+    // Reset drag state immediately.
+    withAnimation(.easeOut(duration: 0.2)) {
+      self.draggedNotebook = nil
+      dragTargetNotebookID = nil
+    }
+    dragSourceFrame = .zero
+    dragPosition = .zero
+    dragTargetFolderID = nil
+
+    // Create the folder and move notebooks.
+    Task { @MainActor in
+      // Create an untitled folder.
+      let folderID = await library.createFolder(displayName: "Untitled Folder")
+
+      // Move both notebooks to the new folder.
+      if let folderID {
+        await library.moveNotebookToFolder(notebookID: draggedNotebook.id, folderID: folderID)
+        await library.moveNotebookToFolder(notebookID: targetNotebook.id, folderID: folderID)
+      }
+
+      // Reload to show the new folder.
+      await library.loadBundles()
+      await loadFolderThumbnails()
+    }
   }
 
   // MARK: - Context Menu Actions

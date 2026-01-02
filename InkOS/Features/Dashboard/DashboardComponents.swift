@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 // MARK: - Notebook Session
 
@@ -24,6 +25,14 @@ struct NotebookCardButton: View {
   let onDelete: () -> Void
   // Long press callback for custom context menu. Passes the card frame and card height.
   let onLongPress: ((CGRect, CGFloat) -> Void)?
+  // Callback when drag starts after long press. Passes notebook, card frame, and initial touch position.
+  let onDragStart: ((NotebookMetadata, CGRect, CGPoint) -> Void)?
+  // Callback during drag. Passes current touch position.
+  let onDragMove: ((CGPoint) -> Void)?
+  // Callback when drag ends. Passes final touch position.
+  let onDragEnd: ((CGPoint) -> Void)?
+  // Opacity for the title/date label. Allows parent to fade the title when targeted.
+  var titleOpacity: Double = 1.0
 
   // Convenience initializer for dashboard use (move to folder).
   init(
@@ -32,7 +41,11 @@ struct NotebookCardButton: View {
     onRename: @escaping () -> Void,
     onMoveToFolder: (() -> Void)?,
     onDelete: @escaping () -> Void,
-    onLongPress: ((CGRect, CGFloat) -> Void)? = nil
+    onLongPress: ((CGRect, CGFloat) -> Void)? = nil,
+    onDragStart: ((NotebookMetadata, CGRect, CGPoint) -> Void)? = nil,
+    onDragMove: ((CGPoint) -> Void)? = nil,
+    onDragEnd: ((CGPoint) -> Void)? = nil,
+    titleOpacity: Double = 1.0
   ) {
     self.notebook = notebook
     self.action = action
@@ -41,6 +54,10 @@ struct NotebookCardButton: View {
     self.onMoveOutOfFolder = nil
     self.onDelete = onDelete
     self.onLongPress = onLongPress
+    self.onDragStart = onDragStart
+    self.onDragMove = onDragMove
+    self.onDragEnd = onDragEnd
+    self.titleOpacity = titleOpacity
   }
 
   // Convenience initializer for folder overlay use (move out of folder).
@@ -50,7 +67,11 @@ struct NotebookCardButton: View {
     onRename: @escaping () -> Void,
     onMoveOutOfFolder: @escaping () -> Void,
     onDelete: @escaping () -> Void,
-    onLongPress: ((CGRect, CGFloat) -> Void)? = nil
+    onLongPress: ((CGRect, CGFloat) -> Void)? = nil,
+    onDragStart: ((NotebookMetadata, CGRect, CGPoint) -> Void)? = nil,
+    onDragMove: ((CGPoint) -> Void)? = nil,
+    onDragEnd: ((CGPoint) -> Void)? = nil,
+    titleOpacity: Double = 1.0
   ) {
     self.notebook = notebook
     self.action = action
@@ -59,10 +80,12 @@ struct NotebookCardButton: View {
     self.onMoveOutOfFolder = onMoveOutOfFolder
     self.onDelete = onDelete
     self.onLongPress = onLongPress
+    self.onDragStart = onDragStart
+    self.onDragMove = onDragMove
+    self.onDragEnd = onDragEnd
+    self.titleOpacity = titleOpacity
   }
 
-  // Tracks press state via gesture. Automatically resets when gesture ends or cancels.
-  @GestureState private var isPressed = false
   // Controls the darkening overlay opacity on the card.
   @State private var dimOpacity: Double = 0
   // Drives a highlight flash on long press.
@@ -75,11 +98,17 @@ struct NotebookCardButton: View {
   @State private var cardFrame: CGRect = .zero
   // Tracks whether the context menu was triggered to prevent button action on release.
   @State private var didTriggerContextMenu = false
+  // Tracks whether the gesture has transitioned to drag mode.
+  @State private var isDragging = false
+  // Tracks the starting position of the touch for drag threshold detection.
+  @State private var touchStartPosition: CGPoint = .zero
 
   private let cardCornerRadius: CGFloat = 10
   private let titleAreaHeight: CGFloat = 36
   // Keeps a paper-like portrait ratio for the overall container.
   private let cardAspectRatio: CGFloat = 0.72
+  // Minimum distance to move after long press to start drag mode.
+  private let dragThreshold: CGFloat = 10
 
   var body: some View {
     GeometryReader { proxy in
@@ -92,8 +121,10 @@ struct NotebookCardButton: View {
         // The card portion wrapped in a button.
         cardButton(width: totalWidth, height: cardHeight)
 
-        // Title and date below the card.
+        // Title and date below the card. Opacity controlled by parent for fade effects.
         NotebookCardTitle(notebook: notebook)
+          .opacity(titleOpacity)
+          .animation(.easeOut(duration: 0.2), value: titleOpacity)
       }
       // Capture global frame for context menu positioning.
       .background(
@@ -109,24 +140,19 @@ struct NotebookCardButton: View {
       )
     }
     .aspectRatio(cardAspectRatio, contentMode: .fit)
-    // Scale animation applies to both card and title together.
-    .scaleEffect(isPressed ? 1.04 : 1.0)
-    .animation(.spring(response: 0.15, dampingFraction: 0.75), value: isPressed)
-    // Detects touch down/up for scale, dim, and sweep animations.
-    .simultaneousGesture(
+    // Combined gesture for press, long press, and drag after long press.
+    .gesture(
       DragGesture(minimumDistance: 0)
-        .updating($isPressed) { _, state, _ in
-          state = true
+        .onChanged { value in
+          handleGestureChange(value)
+        }
+        .onEnded { value in
+          handleGestureEnd(value)
         }
     )
-    // Responds to press state changes to animate dim and schedule sweep.
-    .onChange(of: isPressed) { _, pressed in
-      handlePressChange(pressed)
-    }
   }
 
-  // Builds the card with tap gesture and drag support.
-  // Uses onTapGesture instead of Button to avoid conflicts with draggable modifier.
+  // Builds the card view (no separate tap gesture, handled by the main gesture).
   @ViewBuilder
   private func cardButton(width: CGFloat, height: CGFloat) -> some View {
     let shape = RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
@@ -140,12 +166,9 @@ struct NotebookCardButton: View {
         sweepOverlay(width: width, height: height)
       )
       .contentShape(shape)
-      .onTapGesture {
-        // Only execute action if context menu wasn't triggered by long press.
-        guard !didTriggerContextMenu else { return }
-        action()
-      }
-      .draggable(notebook)
+      // Scale up slightly when pressed (before drag starts).
+      .scaleEffect(dimOpacity > 0 && !isDragging ? 1.04 : 1.0)
+      .animation(.spring(response: 0.15, dampingFraction: 0.75), value: dimOpacity > 0 && !isDragging)
   }
 
   // Builds the sweep highlight overlay that plays on long press.
@@ -180,18 +203,22 @@ struct NotebookCardButton: View {
     .allowsHitTesting(false)
   }
 
-  // Handles press state changes to animate dim and schedule sweep/context menu.
-  private func handlePressChange(_ pressed: Bool) {
-    if pressed {
-      // Reset context menu flag at start of new press to ensure taps work after menu dismissal.
+  // Handles gesture changes (touch down, movement).
+  private func handleGestureChange(_ value: DragGesture.Value) {
+    let currentPosition = value.location
+
+    // First touch: initialize state.
+    if touchStartPosition == .zero {
+      touchStartPosition = value.startLocation
       didTriggerContextMenu = false
+      isDragging = false
 
       // Dim immediately on touch down.
       withAnimation(.easeOut(duration: 0.06)) {
         dimOpacity = 0.12
       }
+
       // Schedule context menu and sweep animation after a delay.
-      // If gesture ends before the delay (a tap or cancel), the work item is cancelled.
       let currentFrame = cardFrame
       let cardHeight = currentFrame.height - titleAreaHeight
       let workItem = DispatchWorkItem { [onLongPress] in
@@ -221,18 +248,63 @@ struct NotebookCardButton: View {
       }
       sweepWorkItem = workItem
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
-    } else {
-      // Fade out dim slowly on release or cancel.
-      withAnimation(.easeOut(duration: 0.25)) {
-        dimOpacity = 0
+      return
+    }
+
+    // After context menu has triggered, check for drag initiation.
+    if didTriggerContextMenu && !isDragging {
+      let distance = hypot(
+        currentPosition.x - touchStartPosition.x,
+        currentPosition.y - touchStartPosition.y
+      )
+      if distance > dragThreshold {
+        // Transition to drag mode.
+        isDragging = true
+        // Convert local position to global position for drag start.
+        let globalPosition = CGPoint(
+          x: cardFrame.minX + currentPosition.x,
+          y: cardFrame.minY + currentPosition.y
+        )
+        onDragStart?(notebook, cardFrame, globalPosition)
       }
-      // Cancel pending sweep if it hasn't fired yet.
-      sweepWorkItem?.cancel()
-      sweepWorkItem = nil
-      // Reset context menu flag after a brief delay to allow button action check.
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-        didTriggerContextMenu = false
-      }
+    }
+
+    // During drag, report position updates.
+    if isDragging {
+      let globalPosition = CGPoint(
+        x: cardFrame.minX + currentPosition.x,
+        y: cardFrame.minY + currentPosition.y
+      )
+      onDragMove?(globalPosition)
+    }
+  }
+
+  // Handles gesture end (touch up).
+  private func handleGestureEnd(_ value: DragGesture.Value) {
+    // Cancel pending sweep if it hasn't fired yet.
+    sweepWorkItem?.cancel()
+    sweepWorkItem = nil
+
+    if isDragging {
+      // End drag mode and report final position.
+      let globalPosition = CGPoint(
+        x: cardFrame.minX + value.location.x,
+        y: cardFrame.minY + value.location.y
+      )
+      onDragEnd?(globalPosition)
+    } else if !didTriggerContextMenu {
+      // Short tap without context menu: trigger action.
+      action()
+    }
+
+    // Reset state.
+    withAnimation(.easeOut(duration: 0.25)) {
+      dimOpacity = 0
+    }
+    touchStartPosition = .zero
+    isDragging = false
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+      didTriggerContextMenu = false
     }
   }
 }
