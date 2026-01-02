@@ -65,6 +65,7 @@ private class GestureDelegateTrampoline: NSObject, IINKGestureDelegate {
     x: Float,
     y: Float
   ) -> IINKGestureAction {
+    print("===== GESTURE: onDoubleTap at (\(x), \(y)) =====")
     // Let MyScript handle double-tap conversion by default.
     return .apply
   }
@@ -76,6 +77,7 @@ private class GestureDelegateTrampoline: NSObject, IINKGestureDelegate {
     x: Float,
     y: Float
   ) -> IINKGestureAction {
+    print("===== GESTURE: onLongPress at (\(x), \(y)) =====")
     // Let MyScript handle long-press behavior by default.
     return .apply
   }
@@ -86,6 +88,7 @@ private class GestureDelegateTrampoline: NSObject, IINKGestureDelegate {
     gestureStrokeId: String,
     selection: any NSObjectProtocol & IINKIContentSelection
   ) -> IINKGestureAction {
+    print("===== GESTURE: onUnderline =====")
     // Let MyScript apply the underline decoration.
     return .apply
   }
@@ -161,6 +164,15 @@ class InputViewModel {
   // Uses protocol type to allow dependency injection for testing.
   var editor: (any EditorProtocol)?
   private weak var engine: IINKEngine?
+
+  // PDF background renderer for drawing pages behind ink.
+  // Set before calling setupModel() to have it applied to the display chain.
+  weak var backgroundRenderer: PDFBackgroundRendererProtocol?
+
+  // Total content height for PDF mode scrolling.
+  // When set to a value > 0, vertical scrolling is bounded by this height.
+  // This allows scrolling through stacked PDF pages beyond the SDK's default bounds.
+  var totalContentHeight: CGFloat = 0
   // Stores the tool controller so tools can be switched from the Notebook toolbar.
   // Uses protocol type to allow dependency injection for testing.
   private var toolController: (any ToolControllerProtocol)?
@@ -220,6 +232,8 @@ class InputViewModel {
     pinchGesture: UIPinchGestureRecognizer?
   ) {
     let displayViewModel = DisplayViewModel()
+    // Pass PDF background renderer to display chain if set.
+    displayViewModel.backgroundRenderer = self.backgroundRenderer
     self.initEditor(with: displayViewModel)
     self.displayViewController = DisplayViewController(viewModel: displayViewModel)
     if self.smartGuideDisabled == false {
@@ -353,12 +367,22 @@ class InputViewModel {
       self.overscrollX = 0
     }
 
-    // Vertical rubber-banding (top boundary only).
+    // Calculate vertical bounds.
+    let maxYOffset = calculateMaxYOffset()
+
+    // Vertical rubber-banding (top boundary).
     if rawProposedOffset.y < minYOffset {
       let overscroll = minYOffset - rawProposedOffset.y
       let rubberBandedOverscroll = applyRubberBandEffect(overscroll: overscroll)
       finalOffset.y = minYOffset - rubberBandedOverscroll
       self.overscrollY = -rubberBandedOverscroll
+    }
+    // Vertical rubber-banding (bottom boundary, only if totalContentHeight is set).
+    else if maxYOffset > 0 && rawProposedOffset.y > maxYOffset {
+      let overscroll = rawProposedOffset.y - maxYOffset
+      let rubberBandedOverscroll = applyRubberBandEffect(overscroll: overscroll)
+      finalOffset.y = maxYOffset + rubberBandedOverscroll
+      self.overscrollY = rubberBandedOverscroll
     } else {
       self.overscrollY = 0
     }
@@ -446,10 +470,14 @@ class InputViewModel {
           // but does not enforce document bounds, allowing progressive drift.
           var currentOffset = renderer.viewOffset
 
-          // Store desired X before SDK clamping since clampViewOffset may reset X to 0.
+          // Store desired offsets before SDK clamping since clampViewOffset may restrict them.
           let desiredXOffset = currentOffset.x
+          // When totalContentHeight is set (PDF mode), preserve Y because SDK clamps based on
+          // ink content bounds which is more restrictive than our PDF page bounds.
+          let desiredYOffset = currentOffset.y
+          let hasPDFBounds = totalContentHeight > 0
 
-          // Let SDK clamp vertical scrolling only.
+          // Let SDK clamp offsets. We'll override with our custom bounds.
           if var clampedOffset = Optional(currentOffset) {
             self.editor?.clampEditorViewOffset(&clampedOffset)
             currentOffset = clampedOffset
@@ -466,9 +494,20 @@ class InputViewModel {
           if currentOffset.x > maxXOffset {
             currentOffset.x = maxXOffset
           }
+
+          // When PDF bounds are set, use our own Y clamping instead of SDK's.
+          if hasPDFBounds {
+            currentOffset.y = desiredYOffset
+          }
+
           // Enforce top edge at 0.
           if currentOffset.y < 0 {
             currentOffset.y = 0
+          }
+          // Enforce bottom edge when totalContentHeight is set.
+          let maxYOffset = calculateMaxYOffset()
+          if maxYOffset > 0 && currentOffset.y > maxYOffset {
+            currentOffset.y = maxYOffset
           }
           renderer.viewOffset = currentOffset
         } catch {
@@ -518,6 +557,83 @@ class InputViewModel {
     }
   }
 
+  // Apply ink style (color and width) to a specific tool.
+  // colorHex: Hex color string like "#FF0000".
+  // width: Stroke width in mm.
+  // tool: The MyScript pointer tool to style.
+  func setToolStyle(colorHex: String, width: CGFloat, tool: IINKPointerTool) {
+    let styleString = String(format: "color:%@;-myscript-pen-width:%.3f", colorHex, width)
+    do {
+      try toolController?.setStyleForTool(style: styleString, tool: tool)
+    } catch {
+      // Silently ignore style setting errors.
+    }
+  }
+
+  // Performs an undo operation on the editor.
+  func undo() {
+    editor?.performUndo()
+  }
+
+  // Performs a redo operation on the editor.
+  func redo() {
+    editor?.performRedo()
+  }
+
+  // Clears all content from the editor.
+  func clear() {
+    try? editor?.performClear()
+  }
+
+  // Releases the part from the editor to allow re-editing.
+  // Must be called before closing the document to avoid "Part is already being edited" errors.
+  func releasePart() {
+    try? editor?.setEditorPart(nil)
+  }
+
+  // Creates invisible anchor strokes at specified Y positions to expand SDK content bounds.
+  // This is needed for PDF mode where the SDK's content bounds are derived from ink strokes.
+  // Without anchor strokes at the bottom of the document, scrolling would be limited to
+  // where visible ink exists, preventing access to pages without annotations.
+  // anchorYPositions: Y coordinates in content space where anchor strokes should be placed.
+  func createAnchorStrokes(at anchorYPositions: [CGFloat]) {
+    guard let editor = self.editor else { return }
+
+    // Save current pen style so we can restore it after creating anchors.
+    let originalStyle = try? toolController?.styleForTool(tool: .toolPen)
+
+    // Set pen to nearly invisible with minimal width.
+    // Uses alpha 01 (nearly transparent) because fully transparent strokes may be ignored.
+    let nearlyInvisibleStyle = "color:#00000001;-myscript-pen-width:0.1"
+    try? toolController?.setStyleForTool(style: nearlyInvisibleStyle, tool: .toolPen)
+
+    // Create anchor strokes at each Y position using pointer sequence.
+    // Each stroke is a tiny 1-pixel line at the left edge.
+    var timestamp = Int64(Date().timeIntervalSince1970 * 1000)
+
+    for yPosition in anchorYPositions {
+      // Create a minimal stroke: down at point, move 1 pixel, up.
+      let startPoint = CGPoint(x: 1, y: yPosition)
+      let endPoint = CGPoint(x: 2, y: yPosition)
+
+      do {
+        try editor.pointerDown(point: startPoint, timestamp: timestamp, force: 0.5, type: .pen)
+        try editor.pointerMove(point: endPoint, timestamp: timestamp + 1, force: 0.5, type: .pen)
+        try editor.pointerUp(point: endPoint, timestamp: timestamp + 2, force: 0.5, type: .pen)
+      } catch {
+        // Silently ignore anchor stroke errors.
+      }
+
+      // Increment timestamp for next stroke to avoid conflicts.
+      timestamp += 10
+    }
+
+    // Restore original pen style.
+    if let originalStyle = originalStyle {
+      try? toolController?.setStyleForTool(style: originalStyle, tool: .toolPen)
+    }
+  }
+
   private func startDeceleration(verticalVelocity: CGFloat, horizontalVelocity: CGFloat) {
     self.decelerationVelocityY = verticalVelocity
     self.decelerationVelocityX = horizontalVelocity
@@ -546,6 +662,7 @@ class InputViewModel {
 
     var nextOffset = editor.editorRenderer.viewOffset
     let maxXOffset = calculateMaxXOffset()
+    let maxYOffset = calculateMaxYOffset()
 
     // Track whether each axis is still active (decelerating or in overscroll).
     var xAxisActive = true
@@ -583,6 +700,12 @@ class InputViewModel {
       nextOffset.y = -overscrollDistance
       self.overscrollY = -overscrollDistance
       // Zero Y velocity but let X continue.
+      self.decelerationVelocityY = 0
+    } else if maxYOffset > 0 && nextOffset.y > maxYOffset {
+      // Hit bottom boundary (only if totalContentHeight is set).
+      let overscrollDistance = applyRubberBandEffect(overscroll: nextOffset.y - maxYOffset)
+      nextOffset.y = maxYOffset + overscrollDistance
+      self.overscrollY = overscrollDistance
       self.decelerationVelocityY = 0
     }
 
@@ -622,13 +745,23 @@ class InputViewModel {
     }
 
     if self.overscrollY != 0 {
-      // Ease Y back toward the boundary (top only).
+      // Ease Y back toward the boundary.
       if self.overscrollY < 0 {
         // Overscrolled past top (offset is negative).
         nextOffset.y = nextOffset.y * (1 - springFactor)
         self.overscrollY = nextOffset.y
         if abs(nextOffset.y) < 0.3 {
           nextOffset.y = 0
+          self.overscrollY = 0
+        }
+      } else {
+        // Overscrolled past bottom (offset is past maxYOffset).
+        let currentOverscroll = nextOffset.y - maxYOffset
+        let newOverscroll = currentOverscroll * (1 - springFactor)
+        nextOffset.y = maxYOffset + newOverscroll
+        self.overscrollY = newOverscroll
+        if abs(newOverscroll) < 0.3 {
+          nextOffset.y = maxYOffset
           self.overscrollY = 0
         }
       }
@@ -679,6 +812,32 @@ class InputViewModel {
     return max(0, maxXOffset)
   }
 
+  // Calculates the maximum vertical offset based on content height and zoom level.
+  // When totalContentHeight is set (PDF mode), scrolling is bounded by the stacked page height.
+  // At zoom 1.0: maxYOffset = contentHeight - viewportHeight (scroll to see last page).
+  // At higher zoom: maxYOffset increases since content appears larger.
+  private func calculateMaxYOffset() -> CGFloat {
+    guard let editor = self.editor else {
+      return 0
+    }
+
+    // If totalContentHeight is not set, return 0 (SDK handles bounds).
+    guard totalContentHeight > 0 else {
+      return 0
+    }
+
+    let viewportHeight = editor.viewSize.height
+    let viewScale = CGFloat(editor.editorRenderer.viewScale)
+
+    // Content appears scaled, so total scrollable distance increases with zoom.
+    // maxYOffset = (contentHeight * scale) - viewportHeight
+    // This ensures the bottom of the last page can reach the top of the viewport.
+    let scaledContentHeight = totalContentHeight * viewScale
+    let maxYOffset = scaledContentHeight - viewportHeight
+
+    return max(0, maxYOffset)
+  }
+
   private func initEditor(with target: DisplayViewModel) {
     guard let engine = self.engine,
       let renderer = try? engine.createRenderer(
@@ -715,6 +874,7 @@ class InputViewModel {
     // Set the gesture delegate for scratch-out, underline, and other gestures.
     // This is a separate delegate from the editor delegate.
     newEditor?.gestureDelegate = self.gestureDelegateTrampoline
+    print("===== GESTURE DELEGATE SET: \(newEditor?.gestureDelegate != nil) =====")
   }
 
   // Internal method for test injection of mock dependencies.

@@ -76,6 +76,14 @@ class InputViewController: UIViewController {
     self.panGestureRecognizer?.isEnabled = enabled
   }
 
+  // Disables scroll and zoom gestures.
+  // Use this when the parent view handles scrolling (e.g., UIScrollView in PDF mode).
+  // Ink input remains active; only viewport manipulation gestures are disabled.
+  func disableScrollAndZoomGestures() {
+    self.panGestureRecognizer?.isEnabled = false
+    self.pinchGestureRecognizer?.isEnabled = false
+  }
+
   // Sets the editor tool to pen mode.
   func selectPenTool() {
     viewModel.selectPenTool()
@@ -96,8 +104,9 @@ class InputViewController: UIViewController {
   private func configureContainerView() {
     self.view.addSubview(self.containerView)
     self.containerView.translatesAutoresizingMaskIntoConstraints = false
-    self.containerView.backgroundColor = UIColor.white
-    self.containerView.isOpaque = true
+    // Use clear background so PDF content shows through when used as overlay.
+    self.containerView.backgroundColor = UIColor.clear
+    self.containerView.isOpaque = false
   }
 
   private func inject(viewController: UIViewController, in container: UIView) {

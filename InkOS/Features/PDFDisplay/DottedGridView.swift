@@ -3,6 +3,25 @@
 
 import UIKit
 
+// Configuration for the dotted grid pattern.
+struct DottedGridConfiguration {
+  let spacing: CGFloat
+  let dotSize: CGFloat
+  let color: UIColor
+
+  static let `default` = DottedGridConfiguration(
+    spacing: 20,
+    dotSize: 2,
+    color: UIColor.systemGray4
+  )
+}
+
+// Protocol for dotted grid views.
+protocol DottedGridViewProtocol {
+  var configuration: DottedGridConfiguration { get set }
+  func updateConfiguration(_ configuration: DottedGridConfiguration)
+}
+
 // UIView subclass that draws a tiled dotted grid pattern.
 // Uses CGPattern for efficient drawing regardless of view size.
 // The pattern is drawn in draw(_ rect:) method.
