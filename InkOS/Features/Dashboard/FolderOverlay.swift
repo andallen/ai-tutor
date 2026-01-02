@@ -172,6 +172,9 @@ struct FolderOverlay: View {
             } label: {
               Label("Delete", systemImage: "trash")
             }
+          } preview: {
+            // Shows only the card in the preview, keeping the title visible in place.
+            NotebookCardContextMenuPreview(notebook: notebook)
           }
         }
       }

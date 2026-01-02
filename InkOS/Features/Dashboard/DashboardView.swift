@@ -1,9 +1,19 @@
 import SwiftUI
 import UIKit
 
+// MARK: - Card Frame Store
+
+// Reference type for storing card frames so UIKit can read current values during transitions.
+// SwiftUI updates this via preferences, and UIKit queries it at dismiss time.
+// Uses a class (reference type) so the same instance is accessible from both SwiftUI and UIKit.
+final class CardFrameStore {
+  var frames: [String: CGRect] = [:]
+}
+
 // The Dashboard shows a list of Notebooks and Folders, providing create, rename, delete, and open actions.
 // It does not contain storage logic. It forwards user actions to the Notebook Library.
-// swiftlint:disable type_body_length
+// swiftlint:disable file_length type_body_length
+// File length exception justified: Main dashboard view with tightly coupled helper view modifiers.
 // Type body length exception justified: SwiftUI view with many computed subview properties for organization.
 struct DashboardView: View {
   // The Notebook Library manages the list of notebooks, folders, and operations on them.
@@ -64,6 +74,16 @@ struct DashboardView: View {
   // Controls the visibility state of the folder overlay for animation timing.
   @State private var isFolderOverlayVisible = false
 
+  // MARK: - Notebook Hero Transition State
+
+  // Holds the transition coordinator for the currently open notebook.
+  // Strong reference prevents deallocation during the transition.
+  @State private var transitionCoordinator: NotebookTransitionCoordinator?
+
+  // Reference type for card frames so UIKit can query current values during dismiss.
+  // Using @State with a class preserves the reference across view updates.
+  @State private var cardFrameStore = CardFrameStore()
+
   var body: some View {
     mainContent
       .modifier(
@@ -93,57 +113,64 @@ struct DashboardView: View {
   // MARK: - Main Content
 
   private var mainContent: some View {
-    ZStack(alignment: .topLeading) {
-      // Keeps the background uniform and bright.
-      Color.white
-        .ignoresSafeArea()
+    GeometryReader { screenGeometry in
+      ZStack(alignment: .topLeading) {
+        // Keeps the background uniform and bright.
+        Color.white
+          .ignoresSafeArea()
 
-      VStack(spacing: 0) {
-        // Item grid or empty state.
-        if isLoadingItems {
-          loadingState
-        } else if library.items.isEmpty {
-          emptyState
-        } else {
-          itemGrid
+        VStack(spacing: 0) {
+          // Item grid or empty state.
+          if isLoadingItems {
+            loadingState
+          } else if library.items.isEmpty {
+            emptyState
+          } else {
+            itemGrid
+          }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+        // Shows the title as a separate overlay above the transparent navigation bar.
+        Text("Notes")
+          .font(.system(size: 32, weight: .semibold))
+          .foregroundStyle(Color.offBlack)
+          .accessibilityAddTraits(.isHeader)
+          .padding(.leading, 16)
+          .padding(.top, 8)
+          .offset(y: -60)
+          .allowsHitTesting(false)
+
+        // Folder expansion overlay.
+        if let folder = expandedFolder {
+          FolderOverlay(
+            folder: folder,
+            notebooks: expandedFolderNotebooks,
+            namespace: folderAnimationNamespace,
+            isContentVisible: isFolderOverlayVisible,
+            onNotebookTap: { notebook in
+              openNotebookFromFolder(notebook)
+            },
+            onMoveToRoot: { notebook in
+              moveNotebookToRoot(notebook)
+            },
+            onRenameNotebook: { notebook, newName in
+              renameNotebookInFolder(notebook, newName: newName)
+            },
+            onDeleteNotebook: { notebook in
+              deleteNotebookInFolder(notebook)
+            },
+            onDismiss: {
+              closeFolder()
+            }
+          )
+          .zIndex(100)
         }
       }
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-      // Shows the title as a separate overlay above the transparent navigation bar.
-      Text("Notes")
-        .font(.system(size: 32, weight: .semibold))
-        .foregroundStyle(Color.offBlack)
-        .accessibilityAddTraits(.isHeader)
-        .padding(.leading, 16)
-        .padding(.top, 8)
-        .offset(y: -60)
-        .allowsHitTesting(false)
-
-      // Folder expansion overlay.
-      if let folder = expandedFolder {
-        FolderOverlay(
-          folder: folder,
-          notebooks: expandedFolderNotebooks,
-          namespace: folderAnimationNamespace,
-          isContentVisible: isFolderOverlayVisible,
-          onNotebookTap: { notebook in
-            openNotebookFromFolder(notebook)
-          },
-          onMoveToRoot: { notebook in
-            moveNotebookToRoot(notebook)
-          },
-          onRenameNotebook: { notebook, newName in
-            renameNotebookInFolder(notebook, newName: newName)
-          },
-          onDeleteNotebook: { notebook in
-            deleteNotebookInFolder(notebook)
-          },
-          onDismiss: {
-            closeFolder()
-          }
-        )
-        .zIndex(100)
+      // Collect card frame preferences for hero transitions.
+      // Updates the reference-type store so UIKit can query current frames at dismiss time.
+      .onPreferenceChange(CardFramePreferenceKey.self) { frames in
+        cardFrameStore.frames.merge(frames) { _, new in new }
       }
     }
   }
@@ -265,6 +292,16 @@ struct DashboardView: View {
     NotebookCardButton(notebook: notebook) {
       openNotebook(notebook)
     }
+    // Capture the card's frame for hero animation positioning.
+    .background(
+      GeometryReader { geometry in
+        Color.clear
+          .preference(
+            key: CardFramePreferenceKey.self,
+            value: [notebook.id: geometry.frame(in: .global)]
+          )
+      }
+    )
     .draggable(notebook)
     .contextMenu {
       Button {
@@ -287,6 +324,9 @@ struct DashboardView: View {
       } label: {
         Label("Delete", systemImage: "trash")
       }
+    } preview: {
+      // Shows only the card in the preview, keeping the title visible in place.
+      NotebookCardContextMenuPreview(notebook: notebook)
     }
   }
 
@@ -315,25 +355,7 @@ struct DashboardView: View {
     .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isTargeted)
     .onDrop(
       of: [.notebookID],
-      delegate: FolderDropDelegate(
-        folderID: folder.id,
-        onNotebookDropped: { notebookID in
-          Task {
-            await library.moveNotebookToFolder(notebookID: notebookID, folderID: folder.id)
-            await loadFolderThumbnails()
-          }
-        },
-        isTargeted: Binding(
-          get: { dropTargetFolderID == folder.id },
-          set: { newValue in
-            if newValue {
-              dropTargetFolderID = folder.id
-            } else if dropTargetFolderID == folder.id {
-              dropTargetFolderID = nil
-            }
-          }
-        )
-      )
+      delegate: createFolderDropDelegate(for: folder)
     )
     .contextMenu {
       Button {
@@ -348,20 +370,96 @@ struct DashboardView: View {
       } label: {
         Label("Delete Folder", systemImage: "trash")
       }
+    } preview: {
+      // Shows only the folder card in the preview, keeping the title visible in place.
+      FolderCardContextMenuPreview(folder: folder, thumbnails: thumbnails)
     }
+  }
+
+  // Creates a drop delegate for folder drag-and-drop operations.
+  private func createFolderDropDelegate(for folder: FolderMetadata) -> FolderDropDelegate {
+    FolderDropDelegate(
+      folderID: folder.id,
+      onNotebookDropped: { notebookID in
+        Task {
+          await library.moveNotebookToFolder(notebookID: notebookID, folderID: folder.id)
+          await loadFolderThumbnails()
+        }
+      },
+      isTargeted: Binding(
+        get: { dropTargetFolderID == folder.id },
+        set: { newValue in
+          if newValue {
+            dropTargetFolderID = folder.id
+          } else if dropTargetFolderID == folder.id {
+            dropTargetFolderID = nil
+          }
+        }
+      )
+    )
   }
 
   // MARK: - Actions
 
-  // Opens a notebook from the main grid.
+  // Opens a notebook from the main grid with a custom UIKit hero transition.
   private func openNotebook(_ notebook: NotebookMetadata) {
+    // Capture the card's current frame before starting animation.
+    guard let sourceFrame = cardFrameStore.frames[notebook.id], sourceFrame.width > 0 else {
+      // Fallback: open without animation if frame not available.
+      Task {
+        do {
+          let handle = try await library.openNotebook(notebookID: notebook.id)
+          activeSession = NotebookSession(id: notebook.id, handle: handle)
+        } catch {
+          openErrorMessage = error.localizedDescription
+        }
+      }
+      return
+    }
+
+    // Capture reference to frame store for dismiss-time frame lookup.
+    let frameStore = cardFrameStore
+    let notebookID = notebook.id
+
     Task {
       do {
+        // Load the document handle.
         let handle = try await library.openNotebook(notebookID: notebook.id)
-        activeSession = NotebookSession(
-          id: notebook.id,
-          handle: handle
-        )
+        let previewImage = notebook.previewImageData.flatMap { UIImage(data: $0) }
+
+        // Create and configure the transition coordinator.
+        let coordinator = NotebookTransitionCoordinator()
+        coordinator.sourceFrame = sourceFrame
+        coordinator.previewImage = previewImage
+        coordinator.documentHandle = handle
+        // Provide a closure to look up the top-left card's frame at dismiss time.
+        // The notebook will move to position 0 (most recent) after loadBundles,
+        // so animate to where position 0 is, not where the notebook currently sits.
+        coordinator.frameProvider = { [weak frameStore] in
+          guard let frames = frameStore?.frames, !frames.isEmpty else { return nil }
+          // Find the frame with minimum x, then minimum y (top-left position).
+          return frames.values.min { frame1, frame2 in
+            if frame1.minY != frame2.minY {
+              return frame1.minY < frame2.minY
+            }
+            return frame1.minX < frame2.minX
+          }
+        }
+        coordinator.onDismiss = { [weak library] _ in
+          // Refresh the dashboard after dismissal to show updated previews.
+          Task {
+            await library?.loadBundles()
+          }
+        }
+
+        // Get the root view controller and present.
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootVC = windowScene.windows.first?.rootViewController {
+          coordinator.present(from: rootVC)
+        }
+
+        // Hold a strong reference to prevent deallocation during transition.
+        transitionCoordinator = coordinator
       } catch {
         openErrorMessage = error.localizedDescription
       }
@@ -407,13 +505,21 @@ struct DashboardView: View {
   }
 
   // Opens a notebook from within the expanded folder overlay.
+  // Uses a simpler transition since the hero animation is designed for main grid cards.
   private func openNotebookFromFolder(_ notebook: NotebookMetadata) {
-    // Close the folder first, then open the notebook.
+    // Close the folder first, then open the notebook directly.
     closeFolder()
 
-    // Small delay to allow folder close animation to start.
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-      openNotebook(notebook)
+    // Small delay to allow folder close animation to complete.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+      Task {
+        do {
+          let handle = try await library.openNotebook(notebookID: notebook.id)
+          activeSession = NotebookSession(id: notebook.id, handle: handle)
+        } catch {
+          openErrorMessage = error.localizedDescription
+        }
+      }
     }
   }
 
@@ -572,6 +678,7 @@ struct DashboardSheetModifiers: ViewModifier {
 
   func body(content: Content) -> some View {
     content
+      // Used only for notebooks opened from folders (not the main grid).
       .fullScreenCover(
         item: $activeSession,
         onDismiss: {
@@ -655,6 +762,17 @@ struct DashboardNotificationModifiers: ViewModifier {
           }
         }
       }
+  }
+}
+
+// MARK: - Card Frame Preference Key
+
+// Preference key for collecting notebook card frames for hero animation.
+struct CardFramePreferenceKey: PreferenceKey {
+  static var defaultValue: [String: CGRect] = [:]
+
+  static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
+    value.merge(nextValue()) { _, new in new }
   }
 }
 

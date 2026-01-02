@@ -237,3 +237,89 @@ struct FolderCardButton: View {
     })
   }
 }
+
+// MARK: - Folder Card Context Menu Preview
+
+// Standalone preview view for context menus that shows only the folder card without title.
+// Used with .contextMenu(menuItems:preview:) to keep the title visible in place
+// while lifting just the card as the preview.
+struct FolderCardContextMenuPreview: View {
+  let folder: FolderMetadata
+  let thumbnails: [UIImage]
+
+  var body: some View {
+    let cardCornerRadius: CGFloat = 10
+    let cardSize = CGSize(width: 160, height: 200)
+
+    ZStack {
+      glassContent(cornerRadius: cardCornerRadius)
+      thumbnailGrid(size: cardSize, cornerRadius: cardCornerRadius)
+    }
+    .frame(width: cardSize.width, height: cardSize.height)
+    .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous))
+  }
+
+  // Draws the liquid glass background effect.
+  @ViewBuilder
+  private func glassContent(cornerRadius: CGFloat) -> some View {
+    if #available(iOS 26.0, *) {
+      RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        .fill(Color.clear)
+        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: cornerRadius))
+    } else {
+      RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        .fill(.ultraThinMaterial)
+    }
+  }
+
+  // Draws a 2x2 grid of notebook thumbnails.
+  @ViewBuilder
+  private func thumbnailGrid(size: CGSize, cornerRadius: CGFloat) -> some View {
+    let padding: CGFloat = 6
+    let spacing: CGFloat = 3
+    let thumbnailCornerRadius: CGFloat = 4
+
+    let maxCellWidth = (size.width - padding * 2 - spacing) / 2
+    let maxCellHeight = (size.height - padding * 2 - spacing) / 2
+    let cellSize = min(maxCellWidth, maxCellHeight)
+
+    let displayCount = min(folder.notebookCount, 4)
+
+    VStack(alignment: .leading, spacing: spacing) {
+      HStack(spacing: spacing) {
+        thumbnailCell(index: 0, size: cellSize, cornerRadius: thumbnailCornerRadius, visible: displayCount > 0)
+        thumbnailCell(index: 1, size: cellSize, cornerRadius: thumbnailCornerRadius, visible: displayCount > 1)
+      }
+      HStack(spacing: spacing) {
+        thumbnailCell(index: 2, size: cellSize, cornerRadius: thumbnailCornerRadius, visible: displayCount > 2)
+        thumbnailCell(index: 3, size: cellSize, cornerRadius: thumbnailCornerRadius, visible: displayCount > 3)
+      }
+    }
+    .padding(padding)
+  }
+
+  // Draws a single thumbnail cell.
+  @ViewBuilder
+  private func thumbnailCell(index: Int, size: CGFloat, cornerRadius: CGFloat, visible: Bool) -> some View {
+    if !visible {
+      Color.clear.frame(width: size, height: size)
+    } else if index < thumbnails.count {
+      Image(uiImage: thumbnails[index])
+        .resizable()
+        .scaledToFill()
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
+    } else {
+      ZStack {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+          .fill(Color.white)
+        Image(systemName: "doc.text")
+          .font(.system(size: size * 0.35, weight: .light))
+          .foregroundStyle(Color.black.opacity(0.2))
+      }
+      .frame(width: size, height: size)
+      .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
+    }
+  }
+}
