@@ -171,7 +171,6 @@ InkOS/
 ## 3. QUALITY ASSURANCE
 - Make errors explicit. Do not use force unwraps (`!`), `try!`, or `fatalError` for expected runtime issues like a missing MyScript certificate or a failed file save.
 - Use `throws` and pass error messages back to the UI so the user can be notified.
-- IMPORTANT: Whenever implementing anything using a third-party library or framework which is NOT MyScript, access relevant documentation using the Context7 MCP server
 
 ## 4: Security & Configuration
 - Do not commit private keys or license material beyond the checked-in certificate files.
