@@ -1,12 +1,13 @@
 // PDFCollectionViewController.swift
 // UIViewController that displays a PDF-based NoteDocument in a vertical collection view.
 
-import UIKit
 import PDFKit
+import UIKit
 
 // UIViewController that displays a PDF-based NoteDocument in a vertical collection view.
 // Uses UICollectionViewCompositionalLayout with full-width items and estimated heights.
 // Cells are sized based on content: PDF pages maintain aspect ratio, spacers use stored height.
+@MainActor
 class PDFCollectionViewController: UIViewController, PDFCollectionViewControllerProtocol {
 
   // The NoteDocument being displayed.
@@ -21,9 +22,18 @@ class PDFCollectionViewController: UIViewController, PDFCollectionViewController
   // Data source for the collection view.
   private var dataSource: UICollectionViewDiffableDataSource<Int, NoteBlock>!
 
-  // Creates a PDF collection view controller for the given documents.
+  // Coordinator managing MyScript annotation across cells.
+  private var annotationCoordinator: PDFAnnotationCoordinator?
+
+  // Creates a PDF collection view controller for the given documents and MyScript dependencies.
   // Throws if the NoteDocument is empty.
-  init(noteDocument: NoteDocument, pdfDocument: PDFDocument) throws {
+  init(
+    noteDocument: NoteDocument,
+    pdfDocument: PDFDocument,
+    package: any ContentPackageProtocol,
+    engineProvider: EngineProvider,
+    editorDelegate: (any EditorDelegate)?
+  ) throws {
     // Validate that document has blocks.
     guard !noteDocument.blocks.isEmpty else {
       throw PDFCollectionViewControllerError.emptyDocument
@@ -31,6 +41,13 @@ class PDFCollectionViewController: UIViewController, PDFCollectionViewController
     self.noteDocument = noteDocument
     self.pdfDocument = pdfDocument
     super.init(nibName: nil, bundle: nil)
+
+    // Create annotation coordinator.
+    self.annotationCoordinator = PDFAnnotationCoordinator(
+      engineProvider: engineProvider,
+      package: package,
+      editorDelegate: editorDelegate
+    )
   }
 
   // Storyboard initializer not supported.
@@ -51,7 +68,8 @@ class PDFCollectionViewController: UIViewController, PDFCollectionViewController
     let layout = PDFCollectionLayout.createLayout { [weak self] indexPath, environment in
       guard let self = self else { return 0 }
       do {
-        return try self.cellHeight(at: indexPath.item, containerWidth: environment.container.contentSize.width)
+        return try self.cellHeight(
+          at: indexPath.item, containerWidth: environment.container.contentSize.width)
       } catch {
         // Return estimated height on error.
         return 500
@@ -75,35 +93,48 @@ class PDFCollectionViewController: UIViewController, PDFCollectionViewController
     ])
 
     // Register cell types.
-    collectionView.register(PDFPageCell.self, forCellWithReuseIdentifier: PDFPageCell.reuseIdentifier)
+    collectionView.register(
+      PDFPageCell.self, forCellWithReuseIdentifier: PDFPageCell.reuseIdentifier)
     collectionView.register(SpacerCell.self, forCellWithReuseIdentifier: SpacerCell.reuseIdentifier)
+
+    // Set delegate for cell visibility tracking.
+    collectionView.delegate = self
   }
 
   // Configures the diffable data source with cell providers.
   private func configureDataSource() {
-    dataSource = UICollectionViewDiffableDataSource<Int, NoteBlock>(collectionView: collectionView) { [weak self] collectionView, indexPath, block in
+    dataSource = UICollectionViewDiffableDataSource<Int, NoteBlock>(
+      collectionView: collectionView
+    ) { [weak self] collectionView, indexPath, block in
       guard let self = self else { return nil }
 
       switch block {
-      case .pdfPage(let pageIndex, let uuid, _):
-        guard let cell = collectionView.dequeueReusableCell(
-          withReuseIdentifier: PDFPageCell.reuseIdentifier,
-          for: indexPath
-        ) as? PDFPageCell else {
+      case .pdfPage(let pageIndex, let uuid, let partID):
+        guard
+          let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: PDFPageCell.reuseIdentifier,
+            for: indexPath
+          ) as? PDFPageCell
+        else {
           return nil
         }
 
-        // Get the PDF page.
-        if let page = self.pdfDocument.page(at: pageIndex) {
-          cell.configure(page: page, pageIndex: pageIndex, uuid: uuid)
-        }
+        // Pass shared document instead of individual page.
+        cell.configure(
+          document: self.pdfDocument,
+          pageIndex: pageIndex,
+          uuid: uuid,
+          myScriptPartID: partID
+        )
         return cell
 
       case .writingSpacer(let height, let uuid, _):
-        guard let cell = collectionView.dequeueReusableCell(
-          withReuseIdentifier: SpacerCell.reuseIdentifier,
-          for: indexPath
-        ) as? SpacerCell else {
+        guard
+          let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: SpacerCell.reuseIdentifier,
+            for: indexPath
+          ) as? SpacerCell
+        else {
           return nil
         }
         cell.configure(height: height, uuid: uuid)
@@ -161,5 +192,39 @@ class PDFCollectionViewController: UIViewController, PDFCollectionViewController
       // Return the stored height for spacers.
       return height
     }
+  }
+}
+
+// MARK: - UICollectionViewDelegate
+
+extension PDFCollectionViewController: UICollectionViewDelegate {
+
+  // Called when a cell becomes visible.
+  // Notifies coordinator to track visible cells and activate if needed.
+  func collectionView(
+    _ collectionView: UICollectionView,
+    willDisplay cell: UICollectionViewCell,
+    forItemAt indexPath: IndexPath
+  ) {
+    guard let pdfCell = cell as? PDFPageCell,
+      let partID = pdfCell.myScriptPartID
+    else { return }
+
+    annotationCoordinator?.cellDidBecomeVisible(
+      pdfCell,
+      at: indexPath,
+      myScriptPartID: partID
+    )
+  }
+
+  // Called when a cell is no longer visible.
+  // Notifies coordinator to clean up tracking and deactivate if needed.
+  func collectionView(
+    _ collectionView: UICollectionView,
+    didEndDisplaying cell: UICollectionViewCell,
+    forItemAt indexPath: IndexPath
+  ) {
+    guard let pdfCell = cell as? PDFPageCell else { return }
+    annotationCoordinator?.cellDidEndDisplay(pdfCell, at: indexPath)
   }
 }

@@ -1,5 +1,10 @@
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
+
+// swiftlint:disable file_length
+// File length exception justified: Complex SwiftUI dashboard view with PDF document lifecycle,
+// folder management, and notebook operations. Splitting would reduce cohesion and readability.
 
 // The Dashboard shows a list of Notebooks and Folders, providing create, rename, delete, and open actions.
 // It does not contain storage logic. It forwards user actions to the Notebook Library.
@@ -20,6 +25,9 @@ struct DashboardView: View {
 
   // Opens a notebook session when a notebook is tapped.
   @State private var activeSession: NotebookSession?
+
+  // Opens a PDF document session when a PDF document is tapped.
+  @State private var activePDFSession: PDFDocumentSession?
 
   // Tracks an error message when opening a notebook fails.
   @State private var openErrorMessage: String?
@@ -64,6 +72,14 @@ struct DashboardView: View {
   // Controls the visibility state of the folder overlay for animation timing.
   @State private var isFolderOverlayVisible = false
 
+  // MARK: - PDF Import State
+
+  // Controls whether the PDF file picker is shown.
+  @State private var showPDFPicker = false
+
+  // Indicates whether a PDF import is in progress.
+  @State private var isImportingPDF = false
+
   var body: some View {
     mainContent
       .modifier(
@@ -79,9 +95,12 @@ struct DashboardView: View {
           openErrorMessage: $openErrorMessage,
           isLoadingItems: $isLoadingItems,
           activeSession: $activeSession,
+          activePDFSession: $activePDFSession,
           movingNotebook: $movingNotebook,
           expandedFolder: $expandedFolder,
           expandedFolderNotebooks: $expandedFolderNotebooks,
+          showPDFPicker: $showPDFPicker,
+          isImportingPDF: $isImportingPDF,
           loadFolderThumbnails: loadFolderThumbnails
         )
       )
@@ -152,18 +171,28 @@ struct DashboardView: View {
 
   @ToolbarContentBuilder
   private var toolbarContent: some ToolbarContent {
-    // When folder is open: direct notebook creation (no menu).
-    // When no folder is open: shows menu with notebook and folder options.
+    // Shows menu with create options. When folder is open: New Note, Import PDF.
+    // When no folder is open: New Note, New Folder, Import PDF.
     ToolbarItem(placement: .navigationBarTrailing) {
       if let folder = expandedFolder {
-        // Direct create button when folder is open.
-        Button {
-          createNotebookInExpandedFolder(folder)
+        // Menu with notebook and PDF import options when folder is open.
+        Menu {
+          Button {
+            createNotebookInExpandedFolder(folder)
+          } label: {
+            Label("New Note", systemImage: "doc.badge.plus")
+          }
+
+          Button {
+            showPDFPicker = true
+          } label: {
+            Label("Import PDF", systemImage: "doc.richtext")
+          }
         } label: {
           Image(systemName: "plus")
         }
       } else {
-        // Menu with options when no folder is open.
+        // Menu with all options when no folder is open.
         Menu {
           Button {
             Task {
@@ -178,6 +207,12 @@ struct DashboardView: View {
             showCreateFolderAlert = true
           } label: {
             Label("New Folder", systemImage: "folder.badge.plus")
+          }
+
+          Button {
+            showPDFPicker = true
+          } label: {
+            Label("Import PDF", systemImage: "doc.richtext")
           }
         } label: {
           Image(systemName: "plus")
@@ -249,6 +284,8 @@ struct DashboardView: View {
             notebookCardView(notebook: notebook)
           case .folder(let folder):
             folderCardView(folder: folder)
+          case .pdfDocument(let pdfDocument):
+            pdfDocumentCardView(pdfDocument: pdfDocument)
           }
         }
       }
@@ -351,6 +388,17 @@ struct DashboardView: View {
     }
   }
 
+  // MARK: - PDF Document Card View
+
+  @ViewBuilder
+  private func pdfDocumentCardView(pdfDocument: PDFDocumentMetadata) -> some View {
+    PDFDocumentCardButton(metadata: pdfDocument) {
+      guard let uuid = UUID(uuidString: pdfDocument.id) else { return }
+      openPDFDocument(documentID: uuid)
+    }
+    // Context menu for future actions (rename, delete, share).
+  }
+
   // MARK: - Actions
 
   // Opens a notebook from the main grid.
@@ -361,6 +409,24 @@ struct DashboardView: View {
         activeSession = NotebookSession(
           id: notebook.id,
           handle: handle
+        )
+      } catch {
+        openErrorMessage = error.localizedDescription
+      }
+    }
+  }
+
+  // Opens a PDF document for editing.
+  // Loads the document data and creates a session for the PDF editor.
+  private func openPDFDocument(documentID: UUID) {
+    Task {
+      do {
+        let result = try await library.openPDFDocument(documentID: documentID)
+        activePDFSession = PDFDocumentSession(
+          id: documentID.uuidString,
+          handle: result.handle,
+          noteDocument: result.noteDocument,
+          pdfDocument: result.pdfDocument
         )
       } catch {
         openErrorMessage = error.localizedDescription
@@ -506,9 +572,12 @@ struct DashboardViewModifiers: ViewModifier {
   @Binding var openErrorMessage: String?
   @Binding var isLoadingItems: Bool
   @Binding var activeSession: NotebookSession?
+  @Binding var activePDFSession: PDFDocumentSession?
   @Binding var movingNotebook: NotebookMetadata?
   @Binding var expandedFolder: FolderMetadata?
   @Binding var expandedFolderNotebooks: [NotebookMetadata]
+  @Binding var showPDFPicker: Bool
+  @Binding var isImportingPDF: Bool
   let loadFolderThumbnails: () async -> Void
 
   func body(content: Content) -> some View {
@@ -542,6 +611,7 @@ struct DashboardViewModifiers: ViewModifier {
       .modifier(
         DashboardSheetModifiers(
           activeSession: $activeSession,
+          activePDFSession: $activePDFSession,
           movingNotebook: $movingNotebook,
           expandedFolder: $expandedFolder,
           expandedFolderNotebooks: $expandedFolderNotebooks,
@@ -552,6 +622,14 @@ struct DashboardViewModifiers: ViewModifier {
           newFolderName: $newFolderName,
           isLoadingItems: $isLoadingItems,
           loadFolderThumbnails: loadFolderThumbnails
+        )
+      )
+      .modifier(
+        PDFImportModifier(
+          showPDFPicker: $showPDFPicker,
+          isImportingPDF: $isImportingPDF,
+          openErrorMessage: $openErrorMessage,
+          library: library
         ))
   }
 }
@@ -559,6 +637,7 @@ struct DashboardViewModifiers: ViewModifier {
 // Encapsulates sheet and fullScreenCover modifiers for the dashboard.
 struct DashboardSheetModifiers: ViewModifier {
   @Binding var activeSession: NotebookSession?
+  @Binding var activePDFSession: PDFDocumentSession?
   @Binding var movingNotebook: NotebookMetadata?
   @Binding var expandedFolder: FolderMetadata?
   @Binding var expandedFolderNotebooks: [NotebookMetadata]
@@ -579,6 +658,15 @@ struct DashboardSheetModifiers: ViewModifier {
         },
         content: { session in
           EditorHostView(documentHandle: session.handle)
+        }
+      )
+      .fullScreenCover(
+        item: $activePDFSession,
+        onDismiss: {
+          activePDFSession = nil
+        },
+        content: { session in
+          PDFEditorHostView(session: session)
         }
       )
       .sheet(item: $movingNotebook) { notebook in
@@ -655,6 +743,85 @@ struct DashboardNotificationModifiers: ViewModifier {
           }
         }
       }
+  }
+}
+
+// Encapsulates the PDF file importer modifier for the dashboard.
+// Handles file selection and import coordination.
+struct PDFImportModifier: ViewModifier {
+  @Binding var showPDFPicker: Bool
+  @Binding var isImportingPDF: Bool
+  @Binding var openErrorMessage: String?
+  let library: NotebookLibrary
+
+  func body(content: Content) -> some View {
+    content
+      .fileImporter(
+        isPresented: $showPDFPicker,
+        allowedContentTypes: [.pdf],
+        allowsMultipleSelection: false
+      ) { result in
+        handleFileImportResult(result)
+      }
+      .overlay {
+        if isImportingPDF {
+          importingOverlay
+        }
+      }
+  }
+
+  // Overlay shown while a PDF import is in progress.
+  private var importingOverlay: some View {
+    ZStack {
+      Color.black.opacity(0.3)
+        .ignoresSafeArea()
+
+      VStack(spacing: 12) {
+        ProgressView()
+          .tint(.white)
+        Text("Importing PDF...")
+          .font(.system(size: 14, weight: .medium))
+          .foregroundStyle(.white)
+      }
+      .padding(24)
+      .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+  }
+
+  // Handles the result from the file importer.
+  private func handleFileImportResult(_ result: Result<[URL], Error>) {
+    switch result {
+    case .success(let urls):
+      guard let url = urls.first else { return }
+      importPDF(from: url)
+    case .failure(let error):
+      openErrorMessage = error.localizedDescription
+    }
+  }
+
+  // Imports a PDF from the selected URL.
+  private func importPDF(from url: URL) {
+    Task { @MainActor in
+      isImportingPDF = true
+      defer { isImportingPDF = false }
+
+      // Start security-scoped access for the file.
+      let didStartAccess = url.startAccessingSecurityScopedResource()
+      defer {
+        if didStartAccess {
+          url.stopAccessingSecurityScopedResource()
+        }
+      }
+
+      do {
+        let coordinator = ImportCoordinator.createDefault()
+        _ = try await coordinator.importPDF(from: url, displayName: nil)
+        // Refresh the library to show the new document.
+        await library.loadBundles()
+      } catch {
+        openErrorMessage = error.localizedDescription
+      }
+    }
   }
 }
 

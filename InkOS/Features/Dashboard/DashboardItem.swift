@@ -8,20 +8,23 @@
 
 import Foundation
 
-// Represents either a notebook or folder for display in the Dashboard grid.
-// The Dashboard grid uses this type to render a mixed list of notebooks and folders.
+// Represents a notebook, folder, or PDF document for display in the Dashboard grid.
+// The Dashboard grid uses this type to render a mixed list of items.
 enum DashboardItem: Identifiable {
   case notebook(NotebookMetadata)
   case folder(FolderMetadata)
+  case pdfDocument(PDFDocumentMetadata)
 
   // Unique identifier combining type prefix with item ID.
-  // Ensures no collision between notebook and folder with same UUID.
+  // Ensures no collision between notebook, folder, and PDF document with same UUID.
   var id: String {
     switch self {
     case .notebook(let metadata):
       return "notebook-\(metadata.id)"
     case .folder(let metadata):
       return "folder-\(metadata.id)"
+    case .pdfDocument(let metadata):
+      return "pdf-\(metadata.id)"
     }
   }
 
@@ -32,16 +35,20 @@ enum DashboardItem: Identifiable {
       return metadata.displayName
     case .folder(let metadata):
       return metadata.displayName
+    case .pdfDocument(let metadata):
+      return metadata.displayName
     }
   }
 
   // Date used for sorting items.
-  // Returns lastAccessedAt for notebooks and modifiedAt for folders.
+  // Returns lastAccessedAt for notebooks and modifiedAt for folders and PDF documents.
   var sortDate: Date? {
     switch self {
     case .notebook(let metadata):
       return metadata.lastAccessedAt
     case .folder(let metadata):
+      return metadata.modifiedAt
+    case .pdfDocument(let metadata):
       return metadata.modifiedAt
     }
   }
@@ -62,6 +69,14 @@ enum DashboardItem: Identifiable {
     return false
   }
 
+  // Returns true if this item is a PDF document.
+  var isPDFDocument: Bool {
+    if case .pdfDocument = self {
+      return true
+    }
+    return false
+  }
+
   // Returns the notebook metadata if this is a notebook, nil otherwise.
   var notebookMetadata: NotebookMetadata? {
     if case .notebook(let metadata) = self {
@@ -73,6 +88,14 @@ enum DashboardItem: Identifiable {
   // Returns the folder metadata if this is a folder, nil otherwise.
   var folderMetadata: FolderMetadata? {
     if case .folder(let metadata) = self {
+      return metadata
+    }
+    return nil
+  }
+
+  // Returns the PDF document metadata if this is a PDF document, nil otherwise.
+  var pdfDocumentMetadata: PDFDocumentMetadata? {
+    if case .pdfDocument(let metadata) = self {
       return metadata
     }
     return nil

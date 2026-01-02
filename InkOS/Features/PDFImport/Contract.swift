@@ -5,8 +5,10 @@
 // It serves as the bridge between requirements and tests, enabling test-driven development.
 // Test writers can implement tests from this contract without ambiguity.
 
-import Foundation
 import CoreGraphics
+import Foundation
+import PDFKit
+import UIKit
 
 // MARK: - NoteBlock
 
@@ -83,7 +85,6 @@ enum NoteBlock: Equatable, Hashable, Codable, Sendable {
  THEN: The block is created without overflow
   AND: JSON encoding preserves the value
 */
-
 
 // MARK: - NoteDocument
 
@@ -176,7 +177,6 @@ struct NoteDocument: Codable, Sendable, Equatable {
   AND: JSON encoding handles special characters correctly
 */
 
-
 // MARK: - NoteDocumentVersion
 
 // Version constants for the NoteDocument manifest format.
@@ -188,7 +188,6 @@ enum NoteDocumentVersion {
   // Set of versions this implementation can read.
   static let supported: Set<Int> = [1]
 }
-
 
 // MARK: - ImportError
 
@@ -277,7 +276,6 @@ enum ImportError: LocalizedError, Equatable {
  WHEN: Compared for equality
  THEN: They are not equal
 */
-
 
 // MARK: - ImportCoordinator Protocol
 
@@ -457,13 +455,13 @@ protocol ImportCoordinatorProtocol: Actor {
  THEN: ImportError.invalidPDF is thrown
 */
 
-
 // MARK: - ImportCoordinator Implementation Signature
 
 // Actor that coordinates PDF import operations.
 // Serializes file system access and MyScript package creation.
 // Uses BundleStorage for directory management.
 // Uses EngineProvider for MyScript package creation.
+// swiftlint:disable:next type_body_length
 actor ImportCoordinator: ImportCoordinatorProtocol {
   // Dependency for engine access. Allows injection for testing.
   private let engineProvider: any EngineProviderProtocol
@@ -490,8 +488,13 @@ actor ImportCoordinator: ImportCoordinatorProtocol {
     engineProvider: (any EngineProviderProtocol)?,
     pdfDocumentFactory: (any PDFDocumentFactoryProtocol)?
   ) {
-    // Store provided dependencies (must be non-nil for actor initialization).
-    self.engineProvider = engineProvider!
+    // Store provided dependencies.
+    // engineProvider is required and must be non-nil at runtime.
+    // This will be caught during initialization if violated.
+    guard let engineProvider = engineProvider else {
+      preconditionFailure("engineProvider must not be nil")
+    }
+    self.engineProvider = engineProvider
     self.pdfDocumentFactory = pdfDocumentFactory ?? PDFDocumentFactory()
   }
 
@@ -507,45 +510,105 @@ actor ImportCoordinator: ImportCoordinatorProtocol {
   func importPDF(from sourceURL: URL, displayName: String?) async throws -> NoteDocument {
     let fileManager = FileManager.default
 
-    // 1. Validate source URL is accessible.
+    // 1. Validate source and PDF document.
+    let (pdfDocument, pageCount) = try validatePDFSource(sourceURL, fileManager: fileManager)
+
+    // 2. Get MyScript engine.
+    let engine = try await getEngine()
+
+    // 3. Set up document directory.
+    let documentID = UUID()
+    let documentDirectoryURL = try await createDocumentDirectory(
+      documentID, fileManager: fileManager)
+
+    // 4. Import with cleanup on failure.
+    return try await performImport(
+      sourceURL: sourceURL,
+      displayName: displayName,
+      pdfDocument: pdfDocument,
+      pageCount: pageCount,
+      engine: engine,
+      documentID: documentID,
+      documentDirectoryURL: documentDirectoryURL,
+      fileManager: fileManager
+    )
+  }
+
+  // Validates the source URL and PDF document.
+  // Returns the PDF document and page count.
+  private func validatePDFSource(
+    _ sourceURL: URL,
+    fileManager: FileManager
+  ) throws -> (any PDFDocumentProtocol, Int) {
+    // Validate source URL is accessible.
     guard fileManager.fileExists(atPath: sourceURL.path) else {
       throw ImportError.sourceFileNotAccessible
     }
 
-    // 2. Create PDFDocument and validate it.
+    // Create PDFDocument and validate it.
     guard let pdfDocument = pdfDocumentFactory.createPDFDocument(from: sourceURL) else {
       throw ImportError.invalidPDF(reason: "Could not read PDF file")
     }
 
-    // 3. Check PDF is not locked.
+    // Check PDF is not locked.
     if pdfDocument.isLocked {
       throw ImportError.pdfLocked
     }
 
-    // 4. Check PDF has at least 1 page.
+    // Check PDF has at least 1 page.
     let pageCount = pdfDocument.pageCount
     if pageCount == 0 {
       throw ImportError.emptyDocument
     }
 
-    // Get engine on MainActor to check availability.
-    let engine: any EngineProtocol = try await MainActor.run {
+    return (pdfDocument, pageCount)
+  }
+
+  // Gets the MyScript engine instance.
+  // Throws if engine is not available.
+  private func getEngine() async throws -> any EngineProtocol {
+    return try await MainActor.run {
       guard let engine = engineProvider.engineInstance else {
         throw ImportError.engineNotAvailable
       }
       return engine
     }
+  }
 
-    // 5. Create document directory in sandbox.
-    let documentID = UUID()
+  // Creates the document directory in the sandbox.
+  // Returns the directory URL.
+  private func createDocumentDirectory(
+    _ documentID: UUID,
+    fileManager: FileManager
+  ) async throws -> URL {
     let documentDirectoryURL = try await PDFNoteStorage.documentDirectory(for: documentID)
 
     do {
-      try fileManager.createDirectory(at: documentDirectoryURL, withIntermediateDirectories: true, attributes: nil)
+      try fileManager.createDirectory(
+        at: documentDirectoryURL,
+        withIntermediateDirectories: true,
+        attributes: nil
+      )
     } catch {
-      throw ImportError.destinationDirectoryCreationFailed(underlyingError: error.localizedDescription)
+      throw ImportError.destinationDirectoryCreationFailed(
+        underlyingError: error.localizedDescription)
     }
 
+    return documentDirectoryURL
+  }
+
+  // Performs the import operation with cleanup on failure.
+  // swiftlint:disable:next function_parameter_count
+  private func performImport(
+    sourceURL: URL,
+    displayName: String?,
+    pdfDocument: any PDFDocumentProtocol,
+    pageCount: Int,
+    engine: any EngineProtocol,
+    documentID: UUID,
+    documentDirectoryURL: URL,
+    fileManager: FileManager
+  ) async throws -> NoteDocument {
     // Track whether we need to clean up on failure.
     var cleanupRequired = true
     defer {
@@ -554,7 +617,7 @@ actor ImportCoordinator: ImportCoordinatorProtocol {
       }
     }
 
-    // 6. Copy PDF to document directory.
+    // Copy PDF to document directory.
     let destinationPDFURL = documentDirectoryURL.appendingPathComponent(Self.pdfFileName)
     do {
       try fileManager.copyItem(at: sourceURL, to: destinationPDFURL)
@@ -562,7 +625,41 @@ actor ImportCoordinator: ImportCoordinatorProtocol {
       throw ImportError.fileCopyFailed(underlyingError: error.localizedDescription)
     }
 
-    // 7. Create MyScript package.
+    // Create and save MyScript package with parts.
+    let blocks = try await createMyScriptPackage(
+      engine: engine,
+      documentDirectoryURL: documentDirectoryURL,
+      pageCount: pageCount
+    )
+
+    // Build NoteDocument.
+    let noteDocument = buildNoteDocument(
+      documentID: documentID,
+      sourceURL: sourceURL,
+      displayName: displayName,
+      blocks: blocks
+    )
+
+    // Save manifest.
+    try saveManifest(noteDocument, to: documentDirectoryURL)
+
+    // Generate preview (non-blocking).
+    generatePreview(pdfDocument: pdfDocument, to: documentDirectoryURL)
+
+    // Success - disable cleanup.
+    cleanupRequired = false
+
+    return noteDocument
+  }
+
+  // Creates MyScript package and parts for each page.
+  // Returns array of NoteBlock for each page.
+  private func createMyScriptPackage(
+    engine: any EngineProtocol,
+    documentDirectoryURL: URL,
+    pageCount: Int
+  ) async throws -> [NoteBlock] {
+    // Create MyScript package.
     let iinkPath = documentDirectoryURL.appendingPathComponent(Self.iinkFileName).path
     let package: any ContentPackageProtocol
     do {
@@ -573,7 +670,7 @@ actor ImportCoordinator: ImportCoordinatorProtocol {
       throw ImportError.packageCreationFailed(underlyingError: error.localizedDescription)
     }
 
-    // 8. Create Drawing part for each PDF page.
+    // Create Drawing part for each PDF page.
     var blocks: [NoteBlock] = []
     for pageIndex in 0..<pageCount {
       let part: any ContentPartProtocol
@@ -582,7 +679,10 @@ actor ImportCoordinator: ImportCoordinatorProtocol {
           try package.createNewPart(with: Self.annotationPartType)
         }
       } catch {
-        throw ImportError.partCreationFailed(partIndex: pageIndex, underlyingError: error.localizedDescription)
+        throw ImportError.partCreationFailed(
+          partIndex: pageIndex,
+          underlyingError: error.localizedDescription
+        )
       }
 
       // Get the part identifier from the protocol.
@@ -605,15 +705,26 @@ actor ImportCoordinator: ImportCoordinatorProtocol {
         try package.savePackage()
       }
     } catch {
-      throw ImportError.packageCreationFailed(underlyingError: "Failed to save package: \(error.localizedDescription)")
+      throw ImportError.packageCreationFailed(
+        underlyingError: "Failed to save package: \(error.localizedDescription)"
+      )
     }
 
-    // 9. Build NoteDocument with block references.
+    return blocks
+  }
+
+  // Builds a NoteDocument from the imported data.
+  private func buildNoteDocument(
+    documentID: UUID,
+    sourceURL: URL,
+    displayName: String?,
+    blocks: [NoteBlock]
+  ) -> NoteDocument {
     let sourceFileName = sourceURL.lastPathComponent
     let derivedDisplayName = deriveDisplayName(from: sourceFileName)
     let now = Date()
 
-    let noteDocument = NoteDocument(
+    return NoteDocument(
       documentID: documentID,
       displayName: displayName ?? derivedDisplayName,
       sourceFileName: sourceFileName,
@@ -621,9 +732,11 @@ actor ImportCoordinator: ImportCoordinatorProtocol {
       modifiedAt: now,
       blocks: blocks
     )
+  }
 
-    // 10. Save NoteDocument manifest.
-    let manifestURL = documentDirectoryURL.appendingPathComponent(Self.manifestFileName)
+  // Saves the NoteDocument manifest to disk.
+  private func saveManifest(_ noteDocument: NoteDocument, to directoryURL: URL) throws {
+    let manifestURL = directoryURL.appendingPathComponent(Self.manifestFileName)
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .iso8601
     encoder.outputFormatting = .prettyPrinted
@@ -632,14 +745,29 @@ actor ImportCoordinator: ImportCoordinatorProtocol {
       let manifestData = try encoder.encode(noteDocument)
       try manifestData.write(to: manifestURL, options: .atomic)
     } catch {
-      throw ImportError.fileCopyFailed(underlyingError: "Failed to save manifest: \(error.localizedDescription)")
+      throw ImportError.fileCopyFailed(
+        underlyingError: "Failed to save manifest: \(error.localizedDescription)"
+      )
     }
+  }
 
-    // Success - disable cleanup.
-    cleanupRequired = false
-
-    // 11. Return NoteDocument.
-    return noteDocument
+  // Generates a preview image from the first PDF page.
+  // Non-blocking: import succeeds even if preview fails.
+  private func generatePreview(pdfDocument: any PDFDocumentProtocol, to directoryURL: URL) {
+    do {
+      let previewImage = try generatePreviewImage(
+        pdfDocument: pdfDocument,
+        pageIndex: 0,
+        maxPixelDimension: 1200
+      )
+      let previewURL = directoryURL.appendingPathComponent("preview.png")
+      if let pngData = previewImage.pngData() {
+        try pngData.write(to: previewURL, options: .atomic)
+      }
+    } catch {
+      // Log error but don't fail import.
+      print("Preview generation failed: \(error.localizedDescription)")
+    }
   }
 
   // Derives display name from source filename by removing the PDF extension.
@@ -650,8 +778,52 @@ actor ImportCoordinator: ImportCoordinatorProtocol {
     }
     return sourceFileName
   }
-}
 
+  // Generates a preview image from a PDF page.
+  // Renders the page to a UIImage scaled to maxPixelDimension.
+  // Throws if rendering fails.
+  private func generatePreviewImage(
+    pdfDocument: any PDFDocumentProtocol,
+    pageIndex: Int,
+    maxPixelDimension: CGFloat
+  ) throws -> UIImage {
+    // Cast to access underlying PDFDocument.
+    guard let wrapper = pdfDocument as? PDFDocumentWrapper else {
+      throw ImportError.invalidPDF(reason: "Cannot extract PDF page for preview")
+    }
+
+    // Get first page.
+    guard let page = wrapper.getPage(at: pageIndex) else {
+      throw ImportError.invalidPDF(reason: "First page unavailable")
+    }
+
+    let pageBounds = page.bounds(for: .mediaBox)
+    guard pageBounds.width > 0, pageBounds.height > 0 else {
+      throw ImportError.invalidPDF(reason: "Invalid page dimensions")
+    }
+
+    // Calculate scale to fit maxPixelDimension.
+    // Use fixed 3.0 scale for retina displays (standard for modern iOS devices).
+    let maxDimension = max(pageBounds.width, pageBounds.height)
+    let scale = min(3.0, maxPixelDimension / maxDimension)
+
+    // Render page to image.
+    let format = UIGraphicsImageRendererFormat()
+    format.scale = scale
+    format.opaque = true
+
+    let renderer = UIGraphicsImageRenderer(size: pageBounds.size, format: format)
+    let image = renderer.image { context in
+      UIColor.white.setFill()
+      context.fill(pageBounds)
+      context.cgContext.translateBy(x: 0, y: pageBounds.height)
+      context.cgContext.scaleBy(x: 1.0, y: -1.0)
+      page.draw(with: .mediaBox, to: context.cgContext)
+    }
+
+    return image
+  }
+}
 
 // MARK: - PDFDocumentFactoryProtocol
 
@@ -676,7 +848,6 @@ protocol PDFDocumentFactoryProtocol: Sendable {
  WHEN: createPDFDocument is called
  THEN: nil is returned
 */
-
 
 // MARK: - PDFDocumentProtocol
 
@@ -722,7 +893,6 @@ protocol PDFDocumentProtocol: Sendable {
   AND: isLocked returns false
 */
 
-
 // MARK: - PDFDocumentFactory (Production Implementation Signature)
 
 // Production implementation of PDFDocumentFactoryProtocol.
@@ -732,7 +902,6 @@ final class PDFDocumentFactory: PDFDocumentFactoryProtocol, @unchecked Sendable 
     return createPDFDocumentImpl(from: url)
   }
 }
-
 
 // MARK: - Storage Directory Structure
 
@@ -754,7 +923,6 @@ final class PDFDocumentFactory: PDFDocumentFactoryProtocol, @unchecked Sendable 
  - This structure mirrors the existing Notebooks/ structure for consistency.
  - PDFNotes/ is separate from Notebooks/ to distinguish document types.
 */
-
 
 // MARK: - PDFNoteStorage
 
@@ -814,7 +982,6 @@ enum PDFNoteStorage {
  THEN: An error is thrown (cannot create directory)
 */
 
-
 // MARK: - Integration with Existing Storage
 
 /*
@@ -842,6 +1009,88 @@ enum PDFNoteStorage {
  This decouples block order from part order, allowing block reordering.
 */
 
+// MARK: - NoteBlock Height Extension
+
+// Extension on NoteBlock to calculate base height without zoom.
+// Used by PDFDocumentView for layout calculations.
+
+extension NoteBlock {
+  // Extracts the MyScript part identifier from the block.
+  // Both pdfPage and writingSpacer blocks store a myScriptPartID.
+  // This computed property provides convenient access without pattern matching.
+  var myScriptPartID: String {
+    switch self {
+    case .pdfPage(_, _, let myScriptPartID):
+      return myScriptPartID
+    case .writingSpacer(_, _, let myScriptPartID):
+      return myScriptPartID
+    }
+  }
+
+  // Calculates the unscaled height of this block.
+  // For pdfPage: Queries the page height from the provider.
+  // For writingSpacer: Returns the stored height value.
+  //
+  // pageHeightProvider: Closure that returns page height for a given page index.
+  //                     Returns nil if the page index is invalid.
+  //
+  // Returns: The height in points, or nil if the page index is invalid.
+  func baseHeight(pageHeightProvider: (Int) -> CGFloat?) -> CGFloat? {
+    switch self {
+    case .pdfPage(let pageIndex, _, _):
+      return pageHeightProvider(pageIndex)
+    case .writingSpacer(let height, _, _):
+      return height
+    }
+  }
+}
+
+/*
+ ACCEPTANCE CRITERIA: NoteBlock.baseHeight
+
+ SCENARIO: PDF page height
+ GIVEN: A NoteBlock.pdfPage with pageIndex 0
+  AND: pageHeightProvider returns 792 for index 0
+ WHEN: baseHeight(pageHeightProvider:) is called
+ THEN: Returns 792
+
+ SCENARIO: PDF page with different aspect ratio
+ GIVEN: A NoteBlock.pdfPage with pageIndex 2
+  AND: pageHeightProvider returns 500 for index 2
+ WHEN: baseHeight(pageHeightProvider:) is called
+ THEN: Returns 500
+
+ SCENARIO: Writing spacer height
+ GIVEN: A NoteBlock.writingSpacer with height 200
+ WHEN: baseHeight(pageHeightProvider:) is called
+ THEN: Returns 200
+  AND: pageHeightProvider is not called
+
+ SCENARIO: Invalid page index
+ GIVEN: A NoteBlock.pdfPage with pageIndex 10
+  AND: pageHeightProvider returns nil for index 10
+ WHEN: baseHeight(pageHeightProvider:) is called
+ THEN: Returns nil
+*/
+
+/*
+ EDGE CASES: NoteBlock.baseHeight
+
+ EDGE CASE: Zero height spacer
+ GIVEN: A NoteBlock.writingSpacer with height 0
+ WHEN: baseHeight is called
+ THEN: Returns 0
+
+ EDGE CASE: Negative height spacer
+ GIVEN: A NoteBlock.writingSpacer with height -100
+ WHEN: baseHeight is called
+ THEN: Returns -100 (invalid state, but extension does not validate)
+
+ EDGE CASE: Very large height
+ GIVEN: A NoteBlock.writingSpacer with height CGFloat.greatestFiniteMagnitude
+ WHEN: baseHeight is called
+ THEN: Returns CGFloat.greatestFiniteMagnitude
+*/
 
 // MARK: - Future Extensions (Not Part of Current Contract)
 

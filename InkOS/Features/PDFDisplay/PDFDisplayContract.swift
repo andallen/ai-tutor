@@ -9,9 +9,9 @@
 // NOTE: This file contains only protocols, data structures, and acceptance criteria.
 // Class implementations are in separate files (DottedGridView.swift, SpacerCell.swift, etc.)
 
-import UIKit
-import PDFKit
 import CoreGraphics
+import PDFKit
+import UIKit
 
 // MARK: - DottedGridConfiguration
 
@@ -86,7 +86,6 @@ struct DottedGridConfiguration: Equatable, Sendable {
  THEN: The configuration is created
   AND: Dots may overlap (visual artifact, not an error)
 */
-
 
 // MARK: - DottedGridViewProtocol
 
@@ -167,7 +166,6 @@ protocol DottedGridViewProtocol: AnyObject {
   AND: setNeedsDisplay is called (will draw when added to hierarchy)
 */
 
-
 // MARK: - SpacerCellProtocol
 
 // Protocol for the spacer cell used between PDF pages.
@@ -235,17 +233,23 @@ protocol SpacerCellProtocol: AnyObject {
  THEN: Previous blockUUID may persist (collection view should always call it)
 */
 
-
 // MARK: - PDFPageCellProtocol
 
 // Protocol for the PDF page cell that displays a single PDF page.
 // Contains a PDFView for rendering and an overlay container for future annotations.
 protocol PDFPageCellProtocol: AnyObject {
   // Configures the cell to display a specific PDF page.
-  // page: The PDFPage to display.
-  // pageIndex: The zero-based index in the original PDF (for identification).
+  // Accepts the shared PDFDocument and navigates to the specified page.
+  // document: The shared PDFDocument containing all pages.
+  // pageIndex: The zero-based index in the original PDF.
   // uuid: The unique identifier of the NoteBlock.pdfPage block.
-  func configure(page: PDFPage, pageIndex: Int, uuid: UUID)
+  // myScriptPartID: The MyScript part identifier for annotations.
+  func configure(
+    document: PDFDocument,
+    pageIndex: Int,
+    uuid: UUID,
+    myScriptPartID: String
+  )
 }
 
 /*
@@ -321,7 +325,6 @@ protocol PDFPageCellProtocol: AnyObject {
   AND: overlayContainer does not intercept touches
 */
 
-
 // MARK: - PDFCollectionViewControllerError
 
 // Errors that can occur when creating or operating the PDF collection view.
@@ -346,7 +349,8 @@ enum PDFCollectionViewControllerError: LocalizedError, Equatable {
     case .invalidPDFDocument:
       return "The PDF document is invalid or could not be loaded."
     case .pageIndexOutOfBounds(let blockIndex, let pageIndex, let pdfPageCount):
-      return "Block \(blockIndex) references page \(pageIndex), but PDF only has \(pdfPageCount) pages."
+      return
+        "Block \(blockIndex) references page \(pageIndex), but PDF only has \(pdfPageCount) pages."
     case .pdfPageUnavailable(let pageIndex):
       return "Could not load page \(pageIndex) from the PDF document."
     }
@@ -371,7 +375,6 @@ enum PDFCollectionViewControllerError: LocalizedError, Equatable {
  WHEN: Compared for equality
  THEN: They are not equal
 */
-
 
 // MARK: - PDFCollectionViewControllerProtocol
 
@@ -526,7 +529,6 @@ protocol PDFCollectionViewControllerProtocol: AnyObject {
   AND: Frame rate remains acceptable
 */
 
-
 /*
  ACCEPTANCE CRITERIA: PDFCollectionLayout
 
@@ -575,7 +577,6 @@ protocol PDFCollectionViewControllerProtocol: AnyObject {
   AND: No crash occurs
 */
 
-
 // MARK: - Integration with PDFImport Data Model
 
 /*
@@ -608,7 +609,6 @@ protocol PDFCollectionViewControllerProtocol: AnyObject {
  The overlayContainer in PDFPageCell is a placeholder for that feature.
 */
 
-
 // MARK: - Scrolling Behavior
 
 /*
@@ -630,7 +630,6 @@ protocol PDFCollectionViewControllerProtocol: AnyObject {
  This ensures the entire document scrolls as a single unit,
  with PDF pages and spacers interleaved seamlessly.
 */
-
 
 // MARK: - Cell Height Calculation
 
@@ -661,7 +660,6 @@ protocol PDFCollectionViewControllerProtocol: AnyObject {
  - Very wide pages: May result in very short cells (acceptable)
 */
 
-
 // MARK: - Accessibility
 
 /*
@@ -681,7 +679,6 @@ protocol PDFCollectionViewControllerProtocol: AnyObject {
  - Supports VoiceOver navigation between cells
  - Adjustable scroll position via accessibility actions
 */
-
 
 // MARK: - Future Extensions (Not Part of Current Contract)
 

@@ -1,8 +1,8 @@
 // PDFPageCell.swift
 // UICollectionViewCell subclass for displaying a single PDF page.
 
-import UIKit
 import PDFKit
+import UIKit
 
 // UICollectionViewCell subclass for displaying a single PDF page.
 // Contains a PDFView set to single-page mode with auto-scaling.
@@ -28,6 +28,9 @@ class PDFPageCell: UICollectionViewCell, PDFPageCellProtocol {
 
   // The UUID of the NoteBlock this cell represents.
   private(set) var blockUUID: UUID?
+
+  // The MyScript part identifier for this page's annotations.
+  private(set) var myScriptPartID: String?
 
   // Called when the cell is dequeued from the reuse pool.
   override init(frame: CGRect) {
@@ -80,24 +83,38 @@ class PDFPageCell: UICollectionViewCell, PDFPageCellProtocol {
   }
 
   // Configures the cell to display a specific PDF page.
-  func configure(page: PDFPage, pageIndex: Int, uuid: UUID) {
+  // Accepts the shared PDFDocument and navigates to the specified page.
+  func configure(
+    document: PDFDocument,
+    pageIndex: Int,
+    uuid: UUID,
+    myScriptPartID: String
+  ) {
     // Store identifiers.
     self.pageIndex = pageIndex
     self.blockUUID = uuid
+    self.myScriptPartID = myScriptPartID
 
-    // Create a document containing just this page and set it on the PDFView.
-    // PDFView needs a PDFDocument, so we create one with the single page.
-    let document = PDFDocument()
-    document.insert(page, at: 0)
-    pdfView.document = document
+    // Set shared document once (optimization).
+    if pdfView.document !== document {
+      pdfView.document = document
+    }
+
+    // Navigate to specific page.
+    if let page = document.page(at: pageIndex) {
+      pdfView.go(to: page)
+    }
   }
 
   // Called when the cell is about to be reused.
   override func prepareForReuse() {
     super.prepareForReuse()
-    // Clear PDFView document and stored identifiers.
-    pdfView.document = nil
+    // Don't nil out document (optimization for shared instance).
+    // Clear identifiers.
     pageIndex = nil
     blockUUID = nil
+    myScriptPartID = nil
+    // Coordinator will handle removing MyScript views.
+    overlayContainer.isUserInteractionEnabled = false
   }
 }
