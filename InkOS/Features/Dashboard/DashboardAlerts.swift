@@ -7,6 +7,8 @@ struct AlertModifiers: ViewModifier {
   @Binding var renamingNotebook: NotebookMetadata?
   @Binding var renameText: String
   @Binding var deletingNotebook: NotebookMetadata?
+  @Binding var renamingPDF: PDFDocumentMetadata?
+  @Binding var deletingPDF: PDFDocumentMetadata?
   @Binding var renamingFolder: FolderMetadata?
   @Binding var deletingFolder: FolderMetadata?
   @Binding var showCreateFolderAlert: Bool
@@ -27,6 +29,19 @@ struct AlertModifiers: ViewModifier {
       .modifier(
         DeleteNotebookAlert(
           deletingNotebook: $deletingNotebook,
+          library: library
+        )
+      )
+      .modifier(
+        RenamePDFAlert(
+          renamingPDF: $renamingPDF,
+          renameText: $renameText,
+          library: library
+        )
+      )
+      .modifier(
+        DeletePDFAlert(
+          deletingPDF: $deletingPDF,
           library: library
         )
       )
@@ -253,6 +268,77 @@ struct OpenErrorAlert: ViewModifier {
         }
       } message: {
         Text(openErrorMessage ?? "Unknown error.")
+      }
+  }
+}
+
+// MARK: - Rename PDF Alert
+
+// Alert dialog for renaming a PDF document.
+struct RenamePDFAlert: ViewModifier {
+  @Binding var renamingPDF: PDFDocumentMetadata?
+  @Binding var renameText: String
+  @ObservedObject var library: NotebookLibrary
+
+  func body(content: Content) -> some View {
+    content
+      .alert(
+        "Rename PDF",
+        isPresented: .init(
+          get: { renamingPDF != nil },
+          set: { if !$0 { renamingPDF = nil } }
+        )
+      ) {
+        TextField("PDF name", text: $renameText)
+        Button("Cancel", role: .cancel) {
+          renamingPDF = nil
+        }
+        Button("Rename") {
+          let trimmedName = renameText.trimmingCharacters(in: .whitespaces)
+          if let pdf = renamingPDF, !trimmedName.isEmpty {
+            Task {
+              await library.renamePDFDocument(documentID: pdf.id, newDisplayName: trimmedName)
+            }
+          }
+          renamingPDF = nil
+        }
+      } message: {
+        Text("Enter a new name for this PDF.")
+      }
+  }
+}
+
+// MARK: - Delete PDF Alert
+
+// Confirmation alert for deleting a PDF document.
+struct DeletePDFAlert: ViewModifier {
+  @Binding var deletingPDF: PDFDocumentMetadata?
+  @ObservedObject var library: NotebookLibrary
+
+  func body(content: Content) -> some View {
+    content
+      .alert(
+        "Delete PDF?",
+        isPresented: .init(
+          get: { deletingPDF != nil },
+          set: { if !$0 { deletingPDF = nil } }
+        )
+      ) {
+        Button("Cancel", role: .cancel) {
+          deletingPDF = nil
+        }
+        Button("Delete", role: .destructive) {
+          if let pdf = deletingPDF {
+            Task {
+              await library.deletePDFDocument(documentID: pdf.id)
+            }
+          }
+          deletingPDF = nil
+        }
+      } message: {
+        if let pdf = deletingPDF {
+          Text("\"\(pdf.displayName)\" will be permanently deleted. This cannot be undone.")
+        }
       }
   }
 }

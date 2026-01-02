@@ -33,6 +33,10 @@ class EditorViewController: UIViewController {
   // Stores the tap gesture that dismisses the tool palette.
   private var outsideTapRecognizer: UITapGestureRecognizer?
 
+  // Handler called when the editor requests dismissal.
+  // When set, this replaces the default dismiss behavior to allow SwiftUI to control the transition.
+  var dismissHandler: (() -> Void)?
+
   // MARK: - Life cycle
 
   override func loadView() {
@@ -195,7 +199,7 @@ class EditorViewController: UIViewController {
       self?.viewModel.updateInkWidth(width: width, for: tool)
     }
     paletteView.expansionChanged = { [weak self] isExpanded in
-      self?.setEditingToolbarVisible(isExpanded == false, animated: true)
+      self?.updateEditingToolbarVisibility(isExpanded == false, animated: true)
     }
     view.addSubview(paletteView)
 
@@ -241,7 +245,7 @@ class EditorViewController: UIViewController {
   }
 
   // Shows or hides the editing toolbar while keeping its layout constraints intact.
-  private func setEditingToolbarVisible(_ visible: Bool, animated: Bool) {
+  private func updateEditingToolbarVisibility(_ visible: Bool, animated: Bool) {
     guard let toolbarView = editingToolbarView else {
       return
     }
@@ -281,6 +285,84 @@ class EditorViewController: UIViewController {
     }
   }
 
+  // MARK: - Transition UI Control
+
+  // Controls the visibility of the navigation bar for hero transitions.
+  // Uses transform to slide the bar up/down without affecting layout.
+  func setNavigationBarVisible(_ visible: Bool, animated: Bool) {
+    guard let navBar = navigationController?.navigationBar else {
+      return
+    }
+    let offset: CGFloat = visible ? 0 : -60
+    if animated {
+      UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut]) {
+        navBar.transform = CGAffineTransform(translationX: 0, y: offset)
+        navBar.alpha = visible ? 1 : 0
+      }
+    } else {
+      navBar.transform = CGAffineTransform(translationX: 0, y: offset)
+      navBar.alpha = visible ? 1 : 0
+    }
+  }
+
+  // Controls the visibility of the tool palette for hero transitions.
+  // Uses transform to slide the palette up/down without affecting layout.
+  func setToolPaletteVisible(_ visible: Bool, animated: Bool) {
+    guard let paletteView = toolPaletteView else {
+      return
+    }
+    let offset: CGFloat = visible ? 0 : 60
+    if animated {
+      UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut]) {
+        paletteView.transform = CGAffineTransform(translationX: 0, y: offset)
+        paletteView.alpha = visible ? 1 : 0
+      }
+    } else {
+      paletteView.transform = CGAffineTransform(translationX: 0, y: offset)
+      paletteView.alpha = visible ? 1 : 0
+    }
+  }
+
+  // Controls the visibility of the editing toolbar for hero transitions.
+  // Uses transform to slide the toolbar up/down without affecting layout.
+  func setEditingToolbarVisible(_ visible: Bool, animated: Bool) {
+    guard let toolbarView = editingToolbarView else {
+      return
+    }
+    let offset: CGFloat = visible ? 0 : 60
+    if animated {
+      UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut]) {
+        toolbarView.transform = CGAffineTransform(translationX: 0, y: offset)
+        toolbarView.alpha = visible ? 1 : 0
+      }
+    } else {
+      toolbarView.transform = CGAffineTransform(translationX: 0, y: offset)
+      toolbarView.alpha = visible ? 1 : 0
+    }
+  }
+
+  // Hides all UI elements for the hero transition animation.
+  // Called at the start of the present animation.
+  func hideAllUIForTransition() {
+    setNavigationBarVisible(false, animated: false)
+    setToolPaletteVisible(false, animated: false)
+    setEditingToolbarVisible(false, animated: false)
+  }
+
+  // Shows all UI elements after the hero transition completes.
+  // Ensures everything is visible and in the correct position.
+  func showAllUIAfterTransition(animated: Bool) {
+    setNavigationBarVisible(true, animated: animated)
+    setToolPaletteVisible(true, animated: animated)
+    setEditingToolbarVisible(true, animated: animated)
+  }
+
+  // Captures the current editor content as a preview image.
+  // Used during dismiss to update the card thumbnail.
+  func capturePreviewImage(maxPixelDimension: CGFloat) -> UIImage? {
+    return editorViewController?.capturePreviewImage(maxPixelDimension: maxPixelDimension)
+  }
+
   // Adds a tap gesture that dismisses the tool palette in touch mode.
   private func configureTapToDismissPalette() {
     let recognizer = UITapGestureRecognizer(target: self, action: #selector(handleOutsideTap(_:)))
@@ -303,7 +385,18 @@ class EditorViewController: UIViewController {
 
   @objc private func backButtonTapped() {
     prepareForExit()
-    self.dismiss(animated: true)
+    // Check for custom UIKit transition coordinator first.
+    if let navController = navigationController as? EditorNavigationController,
+       let coordinator = navController.notebookTransitionCoordinator {
+      coordinator.dismiss()
+      return
+    }
+    // Fallback to SwiftUI dismiss handler if provided.
+    if let dismissHandler = dismissHandler {
+      dismissHandler()
+    } else {
+      self.dismiss(animated: true)
+    }
   }
 
   @objc private func handleWillResignActive() {

@@ -1,26 +1,37 @@
 import SwiftUI
 import UIKit
 
-// Displays an expanded folder overlay with notebooks inside.
+// Displays an expanded folder overlay with notebooks and PDFs inside.
 // Uses matchedGeometryEffect to animate from the source folder card position.
 // Tapping outside the overlay dismisses it.
 struct FolderOverlay: View {
   let folder: FolderMetadata
   let notebooks: [NotebookMetadata]
+  let pdfDocuments: [PDFDocumentMetadata]
   let namespace: Namespace.ID
   let isContentVisible: Bool
   let onNotebookTap: (NotebookMetadata) -> Void
   let onMoveToRoot: (NotebookMetadata) -> Void
   let onRenameNotebook: (NotebookMetadata, String) -> Void
   let onDeleteNotebook: (NotebookMetadata) -> Void
+  let onPDFTap: (PDFDocumentMetadata) -> Void
+  let onMovePDFToRoot: (PDFDocumentMetadata) -> Void
+  let onRenamePDF: (PDFDocumentMetadata, String) -> Void
+  let onDeletePDF: (PDFDocumentMetadata) -> Void
   let onDismiss: () -> Void
 
-  // State for rename alert.
+  // State for notebook rename alert.
   @State private var renamingNotebook: NotebookMetadata?
   @State private var renameText: String = ""
 
-  // State for delete confirmation alert.
+  // State for notebook delete confirmation alert.
   @State private var deletingNotebook: NotebookMetadata?
+
+  // State for PDF rename alert.
+  @State private var renamingPDF: PDFDocumentMetadata?
+
+  // State for PDF delete confirmation alert.
+  @State private var deletingPDF: PDFDocumentMetadata?
 
   // Overlay sizing constants.
   private let overlayWidth: CGFloat = 280
@@ -40,6 +51,7 @@ struct FolderOverlay: View {
           isSource: true
         )
     }
+    // Notebook rename alert.
     .alert(
       "Rename Notebook",
       isPresented: Binding(
@@ -61,6 +73,7 @@ struct FolderOverlay: View {
     } message: {
       Text("Enter a new name for this notebook.")
     }
+    // Notebook delete confirmation alert.
     .alert(
       "Delete Notebook?",
       isPresented: Binding(
@@ -82,6 +95,50 @@ struct FolderOverlay: View {
         Text("\"\(notebook.displayName)\" will be permanently deleted. This cannot be undone.")
       }
     }
+    // PDF rename alert.
+    .alert(
+      "Rename PDF",
+      isPresented: Binding(
+        get: { renamingPDF != nil },
+        set: { if !$0 { renamingPDF = nil } }
+      )
+    ) {
+      TextField("PDF name", text: $renameText)
+      Button("Cancel", role: .cancel) {
+        renamingPDF = nil
+      }
+      Button("Rename") {
+        let trimmedName = renameText.trimmingCharacters(in: .whitespaces)
+        if let pdf = renamingPDF, !trimmedName.isEmpty {
+          onRenamePDF(pdf, trimmedName)
+        }
+        renamingPDF = nil
+      }
+    } message: {
+      Text("Enter a new name for this PDF.")
+    }
+    // PDF delete confirmation alert.
+    .alert(
+      "Delete PDF?",
+      isPresented: Binding(
+        get: { deletingPDF != nil },
+        set: { if !$0 { deletingPDF = nil } }
+      )
+    ) {
+      Button("Cancel", role: .cancel) {
+        deletingPDF = nil
+      }
+      Button("Delete", role: .destructive) {
+        if let pdf = deletingPDF {
+          onDeletePDF(pdf)
+        }
+        deletingPDF = nil
+      }
+    } message: {
+      if let pdf = deletingPDF {
+        Text("\"\(pdf.displayName)\" will be permanently deleted. This cannot be undone.")
+      }
+    }
   }
 
   // Transparent background that dismisses the overlay when tapped.
@@ -100,11 +157,11 @@ struct FolderOverlay: View {
       // Folder title header.
       folderHeader
 
-      // Notebooks grid or empty state.
-      if notebooks.isEmpty {
+      // Content grid or empty state.
+      if notebooks.isEmpty && pdfDocuments.isEmpty {
         emptyState
       } else {
-        notebooksGrid
+        contentGrid
       }
     }
     .frame(width: overlayWidth)
@@ -124,14 +181,14 @@ struct FolderOverlay: View {
       .frame(maxWidth: .infinity, alignment: .leading)
   }
 
-  // Empty state when folder has no notebooks.
+  // Empty state when folder has no content.
   private var emptyState: some View {
     VStack(spacing: 12) {
       Image(systemName: "doc.text")
         .font(.system(size: 36, weight: .light))
         .foregroundStyle(Color.inkFaint)
 
-      Text("No notebooks")
+      Text("No items")
         .font(.system(size: 14, weight: .medium))
         .foregroundStyle(Color.inkSubtle)
     }
@@ -140,8 +197,8 @@ struct FolderOverlay: View {
     .padding(.bottom, contentPadding)
   }
 
-  // Grid of notebook cards inside the folder.
-  private var notebooksGrid: some View {
+  // Grid of notebooks and PDFs inside the folder.
+  private var contentGrid: some View {
     let columns = [
       GridItem(.flexible(), spacing: 10),
       GridItem(.flexible(), spacing: 10)
@@ -149,6 +206,7 @@ struct FolderOverlay: View {
 
     return ScrollView {
       LazyVGrid(columns: columns, spacing: 10) {
+        // Display notebooks.
         ForEach(notebooks) { notebook in
           NotebookCardButton(notebook: notebook) {
             onNotebookTap(notebook)
@@ -172,6 +230,39 @@ struct FolderOverlay: View {
             } label: {
               Label("Delete", systemImage: "trash")
             }
+          } preview: {
+            // Shows only the card in the preview, keeping the title visible in place.
+            NotebookCardContextMenuPreview(notebook: notebook)
+          }
+        }
+
+        // Display PDFs.
+        ForEach(pdfDocuments) { pdf in
+          PDFDocumentCardButton(metadata: pdf) {
+            onPDFTap(pdf)
+          }
+          .contextMenu {
+            Button {
+              renameText = pdf.displayName
+              renamingPDF = pdf
+            } label: {
+              Label("Rename", systemImage: "pencil")
+            }
+
+            Button {
+              onMovePDFToRoot(pdf)
+            } label: {
+              Label("Move Out of Folder", systemImage: "arrow.up.doc")
+            }
+
+            Button(role: .destructive) {
+              deletingPDF = pdf
+            } label: {
+              Label("Delete", systemImage: "trash")
+            }
+          } preview: {
+            // Shows only the card in the preview, keeping the title visible in place.
+            PDFDocumentCardContextMenuPreview(pdfDocument: pdf)
           }
         }
       }

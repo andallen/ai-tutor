@@ -118,8 +118,8 @@ actor JIIXPersistenceService {
       // Cache the exported JIIX.
       cachedJIIX = jiix
 
-      // Log the full JIIX content.
-      print("===== JIIX EXPORT (Debounced) =====")
+      // Log the JIIX content for debugging.
+      print("===== JIIX EXPORT =====")
       print(jiix)
       print("===== END JIIX =====")
 
@@ -200,8 +200,8 @@ actor JIIXPersistenceService {
     // Cache the exported JIIX.
     cachedJIIX = jiix
 
-    // Log the full JIIX content.
-    print("===== JIIX EXPORT (Save Now) =====")
+    // Log the JIIX content for debugging.
+    print("===== JIIX EXPORT =====")
     print(jiix)
     print("===== END JIIX =====")
 

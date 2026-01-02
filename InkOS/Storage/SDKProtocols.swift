@@ -22,6 +22,7 @@ protocol ContentPackageProtocol: AnyObject {
   func getPartCount() -> Int
   func getPart(at index: Int) throws -> any ContentPartProtocol
   func createNewPart(with type: String) throws -> any ContentPartProtocol
+  func createNewPart(with type: String, fixedSize: CGSize) throws -> any ContentPartProtocol
   func savePackage() throws
   func savePackageToTemp() throws
 }
@@ -39,6 +40,10 @@ extension IINKContentPackage: ContentPackageProtocol {
 
   func createNewPart(with type: String) throws -> any ContentPartProtocol {
     return try self.createPart(with: type)
+  }
+
+  func createNewPart(with type: String, fixedSize: CGSize) throws -> any ContentPartProtocol {
+    return try self.createPart(with: type, fixedSize: fixedSize)
   }
 
   func savePackage() throws {
@@ -154,6 +159,7 @@ extension IINKConfiguration: ExtendedConfigurationProtocol {
 protocol ToolControllerProtocol: AnyObject {
   func setToolForPointerType(tool: IINKPointerTool, pointerType: IINKPointerType) throws
   func setStyleForTool(style: String, tool: IINKPointerTool) throws
+  func styleForTool(tool: IINKPointerTool) throws -> String
 }
 
 // Makes the real IINKToolController conform to the protocol.
@@ -164,6 +170,10 @@ extension IINKToolController: ToolControllerProtocol {
 
   func setStyleForTool(style: String, tool: IINKPointerTool) throws {
     try self.set(style: style, forTool: tool)
+  }
+
+  func styleForTool(tool: IINKPointerTool) throws -> String {
+    return try self.style(forTool: tool)
   }
 }
 
@@ -186,6 +196,10 @@ protocol EditorProtocol: AnyObject {
   func performClear() throws
   func performUndo()
   func performRedo()
+  // Pointer event methods for programmatic stroke creation.
+  func pointerDown(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws
+  func pointerMove(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws
+  func pointerUp(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws
 }
 
 // Makes the real IINKEditor conform to the protocol.
@@ -236,6 +250,18 @@ extension IINKEditor: EditorProtocol {
 
   func performRedo() {
     self.redo()
+  }
+
+  func pointerDown(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws {
+    _ = try self.pointerDown(point: point, timestamp: timestamp, force: force, type: type, pointerId: 0)
+  }
+
+  func pointerMove(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws {
+    try self.pointerMove(point: point, timestamp: timestamp, force: force, type: type, pointerId: 0)
+  }
+
+  func pointerUp(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws {
+    try self.pointerUp(point: point, timestamp: timestamp, force: force, type: type, pointerId: 0)
   }
 }
 

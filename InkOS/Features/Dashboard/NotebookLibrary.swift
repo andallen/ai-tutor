@@ -62,17 +62,25 @@ class NotebookLibrary: ObservableObject {
   }
 
   // Loads PDF documents from the PDFNotes directory.
+  // Only loads root-level PDFs (those without a folderID).
   // Enumerates document directories and reads manifests to build metadata.
   // Errors are silently ignored to keep the app usable.
   func loadPDFDocuments() async {
+    let allPDFs = await loadAllPDFDocuments()
+    // Filter to only show root-level PDFs (not in a folder).
+    pdfDocuments = allPDFs.filter { $0.folderID == nil }
+  }
+
+  // Loads all PDF documents from the PDFNotes directory without filtering.
+  // Used internally by both loadPDFDocuments and pdfDocumentsInFolder.
+  private func loadAllPDFDocuments() async -> [PDFDocumentMetadata] {
     do {
       let pdfNotesDir = try await PDFNoteStorage.pdfNotesDirectory()
       let fileManager = FileManager.default
 
       // Check if directory exists.
       guard fileManager.fileExists(atPath: pdfNotesDir.path) else {
-        pdfDocuments = []
-        return
+        return []
       }
 
       // Enumerate subdirectories.
@@ -119,11 +127,18 @@ class NotebookLibrary: ObservableObject {
         }
       }
 
-      pdfDocuments = metadata
+      return metadata
     } catch {
       // Silently ignore errors to keep the app usable.
-      pdfDocuments = []
+      return []
     }
+  }
+
+  // Returns PDF documents that belong to a specific folder.
+  // Used by FolderOverlay to display PDFs inside folders.
+  func pdfDocumentsInFolder(folderID: String) async -> [PDFDocumentMetadata] {
+    let allPDFs = await loadAllPDFDocuments()
+    return allPDFs.filter { $0.folderID == folderID }
   }
 
   // Combines notebooks, folders, and PDF documents into a single sorted list.
@@ -221,6 +236,160 @@ class NotebookLibrary: ObservableObject {
   }
 
   // MARK: - PDF Document Operations
+
+  // Renames a PDF document by updating its displayName in the manifest.
+  // After renaming, refreshes the list of items to show the updated name.
+  // Errors are silently ignored to keep the app usable.
+  func renamePDFDocument(documentID: String, newDisplayName: String) async {
+    guard let uuid = UUID(uuidString: documentID) else { return }
+
+    do {
+      let documentDirectory = try await PDFNoteStorage.documentDirectory(for: uuid)
+      let manifestURL = documentDirectory.appendingPathComponent(ImportCoordinator.manifestFileName)
+      let fileManager = FileManager.default
+
+      guard fileManager.fileExists(atPath: manifestURL.path) else { return }
+
+      // Read the current manifest.
+      let data = try Data(contentsOf: manifestURL)
+      let decoder = JSONDecoder()
+      decoder.dateDecodingStrategy = .iso8601
+      var noteDocument = try decoder.decode(NoteDocument.self, from: data)
+
+      // Update the display name and modification date.
+      noteDocument = NoteDocument(
+        documentID: noteDocument.documentID,
+        displayName: newDisplayName,
+        sourceFileName: noteDocument.sourceFileName,
+        createdAt: noteDocument.createdAt,
+        modifiedAt: Date(),
+        blocks: noteDocument.blocks
+      )
+
+      // Write the updated manifest.
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = .prettyPrinted
+      encoder.dateEncodingStrategy = .iso8601
+      let updatedData = try encoder.encode(noteDocument)
+      try updatedData.write(to: manifestURL)
+
+      // Refresh the list to show the updated name.
+      await loadBundles()
+    } catch {
+      // Silently ignore errors to keep the app usable.
+    }
+  }
+
+  // Deletes a PDF document by removing its entire directory.
+  // After deletion, refreshes the list of items to remove the deleted document.
+  // Errors are silently ignored to keep the app usable.
+  func deletePDFDocument(documentID: String) async {
+    guard let uuid = UUID(uuidString: documentID) else { return }
+
+    do {
+      let documentDirectory = try await PDFNoteStorage.documentDirectory(for: uuid)
+      let fileManager = FileManager.default
+
+      guard fileManager.fileExists(atPath: documentDirectory.path) else { return }
+
+      try fileManager.removeItem(at: documentDirectory)
+
+      // Refresh the list to remove the deleted document.
+      await loadBundles()
+    } catch {
+      // Silently ignore errors to keep the app usable.
+    }
+  }
+
+  // Moves a PDF document to a folder by updating its manifest with folder information.
+  // The PDF file location does not change; only the folderID property is updated.
+  // After moving, refreshes the list to reflect the change.
+  // Errors are silently ignored to keep the app usable.
+  func movePDFDocumentToFolder(documentID: String, folderID: String) async {
+    guard let uuid = UUID(uuidString: documentID) else { return }
+
+    do {
+      let documentDirectory = try await PDFNoteStorage.documentDirectory(for: uuid)
+      let manifestURL = documentDirectory.appendingPathComponent(ImportCoordinator.manifestFileName)
+      let fileManager = FileManager.default
+
+      guard fileManager.fileExists(atPath: manifestURL.path) else { return }
+
+      // Read the current manifest.
+      let data = try Data(contentsOf: manifestURL)
+      let decoder = JSONDecoder()
+      decoder.dateDecodingStrategy = .iso8601
+      var noteDocument = try decoder.decode(NoteDocument.self, from: data)
+
+      // Update the folder ID and modification date.
+      noteDocument = NoteDocument(
+        documentID: noteDocument.documentID,
+        displayName: noteDocument.displayName,
+        sourceFileName: noteDocument.sourceFileName,
+        createdAt: noteDocument.createdAt,
+        modifiedAt: Date(),
+        blocks: noteDocument.blocks,
+        folderID: folderID
+      )
+
+      // Write the updated manifest.
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = .prettyPrinted
+      encoder.dateEncodingStrategy = .iso8601
+      let updatedData = try encoder.encode(noteDocument)
+      try updatedData.write(to: manifestURL)
+
+      // Refresh the list to reflect the move.
+      await loadBundles()
+    } catch {
+      // Silently ignore errors to keep the app usable.
+    }
+  }
+
+  // Moves a PDF document out of a folder back to the root level.
+  // Clears the folderID property in the manifest.
+  // After moving, refreshes the list to reflect the change.
+  // Errors are silently ignored to keep the app usable.
+  func movePDFDocumentToRoot(documentID: String) async {
+    guard let uuid = UUID(uuidString: documentID) else { return }
+
+    do {
+      let documentDirectory = try await PDFNoteStorage.documentDirectory(for: uuid)
+      let manifestURL = documentDirectory.appendingPathComponent(ImportCoordinator.manifestFileName)
+      let fileManager = FileManager.default
+
+      guard fileManager.fileExists(atPath: manifestURL.path) else { return }
+
+      // Read the current manifest.
+      let data = try Data(contentsOf: manifestURL)
+      let decoder = JSONDecoder()
+      decoder.dateDecodingStrategy = .iso8601
+      var noteDocument = try decoder.decode(NoteDocument.self, from: data)
+
+      // Clear the folder ID and update modification date.
+      noteDocument = NoteDocument(
+        documentID: noteDocument.documentID,
+        displayName: noteDocument.displayName,
+        sourceFileName: noteDocument.sourceFileName,
+        createdAt: noteDocument.createdAt,
+        modifiedAt: Date(),
+        blocks: noteDocument.blocks,
+        folderID: nil
+      )
+
+      // Write the updated manifest.
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = .prettyPrinted
+      encoder.dateEncodingStrategy = .iso8601
+      let updatedData = try encoder.encode(noteDocument)
+      try updatedData.write(to: manifestURL)
+
+      // Refresh the list to reflect the move.
+      await loadBundles()
+    } catch {
+      // Silently ignore errors to keep the app usable.
+    }
+  }
 
   // Opens a PDF document for editing.
   // Loads the manifest and PDF file from the document directory.

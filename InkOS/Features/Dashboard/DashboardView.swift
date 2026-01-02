@@ -6,9 +6,19 @@ import UniformTypeIdentifiers
 // File length exception justified: Complex SwiftUI dashboard view with PDF document lifecycle,
 // folder management, and notebook operations. Splitting would reduce cohesion and readability.
 
+// MARK: - Card Frame Store
+
+// Reference type for storing card frames so UIKit can read current values during transitions.
+// SwiftUI updates this via preferences, and UIKit queries it at dismiss time.
+// Uses a class (reference type) so the same instance is accessible from both SwiftUI and UIKit.
+final class CardFrameStore {
+  var frames: [String: CGRect] = [:]
+}
+
 // The Dashboard shows a list of Notebooks and Folders, providing create, rename, delete, and open actions.
 // It does not contain storage logic. It forwards user actions to the Notebook Library.
-// swiftlint:disable type_body_length
+// swiftlint:disable file_length type_body_length
+// File length exception justified: Main dashboard view with tightly coupled helper view modifiers.
 // Type body length exception justified: SwiftUI view with many computed subview properties for organization.
 struct DashboardView: View {
   // The Notebook Library manages the list of notebooks, folders, and operations on them.
@@ -34,6 +44,17 @@ struct DashboardView: View {
 
   // Tracks whether the dashboard is loading items.
   @State private var isLoadingItems = true
+
+  // MARK: - PDF State
+
+  // Tracks which PDF document is being renamed.
+  @State private var renamingPDF: PDFDocumentMetadata?
+
+  // Tracks which PDF document is being confirmed for deletion.
+  @State private var deletingPDF: PDFDocumentMetadata?
+
+  // Tracks which PDF document is being moved to a folder.
+  @State private var movingPDF: PDFDocumentMetadata?
 
   // MARK: - Folder State
 
@@ -69,6 +90,9 @@ struct DashboardView: View {
   // Notebooks loaded for the currently expanded folder.
   @State private var expandedFolderNotebooks: [NotebookMetadata] = []
 
+  // PDFs loaded for the currently expanded folder.
+  @State private var expandedFolderPDFs: [PDFDocumentMetadata] = []
+
   // Controls the visibility state of the folder overlay for animation timing.
   @State private var isFolderOverlayVisible = false
 
@@ -80,6 +104,16 @@ struct DashboardView: View {
   // Indicates whether a PDF import is in progress.
   @State private var isImportingPDF = false
 
+  // MARK: - Notebook Hero Transition State
+
+  // Holds the transition coordinator for the currently open notebook.
+  // Strong reference prevents deallocation during the transition.
+  @State private var transitionCoordinator: NotebookTransitionCoordinator?
+
+  // Reference type for card frames so UIKit can query current values during dismiss.
+  // Using @State with a class preserves the reference across view updates.
+  @State private var cardFrameStore = CardFrameStore()
+
   var body: some View {
     mainContent
       .modifier(
@@ -88,6 +122,9 @@ struct DashboardView: View {
           renamingNotebook: $renamingNotebook,
           renameText: $renameText,
           deletingNotebook: $deletingNotebook,
+          renamingPDF: $renamingPDF,
+          deletingPDF: $deletingPDF,
+          movingPDF: $movingPDF,
           renamingFolder: $renamingFolder,
           deletingFolder: $deletingFolder,
           showCreateFolderAlert: $showCreateFolderAlert,
@@ -112,57 +149,77 @@ struct DashboardView: View {
   // MARK: - Main Content
 
   private var mainContent: some View {
-    ZStack(alignment: .topLeading) {
-      // Keeps the background uniform and bright.
-      Color.white
-        .ignoresSafeArea()
+    GeometryReader { screenGeometry in
+      ZStack(alignment: .topLeading) {
+        // Keeps the background uniform and bright.
+        Color.white
+          .ignoresSafeArea()
 
-      VStack(spacing: 0) {
-        // Item grid or empty state.
-        if isLoadingItems {
-          loadingState
-        } else if library.items.isEmpty {
-          emptyState
-        } else {
-          itemGrid
+        VStack(spacing: 0) {
+          // Item grid or empty state.
+          if isLoadingItems {
+            loadingState
+          } else if library.items.isEmpty {
+            emptyState
+          } else {
+            itemGrid
+          }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+        // Shows the title as a separate overlay above the transparent navigation bar.
+        Text("Notes")
+          .font(.system(size: 32, weight: .semibold))
+          .foregroundStyle(Color.offBlack)
+          .accessibilityAddTraits(.isHeader)
+          .padding(.leading, 16)
+          .padding(.top, 8)
+          .offset(y: -60)
+          .allowsHitTesting(false)
+
+        // Folder expansion overlay.
+        if let folder = expandedFolder {
+          FolderOverlay(
+            folder: folder,
+            notebooks: expandedFolderNotebooks,
+            pdfDocuments: expandedFolderPDFs,
+            namespace: folderAnimationNamespace,
+            isContentVisible: isFolderOverlayVisible,
+            onNotebookTap: { notebook in
+              openNotebookFromFolder(notebook)
+            },
+            onMoveToRoot: { notebook in
+              moveNotebookToRoot(notebook)
+            },
+            onRenameNotebook: { notebook, newName in
+              renameNotebookInFolder(notebook, newName: newName)
+            },
+            onDeleteNotebook: { notebook in
+              deleteNotebookInFolder(notebook)
+            },
+            onPDFTap: { pdf in
+              openPDFFromFolder(pdf)
+            },
+            onMovePDFToRoot: { pdf in
+              movePDFToRoot(pdf)
+            },
+            onRenamePDF: { pdf, newName in
+              renamePDFInFolder(pdf, newName: newName)
+            },
+            onDeletePDF: { pdf in
+              deletePDFInFolder(pdf)
+            },
+            onDismiss: {
+              closeFolder()
+            }
+          )
+          .zIndex(100)
         }
       }
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-      // Shows the title as a separate overlay above the transparent navigation bar.
-      Text("Notes")
-        .font(.system(size: 32, weight: .semibold))
-        .foregroundStyle(Color.offBlack)
-        .accessibilityAddTraits(.isHeader)
-        .padding(.leading, 16)
-        .padding(.top, 8)
-        .offset(y: -60)
-        .allowsHitTesting(false)
-
-      // Folder expansion overlay.
-      if let folder = expandedFolder {
-        FolderOverlay(
-          folder: folder,
-          notebooks: expandedFolderNotebooks,
-          namespace: folderAnimationNamespace,
-          isContentVisible: isFolderOverlayVisible,
-          onNotebookTap: { notebook in
-            openNotebookFromFolder(notebook)
-          },
-          onMoveToRoot: { notebook in
-            moveNotebookToRoot(notebook)
-          },
-          onRenameNotebook: { notebook, newName in
-            renameNotebookInFolder(notebook, newName: newName)
-          },
-          onDeleteNotebook: { notebook in
-            deleteNotebookInFolder(notebook)
-          },
-          onDismiss: {
-            closeFolder()
-          }
-        )
-        .zIndex(100)
+      // Collect card frame preferences for hero transitions.
+      // Updates the reference-type store so UIKit can query current frames at dismiss time.
+      .onPreferenceChange(CardFramePreferenceKey.self) { frames in
+        cardFrameStore.frames.merge(frames) { _, new in new }
       }
     }
   }
@@ -302,6 +359,16 @@ struct DashboardView: View {
     NotebookCardButton(notebook: notebook) {
       openNotebook(notebook)
     }
+    // Capture the card's frame for hero animation positioning.
+    .background(
+      GeometryReader { geometry in
+        Color.clear
+          .preference(
+            key: CardFramePreferenceKey.self,
+            value: [notebook.id: geometry.frame(in: .global)]
+          )
+      }
+    )
     .draggable(notebook)
     .contextMenu {
       Button {
@@ -324,6 +391,9 @@ struct DashboardView: View {
       } label: {
         Label("Delete", systemImage: "trash")
       }
+    } preview: {
+      // Shows only the card in the preview, keeping the title visible in place.
+      NotebookCardContextMenuPreview(notebook: notebook)
     }
   }
 
@@ -352,25 +422,7 @@ struct DashboardView: View {
     .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isTargeted)
     .onDrop(
       of: [.notebookID],
-      delegate: FolderDropDelegate(
-        folderID: folder.id,
-        onNotebookDropped: { notebookID in
-          Task {
-            await library.moveNotebookToFolder(notebookID: notebookID, folderID: folder.id)
-            await loadFolderThumbnails()
-          }
-        },
-        isTargeted: Binding(
-          get: { dropTargetFolderID == folder.id },
-          set: { newValue in
-            if newValue {
-              dropTargetFolderID = folder.id
-            } else if dropTargetFolderID == folder.id {
-              dropTargetFolderID = nil
-            }
-          }
-        )
-      )
+      delegate: createFolderDropDelegate(for: folder)
     )
     .contextMenu {
       Button {
@@ -385,6 +437,9 @@ struct DashboardView: View {
       } label: {
         Label("Delete Folder", systemImage: "trash")
       }
+    } preview: {
+      // Shows only the folder card in the preview, keeping the title visible in place.
+      FolderCardContextMenuPreview(folder: folder, thumbnails: thumbnails)
     }
   }
 
@@ -396,20 +451,117 @@ struct DashboardView: View {
       guard let uuid = UUID(uuidString: pdfDocument.id) else { return }
       openPDFDocument(documentID: uuid)
     }
-    // Context menu for future actions (rename, delete, share).
+    .contextMenu {
+      Button {
+        renameText = pdfDocument.displayName
+        renamingPDF = pdfDocument
+      } label: {
+        Label("Rename", systemImage: "pencil")
+      }
+
+      if !library.folders.isEmpty {
+        Button {
+          movingPDF = pdfDocument
+        } label: {
+          Label("Move to Folder", systemImage: "folder")
+        }
+      }
+
+      Button(role: .destructive) {
+        deletingPDF = pdfDocument
+      } label: {
+        Label("Delete", systemImage: "trash")
+      }
+    } preview: {
+      // Shows only the card in the preview, keeping the title visible in place.
+      PDFDocumentCardContextMenuPreview(pdfDocument: pdfDocument)
+    }
+  }
+
+  // Creates a drop delegate for folder drag-and-drop operations.
+  private func createFolderDropDelegate(for folder: FolderMetadata) -> FolderDropDelegate {
+    FolderDropDelegate(
+      folderID: folder.id,
+      onNotebookDropped: { notebookID in
+        Task {
+          await library.moveNotebookToFolder(notebookID: notebookID, folderID: folder.id)
+          await loadFolderThumbnails()
+        }
+      },
+      isTargeted: Binding(
+        get: { dropTargetFolderID == folder.id },
+        set: { newValue in
+          if newValue {
+            dropTargetFolderID = folder.id
+          } else if dropTargetFolderID == folder.id {
+            dropTargetFolderID = nil
+          }
+        }
+      )
+    )
   }
 
   // MARK: - Actions
 
-  // Opens a notebook from the main grid.
+  // Opens a notebook from the main grid with a custom UIKit hero transition.
   private func openNotebook(_ notebook: NotebookMetadata) {
+    // Capture the card's current frame before starting animation.
+    guard let sourceFrame = cardFrameStore.frames[notebook.id], sourceFrame.width > 0 else {
+      // Fallback: open without animation if frame not available.
+      Task {
+        do {
+          let handle = try await library.openNotebook(notebookID: notebook.id)
+          activeSession = NotebookSession(id: notebook.id, handle: handle)
+        } catch {
+          openErrorMessage = error.localizedDescription
+        }
+      }
+      return
+    }
+
+    // Capture reference to frame store for dismiss-time frame lookup.
+    let frameStore = cardFrameStore
+    let notebookID = notebook.id
+
     Task {
       do {
-        let handle = try await library.openNotebook(notebookID: notebook.id)
-        activeSession = NotebookSession(
-          id: notebook.id,
-          handle: handle
-        )
+        // Load the document handle.
+        let handle = try await library.openNotebook(notebookID: notebookID)
+        let previewImage = notebook.previewImageData.flatMap { UIImage(data: $0) }
+
+        // Create and configure the transition coordinator.
+        let coordinator = NotebookTransitionCoordinator()
+        coordinator.sourceFrame = sourceFrame
+        coordinator.previewImage = previewImage
+        coordinator.documentHandle = handle
+        // Provide a closure to look up the top-left card's frame at dismiss time.
+        // The notebook will move to position 0 (most recent) after loadBundles,
+        // so animate to where position 0 is, not where the notebook currently sits.
+        coordinator.frameProvider = { [weak frameStore] in
+          guard let frames = frameStore?.frames, !frames.isEmpty else { return nil }
+          // Find the frame with minimum x, then minimum y (top-left position).
+          return frames.values.min { frame1, frame2 in
+            if frame1.minY != frame2.minY {
+              return frame1.minY < frame2.minY
+            }
+            return frame1.minX < frame2.minX
+          }
+        }
+        coordinator.onDismiss = { [weak library] _ in
+          // Refresh the dashboard after dismissal to show updated previews.
+          Task {
+            await library?.loadBundles()
+          }
+        }
+
+        // Get the root view controller and present.
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootVC = windowScene.windows.first?.rootViewController {
+          coordinator.present(from: rootVC)
+        }
+
+        // Hold a strong reference to prevent deallocation during transition.
+        transitionCoordinator = coordinator
       } catch {
         openErrorMessage = error.localizedDescription
       }
@@ -436,12 +588,14 @@ struct DashboardView: View {
 
   // MARK: - Folder Expansion Actions
 
-  // Opens a folder and loads its notebooks for display in the overlay.
+  // Opens a folder and loads its notebooks and PDFs for display in the overlay.
   private func openFolder(_ folder: FolderMetadata) {
     Task {
-      // Load notebooks before showing overlay.
+      // Load notebooks and PDFs before showing overlay.
       let notebooks = await library.notebooksInFolder(folderID: folder.id)
+      let pdfs = await library.pdfDocumentsInFolder(folderID: folder.id)
       expandedFolderNotebooks = notebooks
+      expandedFolderPDFs = pdfs
 
       // Animate the folder expansion.
       withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
@@ -469,17 +623,26 @@ struct DashboardView: View {
         expandedFolder = nil
       }
       expandedFolderNotebooks = []
+      expandedFolderPDFs = []
     }
   }
 
   // Opens a notebook from within the expanded folder overlay.
+  // Uses a simpler transition since the hero animation is designed for main grid cards.
   private func openNotebookFromFolder(_ notebook: NotebookMetadata) {
-    // Close the folder first, then open the notebook.
+    // Close the folder first, then open the notebook directly.
     closeFolder()
 
-    // Small delay to allow folder close animation to start.
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-      openNotebook(notebook)
+    // Small delay to allow folder close animation to complete.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+      Task {
+        do {
+          let handle = try await library.openNotebook(notebookID: notebook.id)
+          activeSession = NotebookSession(id: notebook.id, handle: handle)
+        } catch {
+          openErrorMessage = error.localizedDescription
+        }
+      }
     }
   }
 
@@ -541,6 +704,56 @@ struct DashboardView: View {
     }
   }
 
+  // MARK: - PDF Folder Operations
+
+  // Opens a PDF document from the expanded folder.
+  private func openPDFFromFolder(_ pdf: PDFDocumentMetadata) {
+    guard let uuid = UUID(uuidString: pdf.id) else { return }
+    openPDFDocument(documentID: uuid)
+  }
+
+  // Renames a PDF inside the expanded folder and refreshes the display.
+  private func renamePDFInFolder(_ pdf: PDFDocumentMetadata, newName: String) {
+    guard let folder = expandedFolder else { return }
+    Task { @MainActor in
+      await library.renamePDFDocument(documentID: pdf.id, newDisplayName: newName)
+      await library.loadBundles()
+      await loadFolderThumbnails()
+      let updatedPDFs = await library.pdfDocumentsInFolder(folderID: folder.id)
+      withAnimation(.easeInOut(duration: 0.2)) {
+        expandedFolderPDFs = updatedPDFs
+      }
+    }
+  }
+
+  // Moves a PDF out of the expanded folder to the root level.
+  private func movePDFToRoot(_ pdf: PDFDocumentMetadata) {
+    guard let folder = expandedFolder else { return }
+    Task { @MainActor in
+      await library.movePDFDocumentToRoot(documentID: pdf.id)
+      await library.loadBundles()
+      await loadFolderThumbnails()
+      let updatedPDFs = await library.pdfDocumentsInFolder(folderID: folder.id)
+      withAnimation(.easeInOut(duration: 0.2)) {
+        expandedFolderPDFs = updatedPDFs
+      }
+    }
+  }
+
+  // Deletes a PDF inside the expanded folder and refreshes the display.
+  private func deletePDFInFolder(_ pdf: PDFDocumentMetadata) {
+    guard let folder = expandedFolder else { return }
+    Task { @MainActor in
+      await library.deletePDFDocument(documentID: pdf.id)
+      await library.loadBundles()
+      await loadFolderThumbnails()
+      let updatedPDFs = await library.pdfDocumentsInFolder(folderID: folder.id)
+      withAnimation(.easeInOut(duration: 0.2)) {
+        expandedFolderPDFs = updatedPDFs
+      }
+    }
+  }
+
   // Loads thumbnail images for all folders.
   private func loadFolderThumbnails() async {
     var thumbnails: [String: [UIImage]] = [:]
@@ -565,6 +778,9 @@ struct DashboardViewModifiers: ViewModifier {
   @Binding var renamingNotebook: NotebookMetadata?
   @Binding var renameText: String
   @Binding var deletingNotebook: NotebookMetadata?
+  @Binding var renamingPDF: PDFDocumentMetadata?
+  @Binding var deletingPDF: PDFDocumentMetadata?
+  @Binding var movingPDF: PDFDocumentMetadata?
   @Binding var renamingFolder: FolderMetadata?
   @Binding var deletingFolder: FolderMetadata?
   @Binding var showCreateFolderAlert: Bool
@@ -597,6 +813,8 @@ struct DashboardViewModifiers: ViewModifier {
           renamingNotebook: $renamingNotebook,
           renameText: $renameText,
           deletingNotebook: $deletingNotebook,
+          renamingPDF: $renamingPDF,
+          deletingPDF: $deletingPDF,
           renamingFolder: $renamingFolder,
           deletingFolder: $deletingFolder,
           showCreateFolderAlert: $showCreateFolderAlert,
@@ -613,6 +831,7 @@ struct DashboardViewModifiers: ViewModifier {
           activeSession: $activeSession,
           activePDFSession: $activePDFSession,
           movingNotebook: $movingNotebook,
+          movingPDF: $movingPDF,
           expandedFolder: $expandedFolder,
           expandedFolderNotebooks: $expandedFolderNotebooks,
           renamingNotebook: $renamingNotebook,
@@ -639,6 +858,7 @@ struct DashboardSheetModifiers: ViewModifier {
   @Binding var activeSession: NotebookSession?
   @Binding var activePDFSession: PDFDocumentSession?
   @Binding var movingNotebook: NotebookMetadata?
+  @Binding var movingPDF: PDFDocumentMetadata?
   @Binding var expandedFolder: FolderMetadata?
   @Binding var expandedFolderNotebooks: [NotebookMetadata]
   @Binding var renamingNotebook: NotebookMetadata?
@@ -651,6 +871,7 @@ struct DashboardSheetModifiers: ViewModifier {
 
   func body(content: Content) -> some View {
     content
+      // Used only for notebooks opened from folders (not the main grid).
       .fullScreenCover(
         item: $activeSession,
         onDismiss: {
@@ -687,6 +908,27 @@ struct DashboardSheetModifiers: ViewModifier {
           },
           onDismiss: {
             movingNotebook = nil
+          }
+        )
+      }
+      .sheet(item: $movingPDF) { pdf in
+        PDFMoveToFolderSheet(
+          pdfDocument: pdf,
+          folders: library.folders,
+          onSelectFolder: { folder in
+            Task {
+              await library.movePDFDocumentToFolder(documentID: pdf.id, folderID: folder.id)
+              await loadFolderThumbnails()
+            }
+            movingPDF = nil
+          },
+          onCreateNewFolder: {
+            movingPDF = nil
+            newFolderName = ""
+            showCreateFolderAlert = true
+          },
+          onDismiss: {
+            movingPDF = nil
           }
         )
       }
@@ -822,6 +1064,17 @@ struct PDFImportModifier: ViewModifier {
         openErrorMessage = error.localizedDescription
       }
     }
+  }
+}
+
+// MARK: - Card Frame Preference Key
+
+// Preference key for collecting notebook card frames for hero animation.
+struct CardFramePreferenceKey: PreferenceKey {
+  static var defaultValue: [String: CGRect] = [:]
+
+  static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
+    value.merge(nextValue()) { _, new in new }
   }
 }
 

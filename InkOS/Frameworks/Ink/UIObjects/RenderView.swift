@@ -23,6 +23,15 @@ class RenderView: UIView {
       self.canvas.offscreenRenderSurfaces = self.offscreenRenderSurfaces
     }
   }
+
+  // PDF background renderer for drawing pages behind ink strokes.
+  // When set, PDF pages are rendered as background before MyScript content.
+  weak var backgroundRenderer: PDFBackgroundRendererProtocol? {
+    didSet {
+      self.canvas.backgroundRenderer = self.backgroundRenderer
+    }
+  }
+
   private var canvas: Canvas = Canvas()
 
   // MARK: - Init
@@ -52,6 +61,13 @@ class RenderView: UIView {
     self.canvas.context = UIGraphicsGetCurrentContext()
     self.canvas.size = self.bounds.size
     self.canvas.clearAtStartDraw = false
+
+    // Update canvas viewport state from renderer for PDF background positioning.
+    if let renderer = self.renderer {
+      self.canvas.viewportOffset = renderer.viewOffset
+      self.canvas.viewportScale = CGFloat(renderer.viewScale)
+    }
+
     self.renderer?.drawModel(rect, canvas: self.canvas)
     self.renderer?.drawCaptureStrokes(rect, canvas: self.canvas)
   }

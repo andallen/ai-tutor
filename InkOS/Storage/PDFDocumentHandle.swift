@@ -4,6 +4,36 @@
 
 import Foundation
 
+// Protocol for PDF document handles.
+protocol PDFDocumentHandleProtocol: Actor {
+  var documentID: UUID { get }
+  var noteDocument: NoteDocument { get }
+  func part(for myScriptPartID: String) async throws -> any ContentPartProtocol
+  func savePackage() async throws
+  func close() async
+}
+
+// Errors specific to PDF documents.
+enum PDFDocumentError: LocalizedError {
+  case emptyDocument
+  case pageIndexOutOfBounds(blockIndex: Int, pageIndex: Int, pdfPageCount: Int)
+  case engineNotAvailable
+  case partNotFound(myScriptPartID: String)
+
+  var errorDescription: String? {
+    switch self {
+    case .emptyDocument:
+      return "Document has no pages."
+    case .pageIndexOutOfBounds(let blockIndex, let pageIndex, let pdfPageCount):
+      return "Block \(blockIndex) references page \(pageIndex) but PDF has only \(pdfPageCount) pages."
+    case .engineNotAvailable:
+      return "MyScript engine is not available."
+    case .partNotFound(let myScriptPartID):
+      return "Part not found: \(myScriptPartID)"
+    }
+  }
+}
+
 // Actor managing an opened PDF note document with MyScript annotation support.
 // Follows the DocumentHandle pattern but adapted for multi-part PDF documents.
 // Each block in the NoteDocument has its own MyScript part for annotations.

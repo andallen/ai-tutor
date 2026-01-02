@@ -43,6 +43,10 @@ class InputView: UIView {
     self.eventTimeOffset = absoluteTime - relativeTime
   }
 
+  override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+    return super.hitTest(point, with: event)
+  }
+
   // MARK: - Touches
 
   private func normalizeForce(from touch: UITouch) -> Float {
