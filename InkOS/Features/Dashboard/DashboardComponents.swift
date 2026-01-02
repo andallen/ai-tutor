@@ -9,6 +9,24 @@ struct NotebookSession: Identifiable {
   let handle: DocumentHandle
 }
 
+// MARK: - Card Preview Shape
+
+// Custom shape that only covers the card portion of a notebook/folder card,
+// excluding the title area below. Used for context menu and drag previews
+// so the highlight outline only appears around the card, not the title.
+struct CardPreviewShape: Shape {
+  let cornerRadius: CGFloat
+  let titleAreaHeight: CGFloat
+
+  func path(in rect: CGRect) -> SwiftUI.Path {
+    // Calculates the card height by subtracting the title area.
+    let cardHeight = rect.height - titleAreaHeight
+    let cardRect = CGRect(x: 0, y: 0, width: rect.width, height: cardHeight)
+    return RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+      .path(in: cardRect)
+  }
+}
+
 // MARK: - Scaling Card Button Style
 
 // Custom button style that scales the card on press.
@@ -21,13 +39,27 @@ struct ScalingCardButtonStyle: ButtonStyle {
   }
 }
 
+// Button style that scales on press. Dimming is handled separately via gesture.
+struct DarkeningCardButtonStyle: ButtonStyle {
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .scaleEffect(configuration.isPressed ? 1.04 : 1.0)
+      .animation(.spring(response: 0.15, dampingFraction: 0.75), value: configuration.isPressed)
+  }
+}
+
 // MARK: - Notebook Card Button
 
 // Interactive button wrapper for a notebook card with tactile press effects.
-// Displays a highlight sweep animation on long press (context menu trigger).
+// Displays a darkening effect on press and highlight sweep on long press.
 struct NotebookCardButton: View {
   let notebook: NotebookMetadata
   let action: () -> Void
+  // Tracks press state via gesture. Automatically resets when gesture ends or cancels
+  // (e.g., when context menu appears), ensuring dim doesn't get stuck.
+  @GestureState private var isPressed = false
+  // Controls the darkening overlay opacity.
+  @State private var dimOpacity: Double = 0
   // Drives a highlight flash on long press.
   @State private var showHighlight = false
   // Moves a bright sweep across the card on long press.
@@ -38,12 +70,12 @@ struct NotebookCardButton: View {
   var body: some View {
     let cardCornerRadius: CGFloat = 10
     Button(action: action) {
-      NotebookCard(notebook: notebook)
+      // Pass dimOpacity to NotebookCard so the overlay only covers the preview.
+      NotebookCard(notebook: notebook, dimOpacity: dimOpacity)
         .contentShape(Rectangle())
     }
-    // Uses custom button style for scale effect. This allows ScrollView to properly
-    // intercept scroll gestures, unlike DragGesture which blocks scrolling.
-    .buttonStyle(ScalingCardButtonStyle())
+    // Uses custom button style for scale animation.
+    .buttonStyle(DarkeningCardButtonStyle())
     // Adds a highlight sweep on long press.
     .overlay(
       GeometryReader { proxy in
@@ -78,12 +110,24 @@ struct NotebookCardButton: View {
         .allowsHitTesting(false)
       }
     )
-    // Triggers sweep animation on long press. Uses pressing callback with a delay
-    // so taps don't trigger the sweep - only sustained presses do.
-    .onLongPressGesture(minimumDuration: 0.5, pressing: { pressing in
-      if pressing {
-        // Schedule sweep animation after a delay. If user lifts finger before
-        // the delay (a tap), the work item is cancelled and sweep doesn't play.
+    // Detects touch down/up for dim and sweep animations. Uses DragGesture with
+    // zero minimum distance so it fires immediately on any touch, including taps.
+    // GestureState auto-resets when gesture ends or cancels (e.g., context menu).
+    .simultaneousGesture(
+      DragGesture(minimumDistance: 0)
+        .updating($isPressed) { _, state, _ in
+          state = true
+        }
+    )
+    // Responds to press state changes to animate dim and schedule sweep.
+    .onChange(of: isPressed) { _, pressed in
+      if pressed {
+        // Dim immediately on touch down.
+        withAnimation(.easeOut(duration: 0.06)) {
+          dimOpacity = 0.12
+        }
+        // Schedule sweep animation after a delay. If gesture ends before
+        // the delay (a tap or cancel), the work item is cancelled.
         let workItem = DispatchWorkItem {
           guard !showHighlight else { return }
           showHighlight = true
@@ -98,13 +142,19 @@ struct NotebookCardButton: View {
         sweepWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
       } else {
-        // User lifted finger - cancel pending sweep if it hasn't fired yet.
+        // Fade out dim slowly on release or cancel.
+        withAnimation(.easeOut(duration: 0.25)) {
+          dimOpacity = 0
+        }
+        // Cancel pending sweep if it hasn't fired yet.
         sweepWorkItem?.cancel()
         sweepWorkItem = nil
       }
-    }, perform: {
-      // Empty perform - context menu handles the actual action.
-    })
+    }
+    // Defines the shape for drag previews. Uses CardPreviewShape so only the
+    // card portion (not the title area) is shown when dragging.
+    .contentShape(
+      .dragPreview, CardPreviewShape(cornerRadius: cardCornerRadius, titleAreaHeight: 36))
   }
 }
 
@@ -113,6 +163,8 @@ struct NotebookCardButton: View {
 // Displays a notebook preview card with title and date.
 struct NotebookCard: View {
   let notebook: NotebookMetadata
+  // Opacity of darkening overlay on the preview. Animated externally for press effects.
+  var dimOpacity: Double = 0
 
   // Height reserved for the external title area below the card.
   private let titleAreaHeight: CGFloat = 36
@@ -142,9 +194,13 @@ struct NotebookCard: View {
               .resizable()
               .scaledToFill()
               .frame(width: totalWidth, height: cardHeight)
-              .brightness(0.02)
-              .contrast(1.0)
+              .clipped()
           }
+
+          // Darkening overlay for press feedback. Only covers the preview area.
+          RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
+            .fill(Color.black.opacity(dimOpacity))
+            .allowsHitTesting(false)
         }
         .frame(width: totalWidth, height: cardHeight)
         .clipShape(shape)
@@ -187,4 +243,31 @@ struct NotebookCard: View {
     formatter.dateFormat = "h:mm a  MM/dd/yy"
     return formatter
   }()
+}
+
+// MARK: - Notebook Card Context Menu Preview
+
+// Standalone preview view for context menus that shows only the card without title.
+// Used with .contextMenu(menuItems:preview:) to keep the title visible in place
+// while lifting just the card as the preview.
+struct NotebookCardContextMenuPreview: View {
+  let notebook: NotebookMetadata
+
+  var body: some View {
+    let previewImage = notebook.previewImageData.flatMap { UIImage(data: $0) }
+    let cardCornerRadius: CGFloat = 10
+
+    ZStack {
+      Color.white
+      if let previewImage {
+        Image(uiImage: previewImage)
+          .resizable()
+          .scaledToFill()
+          .frame(width: 160, height: 200)
+          .clipped()
+      }
+    }
+    .frame(width: 160, height: 200)
+    .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous))
+  }
 }
