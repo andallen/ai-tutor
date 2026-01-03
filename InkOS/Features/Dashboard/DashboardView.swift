@@ -83,17 +83,23 @@ struct DashboardView: View {
 
   // MARK: - Folder Expansion State
 
-  // Namespace for matchedGeometryEffect animations between folder card and overlay.
-  @Namespace private var folderAnimationNamespace
-
   // Tracks which folder is currently expanded (nil when no folder is open).
   @State private var expandedFolder: FolderMetadata?
 
   // Notebooks loaded for the currently expanded folder.
   @State private var expandedFolderNotebooks: [NotebookMetadata] = []
 
-  // Controls the visibility state of the folder overlay for animation timing.
-  @State private var isFolderOverlayVisible = false
+  // The source frame of the folder card when expansion started.
+  // Used to animate the overlay from the card's position.
+  @State private var expandedFolderSourceFrame: CGRect = .zero
+
+  // Controls the overlay's expansion animation state.
+  // Separate from expandedFolder so the overlay stays in hierarchy during close animation.
+  @State private var isOverlayExpanded: Bool = false
+
+  // Controls when the folder card is hidden during overlay expansion.
+  // Separate from isOverlayExpanded so the card can start appearing before overlay contracts.
+  @State private var isFolderCardHidden: Bool = false
 
   // MARK: - Notebook Hero Transition State
 
@@ -167,13 +173,14 @@ struct DashboardView: View {
           .offset(y: -60)
           .allowsHitTesting(false)
 
-        // Folder expansion overlay.
+        // Folder expansion overlay - single expanding view that animates from card position.
+        // Uses scale-based animation for smooth expand/collapse transitions.
         if let folder = expandedFolder {
           FolderOverlay(
             folder: folder,
             notebooks: expandedFolderNotebooks,
-            namespace: folderAnimationNamespace,
-            isContentVisible: isFolderOverlayVisible,
+            sourceFrame: expandedFolderSourceFrame,
+            isExpanded: isOverlayExpanded,
             onNotebookTap: { notebook in
               openNotebookFromFolder(notebook)
             },
@@ -346,60 +353,69 @@ struct DashboardView: View {
       dropTargetUnderlay(isActive: isDragTarget)
 
       // The notebook card that scales down when targeted.
-      NotebookCardButton(
-        notebook: notebook,
-        action: {
-          openNotebook(notebook)
-        },
-        onRename: {
-          renameText = notebook.displayName
-          renamingNotebook = notebook
-        },
-        onMoveToFolder: library.folders.isEmpty
-          ? nil
-          : {
-            movingNotebook = notebook
-          },
-        onDelete: {
-          deletingNotebook = notebook
-        },
-        onLongPress: { frame, cardHeight in
-          contextMenuState = ContextMenuState(
-            item: .notebook(notebook),
-            sourceFrame: frame,
-            cardHeight: cardHeight
-          )
-        },
-        onDragStart: { notebook, frame, position in
-          handleDragStart(notebook: notebook, frame: frame, position: position)
-        },
-        onDragMove: { position in
-          handleDragMove(position: position)
-        },
-        onDragEnd: { position in
-          handleDragEnd(position: position)
-        },
-        titleOpacity: isDragTarget ? 0 : 1
-      )
-      // Scale up when context menu is active, scale DOWN when targeted for folder creation.
-      .scaleEffect(isContextMenuActive ? 1.08 : (isDragTarget ? 0.82 : 1.0), anchor: .center)
-      .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isContextMenuActive)
-      .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isDragTarget)
+      notebookCardButton(for: notebook, isDragTarget: isDragTarget)
+        .scaleEffect(
+          isContextMenuActive ? 1.08 : (isDragTarget ? 0.82 : 1.0),
+          anchor: .center
+        )
+        .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isContextMenuActive)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isDragTarget)
     }
-    // Capture the card's frame for hero animation and drag hit testing via preferences.
-    .background(
-      GeometryReader { geometry in
-        Color.clear
-          .preference(
-            key: CardFramePreferenceKey.self,
-            value: [notebook.id: geometry.frame(in: .global)]
-          )
-      }
-    )
-    // Hide the original card when it's being dragged.
+    .background(notebookCardFrameCapture(for: notebook))
     .opacity(isBeingDragged ? 0 : 1)
-    // Lift the card above others when context menu is active.
     .zIndex(isContextMenuActive ? 300 : 0)
+  }
+
+  // Builds the notebook card button with all its handlers.
+  @ViewBuilder
+  private func notebookCardButton(for notebook: NotebookMetadata, isDragTarget: Bool) -> some View {
+    NotebookCardButton(
+      notebook: notebook,
+      action: {
+        openNotebook(notebook)
+      },
+      onRename: {
+        renameText = notebook.displayName
+        renamingNotebook = notebook
+      },
+      onMoveToFolder: library.folders.isEmpty
+        ? nil
+        : {
+          movingNotebook = notebook
+        },
+      onDelete: {
+        deletingNotebook = notebook
+      },
+      onLongPress: { frame, cardHeight in
+        contextMenuState = ContextMenuState(
+          item: .notebook(notebook),
+          sourceFrame: frame,
+          cardHeight: cardHeight
+        )
+      },
+      onDragStart: { notebook, frame, position in
+        handleDragStart(notebook: notebook, frame: frame, position: position)
+      },
+      onDragMove: { position in
+        handleDragMove(position: position)
+      },
+      onDragEnd: { position in
+        handleDragEnd(position: position)
+      },
+      titleOpacity: isDragTarget ? 0 : 1
+    )
+  }
+
+  // Captures the card's frame for hero animation and drag hit testing.
+  @ViewBuilder
+  private func notebookCardFrameCapture(for notebook: NotebookMetadata) -> some View {
+    GeometryReader { geometry in
+      Color.clear
+        .preference(
+          key: CardFramePreferenceKey.self,
+          value: [notebook.id: geometry.frame(in: .global)]
+        )
+    }
   }
 
   // Builds the grey underlay shown when a notebook is targeted for folder creation.
@@ -428,6 +444,28 @@ struct DashboardView: View {
     // Check if this folder's context menu is currently shown.
     let isContextMenuActive = contextMenuState?.matchesFolder(folder) == true
 
+    // Calculate offset from card center to screen center for the appearance animation.
+    // This makes the card appear to move FROM the overlay center TO its actual position.
+    // Uses a smaller offset for contraction so the card starts closer to its final position.
+    let appearanceOffset: CGSize = {
+      guard isExpanded, let cardFrame = folderFrames[folder.id] else {
+        return .zero
+      }
+      let screenBounds = UIScreen.main.bounds
+      let screenCenter = CGPoint(x: screenBounds.midX, y: screenBounds.midY)
+      let cardCenter = CGPoint(x: cardFrame.midX, y: cardFrame.midY)
+      let fullOffset = CGSize(
+        width: screenCenter.x - cardCenter.x,
+        height: screenCenter.y - cardCenter.y
+      )
+      // Reduce the offset during contraction so the card starts closer to its position.
+      let multiplier: CGFloat = isFolderCardHidden ? 1.0 : 0.35
+      return CGSize(
+        width: fullOffset.width * multiplier,
+        height: fullOffset.height * multiplier
+      )
+    }()
+
     FolderCardButton(
       folder: folder,
       thumbnails: thumbnails,
@@ -448,9 +486,15 @@ struct DashboardView: View {
           sourceFrame: frame,
           cardHeight: cardHeight
         )
-      }
+      },
+      // Hide the card preview when expanded and card is hidden.
+      // Uses isFolderCardHidden so the card can start appearing before the overlay contracts.
+      previewOpacity: (isExpanded && isFolderCardHidden) ? 0 : 1,
+      appearanceOffset: appearanceOffset
     )
-    // Capture folder frame for custom drag hit testing.
+    // Card animation is now handled internally in FolderCard.swift with separate
+    // timings for opacity (fast) and movement (slower) to create a fluid effect.
+    // Capture folder frame for expansion animation and drag hit testing.
     .background(
       GeometryReader { geometry in
         Color.clear
@@ -462,14 +506,6 @@ struct DashboardView: View {
           }
       }
     )
-    // Apply matchedGeometryEffect for folder expansion animation.
-    .matchedGeometryEffect(
-      id: "folder-\(folder.id)",
-      in: folderAnimationNamespace,
-      isSource: !isExpanded
-    )
-    // Hide when folder is expanded (for folder overlay transition).
-    .opacity(isExpanded ? 0 : 1)
     // Lift the card above the dim overlay when context menu is active.
     .zIndex(isContextMenuActive ? 300 : 0)
     // Scale up when context menu is active or drop target.
@@ -575,38 +611,53 @@ struct DashboardView: View {
   // MARK: - Folder Expansion Actions
 
   // Opens a folder and loads its notebooks for display in the overlay.
+  // Uses scale-based animation from the folder card's position.
   private func openFolder(_ folder: FolderMetadata) {
+    // Capture the folder card's current frame for the expansion animation.
+    // The frame includes the title area, so subtract 36pt for just the card portion.
+    guard let fullFrame = folderFrames[folder.id] else { return }
+    let cardFrame = CGRect(
+      x: fullFrame.minX,
+      y: fullFrame.minY,
+      width: fullFrame.width,
+      height: fullFrame.height - 36
+    )
+    expandedFolderSourceFrame = cardFrame
+
     Task {
       // Load notebooks before showing overlay.
       let notebooks = await library.notebooksInFolder(folderID: folder.id)
       expandedFolderNotebooks = notebooks
 
-      // Animate the folder expansion.
-      withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
-        expandedFolder = folder
-      }
+      // Show overlay at source position (collapsed state).
+      expandedFolder = folder
 
-      // Slight delay for content to fade in after position animation starts.
-      try? await Task.sleep(nanoseconds: 50_000_000)
-      withAnimation(.easeOut(duration: 0.2)) {
-        isFolderOverlayVisible = true
+      // Hide the folder card and animate expansion to center.
+      DispatchQueue.main.async {
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+          isFolderCardHidden = true
+          isOverlayExpanded = true
+        }
       }
     }
   }
 
-  // Closes the expanded folder with reverse animation.
+  // Closes the expanded folder with reverse animation back to the source card.
   private func closeFolder() {
-    // Fade out content first.
-    withAnimation(.easeIn(duration: 0.15)) {
-      isFolderOverlayVisible = false
+    // Card animation (opacity + movement) is handled in FolderCard.swift.
+    // Setting isFolderCardHidden triggers the card's internal animations.
+    isFolderCardHidden = false
+
+    // Overlay contraction animation.
+    withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
+      isOverlayExpanded = false
     }
 
-    // Then animate back to source position.
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
-      withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) {
-        expandedFolder = nil
-      }
+    // Remove overlay from hierarchy after animation completes.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+      expandedFolder = nil
       expandedFolderNotebooks = []
+      expandedFolderSourceFrame = .zero
     }
   }
 
@@ -742,11 +793,9 @@ struct DashboardView: View {
 
     // Check which folder (if any) the finger is over.
     var foundFolderTarget: String?
-    for (folderID, frame) in folderFrames {
-      if frame.contains(position) {
-        foundFolderTarget = folderID
-        break
-      }
+    for (folderID, frame) in folderFrames where frame.contains(position) {
+      foundFolderTarget = folderID
+      break
     }
 
     // Check which notebook (if any) the finger is over (excluding the dragged one).

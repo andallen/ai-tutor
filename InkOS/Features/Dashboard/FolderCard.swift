@@ -15,6 +15,12 @@ struct FolderCardButton: View {
   let onDelete: () -> Void
   // Long press callback for custom context menu. Passes the card frame and card height.
   let onLongPress: ((CGRect, CGFloat) -> Void)?
+  // Controls the opacity of just the card preview (not the title).
+  // Used during folder expansion so the title stays visible.
+  var previewOpacity: Double = 1.0
+  // Offset to move the card from when appearing (e.g., from overlay center).
+  // Applied proportionally to (1 - previewOpacity) so card moves from offset to zero.
+  var appearanceOffset: CGSize = .zero
 
   // Convenience initializer with default nil for onLongPress.
   init(
@@ -23,7 +29,9 @@ struct FolderCardButton: View {
     action: @escaping () -> Void,
     onRename: @escaping () -> Void,
     onDelete: @escaping () -> Void,
-    onLongPress: ((CGRect, CGFloat) -> Void)? = nil
+    onLongPress: ((CGRect, CGFloat) -> Void)? = nil,
+    previewOpacity: Double = 1.0,
+    appearanceOffset: CGSize = .zero
   ) {
     self.folder = folder
     self.thumbnails = thumbnails
@@ -31,6 +39,8 @@ struct FolderCardButton: View {
     self.onRename = onRename
     self.onDelete = onDelete
     self.onLongPress = onLongPress
+    self.previewOpacity = previewOpacity
+    self.appearanceOffset = appearanceOffset
   }
 
   // Tracks press state via gesture. Automatically resets when gesture ends or cancels.
@@ -60,10 +70,42 @@ struct FolderCardButton: View {
 
       VStack(alignment: .leading, spacing: 4) {
         // The card portion wrapped in a button.
-        cardButton(width: totalWidth, height: cardHeight)
+        // Uses a white overlay that fades OUT instead of fading the card in,
+        // to avoid the blurry grey appearance from the glass material at low opacity.
+        ZStack {
+          cardButton(width: totalWidth, height: cardHeight)
+          // White overlay that fades out as previewOpacity approaches 1.
+          // This covers the glass material so it fades in from clean white.
+          RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
+            .fill(Color.white)
+            .frame(width: totalWidth, height: cardHeight)
+            .opacity(1 - previewOpacity)
+            .allowsHitTesting(false)
+        }
+        // Offset moves the card from the overlay center to its actual position.
+        // When hidden (previewOpacity=0), card is at full offset (towards overlay center).
+        // When visible (previewOpacity=1), card is at zero offset (actual position).
+        .offset(
+          x: appearanceOffset.width * (1 - previewOpacity),
+          y: appearanceOffset.height * (1 - previewOpacity)
+        )
+        // Movement animation - faster response so card moves back earlier.
+        .animation(.spring(response: 0.26, dampingFraction: 0.80), value: previewOpacity)
+        // Scale effect makes the card expand when moving towards overlay (opening)
+        // and contract when moving back to position (closing).
+        // Larger when hidden (at overlay), normal size when visible (at position).
+        .scaleEffect(1.0 + (1 - previewOpacity) * 0.6)
+        // Fade out the entire card when hidden to avoid showing the white
+        // rectangle behind the overlay. The card fades in as it moves.
+        .opacity(previewOpacity)
+        // Opacity animation - faster so the card becomes visible quickly.
+        .animation(.spring(response: 0.22, dampingFraction: 0.9), value: previewOpacity)
 
         // Title and notebook count below the card.
+        // Has its own faster opacity animation so the name appears quickly on contraction.
         FolderCardTitle(folder: folder)
+          .opacity(previewOpacity)
+          .animation(.spring(response: 0.05, dampingFraction: 0.9), value: previewOpacity)
       }
       // Capture global frame for context menu positioning.
       .background(
