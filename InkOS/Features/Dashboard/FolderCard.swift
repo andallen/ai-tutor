@@ -21,6 +21,9 @@ struct FolderCardButton: View {
   // Offset to move the card from when appearing (e.g., from overlay center).
   // Applied proportionally to (1 - previewOpacity) so card moves from offset to zero.
   var appearanceOffset: CGSize = .zero
+  // Number of items being dragged out of this folder.
+  // Used to reduce displayed item count while drag is in progress.
+  var draggedOutCount: Int = 0
 
   // Convenience initializer with default nil for onLongPress.
   init(
@@ -31,7 +34,8 @@ struct FolderCardButton: View {
     onDelete: @escaping () -> Void,
     onLongPress: ((CGRect, CGFloat) -> Void)? = nil,
     previewOpacity: Double = 1.0,
-    appearanceOffset: CGSize = .zero
+    appearanceOffset: CGSize = .zero,
+    draggedOutCount: Int = 0
   ) {
     self.folder = folder
     self.thumbnails = thumbnails
@@ -41,6 +45,7 @@ struct FolderCardButton: View {
     self.onLongPress = onLongPress
     self.previewOpacity = previewOpacity
     self.appearanceOffset = appearanceOffset
+    self.draggedOutCount = draggedOutCount
   }
 
   // Tracks press state via gesture. Automatically resets when gesture ends or cancels.
@@ -82,28 +87,23 @@ struct FolderCardButton: View {
             .opacity(1 - previewOpacity)
             .allowsHitTesting(false)
         }
-        // Offset moves the card from the overlay center to its actual position.
-        // When hidden (previewOpacity=0), card is at full offset (towards overlay center).
-        // When visible (previewOpacity=1), card is at zero offset (actual position).
+        // Offset toward the overlay center when hidden.
+        // Uses a moderate multiplier so the card visibly returns from the overlay direction
+        // while still staying close enough to avoid harsh animation jumps.
         .offset(
-          x: appearanceOffset.width * (1 - previewOpacity),
-          y: appearanceOffset.height * (1 - previewOpacity)
+          x: appearanceOffset.width * (1 - previewOpacity) * 0.35,
+          y: appearanceOffset.height * (1 - previewOpacity) * 0.35
         )
-        // Movement animation - faster response so card moves back earlier.
         .animation(.spring(response: 0.26, dampingFraction: 0.80), value: previewOpacity)
-        // Scale effect makes the card expand when moving towards overlay (opening)
-        // and contract when moving back to position (closing).
-        // Larger when hidden (at overlay), normal size when visible (at position).
-        .scaleEffect(1.0 + (1 - previewOpacity) * 0.6)
-        // Fade out the entire card when hidden to avoid showing the white
-        // rectangle behind the overlay. The card fades in as it moves.
+        // Scale increase when hidden to match the overlay's expanded size.
+        .scaleEffect(1.0 + (1 - previewOpacity) * 0.25)
+        // Fade out the card when the folder is expanded.
         .opacity(previewOpacity)
-        // Opacity animation - faster so the card becomes visible quickly.
         .animation(.spring(response: 0.22, dampingFraction: 0.9), value: previewOpacity)
 
         // Title and notebook count below the card.
-        // Has its own faster opacity animation so the name appears quickly on contraction.
-        FolderCardTitle(folder: folder)
+        // Fades with a fast animation so the name appears quickly on contraction.
+        FolderCardTitle(folder: folder, draggedOutCount: draggedOutCount)
           .opacity(previewOpacity)
           .animation(.spring(response: 0.05, dampingFraction: 0.9), value: previewOpacity)
       }
@@ -143,7 +143,7 @@ struct FolderCardButton: View {
   private func cardButton(width: CGFloat, height: CGFloat) -> some View {
     let shape = RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
 
-    FolderCardPreview(folder: folder, thumbnails: thumbnails)
+    FolderCardPreview(folder: folder, thumbnails: thumbnails, draggedOutCount: draggedOutCount)
       .frame(width: width, height: height)
       .background(Color.white.opacity(0.01))
       .clipShape(shape)
@@ -242,6 +242,9 @@ struct FolderCardButton: View {
 struct FolderCardPreview: View {
   let folder: FolderMetadata
   let thumbnails: [UIImage]
+  // Number of items being dragged out of this folder.
+  // Reduces the displayed item count to reflect the pending removal.
+  var draggedOutCount: Int = 0
 
   private let cardCornerRadius: CGFloat = 10
 
@@ -275,7 +278,7 @@ struct FolderCardPreview: View {
     }
   }
 
-  // Draws a 2x2 grid of notebook thumbnails inside the folder card.
+  // Draws a 2x2 grid of item thumbnails (notebooks and PDFs) inside the folder card.
   @ViewBuilder
   private func thumbnailGrid(size: CGSize, cornerRadius: CGFloat) -> some View {
     let padding: CGFloat = 6
@@ -287,8 +290,9 @@ struct FolderCardPreview: View {
     let maxCellHeight = (size.height - padding * 2 - spacing) / 2
     let cellSize = min(maxCellWidth, maxCellHeight)
 
-    // Limits displayed cells to actual notebook count (max 4).
-    let displayCount = min(folder.notebookCount, 4)
+    // Limits displayed cells to actual item count (notebooks + PDFs, max 4).
+    // Subtract dragged out count to reflect items being removed.
+    let displayCount = max(0, min(folder.itemCount, 4) - draggedOutCount)
 
     // Grid of notebook thumbnails with invisible spacers for empty positions.
     VStack(alignment: .leading, spacing: spacing) {
@@ -346,10 +350,13 @@ struct FolderCardPreview: View {
 
 // MARK: - Folder Card Title
 
-// Displays the folder name and notebook count.
+// Displays the folder name and item count (notebooks + PDFs).
 // Rendered as a sibling to the card preview, outside the context menu scope.
 struct FolderCardTitle: View {
   let folder: FolderMetadata
+  // Number of items being dragged out of this folder.
+  // Reduces the displayed item count to reflect the pending removal.
+  var draggedOutCount: Int = 0
 
   var body: some View {
     VStack(alignment: .leading, spacing: 1) {
@@ -359,7 +366,7 @@ struct FolderCardTitle: View {
         .lineLimit(1)
         .truncationMode(.tail)
 
-      Text(notebookCountLabel)
+      Text(itemCountLabel)
         .font(.system(size: 10, weight: .medium))
         .foregroundStyle(Color.inkSubtle)
         .lineLimit(1)
@@ -367,12 +374,22 @@ struct FolderCardTitle: View {
     .padding(.horizontal, 2)
   }
 
-  // Formats the notebook count label.
-  private var notebookCountLabel: String {
-    if folder.notebookCount == 1 {
-      return "1 notebook"
+  // Formats the item count label.
+  // Shows "notebooks" if only notebooks, "PDFs" if only PDFs, or "items" if mixed.
+  // Subtracts draggedOutCount to reflect items being removed during drag.
+  private var itemCountLabel: String {
+    let total = max(0, folder.itemCount - draggedOutCount)
+    if total == 0 {
+      return "Empty"
+    } else if folder.pdfCount == 0 {
+      // Only notebooks.
+      return total == 1 ? "1 notebook" : "\(total) notebooks"
+    } else if folder.notebookCount == 0 {
+      // Only PDFs.
+      return total == 1 ? "1 PDF" : "\(total) PDFs"
     } else {
-      return "\(folder.notebookCount) notebooks"
+      // Mixed content.
+      return total == 1 ? "1 item" : "\(total) items"
     }
   }
 }
@@ -412,7 +429,7 @@ struct FolderCardContextMenuPreview: View {
     }
   }
 
-  // Draws a 2x2 grid of notebook thumbnails.
+  // Draws a 2x2 grid of item thumbnails (notebooks and PDFs).
   @ViewBuilder
   private func thumbnailGrid(size: CGSize, cornerRadius: CGFloat) -> some View {
     let padding: CGFloat = 6
@@ -423,7 +440,7 @@ struct FolderCardContextMenuPreview: View {
     let maxCellHeight = (size.height - padding * 2 - spacing) / 2
     let cellSize = min(maxCellWidth, maxCellHeight)
 
-    let displayCount = min(folder.notebookCount, 4)
+    let displayCount = min(folder.itemCount, 4)
 
     VStack(alignment: .leading, spacing: spacing) {
       HStack(spacing: spacing) {

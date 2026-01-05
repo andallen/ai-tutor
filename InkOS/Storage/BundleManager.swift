@@ -414,6 +414,7 @@ actor BundleManager {
             displayName: folderManifest.displayName,
             previewImages: previewImages,
             notebookCount: notebooksInFolder.count,
+            pdfCount: 0,
             modifiedAt: folderManifest.modifiedAt
           ))
       } catch {
@@ -500,6 +501,13 @@ actor BundleManager {
       }
     }
 
+    // Sort by lastAccessedAt descending (most recent first).
+    // IMPORTANT: This sort order must match the display order in FolderOverlay
+    // for thumbnail index consistency when dragging items out of folders.
+    notebooks.sort {
+      ($0.lastAccessedAt ?? .distantPast) > ($1.lastAccessedAt ?? .distantPast)
+    }
+
     return notebooks
   }
 
@@ -528,6 +536,7 @@ actor BundleManager {
       displayName: displayName,
       previewImages: [],
       notebookCount: 0,
+      pdfCount: 0,
       modifiedAt: folderManifest.modifiedAt
     )
   }

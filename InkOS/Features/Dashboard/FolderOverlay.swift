@@ -1,6 +1,119 @@
 import SwiftUI
 import UIKit
 
+// swiftlint:disable file_length type_body_length
+// File length exception justified: Cohesive folder overlay view with tightly coupled animation logic.
+// Type body length exception justified: SwiftUI view with many computed subview properties for organization.
+
+// MARK: - Animated Blur View
+
+// UIViewRepresentable that wraps a UIVisualEffectView for smooth blur animation.
+// Uses UIViewPropertyAnimator with CADisplayLink for smooth interpolation.
+// Animates smoothly between clear (0) and fully blurred (1).
+struct AnimatedBlurView: UIViewRepresentable {
+  // Target blur intensity from 0 (clear) to 1 (full blur).
+  let blurFraction: CGFloat
+  // Duration for blur animation.
+  let animationDuration: TimeInterval
+  // Style of blur effect to use.
+  let style: UIBlurEffect.Style
+
+  init(
+    blurFraction: CGFloat,
+    animationDuration: TimeInterval = 0.35,
+    style: UIBlurEffect.Style = .regular
+  ) {
+    self.blurFraction = blurFraction
+    self.animationDuration = animationDuration
+    self.style = style
+  }
+
+  func makeUIView(context: Context) -> UIVisualEffectView {
+    let blurView = UIVisualEffectView(effect: nil)
+    // Create an animator that applies blur when its fractionComplete increases.
+    let animator = UIViewPropertyAnimator(duration: 1, curve: .linear) {
+      blurView.effect = UIBlurEffect(style: self.style)
+    }
+    animator.pausesOnCompletion = true
+    animator.fractionComplete = 0
+    context.coordinator.animator = animator
+    context.coordinator.currentFraction = 0
+    // Start animation to target if not zero.
+    if blurFraction > 0 {
+      context.coordinator.animateTo(blurFraction, duration: animationDuration)
+    }
+    return blurView
+  }
+
+  func updateUIView(_ uiView: UIVisualEffectView, context: Context) {
+    // Animate to new target fraction if different from current target.
+    let target = blurFraction
+    if abs(context.coordinator.targetFraction - target) > 0.001 {
+      context.coordinator.animateTo(target, duration: animationDuration)
+    }
+  }
+
+  func makeCoordinator() -> Coordinator {
+    Coordinator()
+  }
+
+  class Coordinator {
+    var animator: UIViewPropertyAnimator?
+    var displayLink: CADisplayLink?
+    var currentFraction: CGFloat = 0
+    var targetFraction: CGFloat = 0
+    var animationStartTime: CFTimeInterval = 0
+    var animationStartFraction: CGFloat = 0
+    var animationDuration: TimeInterval = 0.35
+
+    // Starts a smooth animation from current fraction to target.
+    func animateTo(_ target: CGFloat, duration: TimeInterval) {
+      targetFraction = target
+      animationStartFraction = currentFraction
+      animationDuration = duration
+      animationStartTime = CACurrentMediaTime()
+
+      // Cancel existing display link.
+      displayLink?.invalidate()
+
+      // Create new display link for animation.
+      let link = CADisplayLink(target: self, selector: #selector(updateAnimation))
+      link.add(to: .main, forMode: .common)
+      displayLink = link
+    }
+
+    @objc func updateAnimation() {
+      let elapsed = CACurrentMediaTime() - animationStartTime
+      var progress = min(1.0, elapsed / animationDuration)
+
+      // Apply ease-out cubic for smooth deceleration.
+      progress = easeOutCubic(progress)
+
+      // Interpolate between start and target.
+      let newFraction = animationStartFraction + (targetFraction - animationStartFraction) * progress
+      currentFraction = newFraction
+      animator?.fractionComplete = newFraction
+
+      // Stop animation when complete.
+      if progress >= 1.0 {
+        displayLink?.invalidate()
+        displayLink = nil
+      }
+    }
+
+    // Ease out cubic for a smooth deceleration.
+    private func easeOutCubic(_ t: CGFloat) -> CGFloat {
+      let adjusted = t - 1
+      return adjusted * adjusted * adjusted + 1
+    }
+
+    deinit {
+      displayLink?.invalidate()
+      animator?.stopAnimation(true)
+    }
+  }
+}
+
 // Displays an expanded folder overlay with notebooks and PDFs inside.
 // Uses scale-based animation: renders at full size but scales down to match source position.
 // Content is always visible and scales naturally with the container.
@@ -22,6 +135,31 @@ struct FolderOverlay: View {
   let onDeletePDF: (PDFDocumentMetadata) -> Void
   let onDismiss: () -> Void
 
+  // Drag callbacks for notebooks being dragged out of the folder.
+  let onNotebookDragStart: ((NotebookMetadata, CGRect, CGPoint) -> Void)?
+  let onNotebookDragMove: ((CGPoint) -> Void)?
+  let onNotebookDragEnd: ((CGPoint) -> Void)?
+
+  // Drag callbacks for PDFs being dragged out of the folder.
+  let onPDFDragStart: ((PDFDocumentMetadata, CGRect, CGPoint) -> Void)?
+  let onPDFDragMove: ((CGPoint) -> Void)?
+  let onPDFDragEnd: ((CGPoint) -> Void)?
+
+  // Called when a drag crosses outside the overlay bounds.
+  let onDragExitedBounds: (() -> Void)?
+
+  // When true, a drag from this overlay is active at the dashboard level.
+  // Used to keep a tiny opacity during collapse so gestures continue receiving events.
+  let isDragActiveFromOverlay: Bool
+
+  // ID of the notebook currently being dragged from this overlay.
+  // Used to hide the original card while dragging (so it appears to move, not duplicate).
+  let draggedNotebookID: String?
+
+  // ID of the PDF currently being dragged from this overlay.
+  // Used to hide the original card while dragging (so it appears to move, not duplicate).
+  let draggedPDFID: String?
+
   // State for notebook rename alert.
   @State private var renamingNotebook: NotebookMetadata?
   @State private var renameText: String = ""
@@ -34,6 +172,37 @@ struct FolderOverlay: View {
 
   // State for PDF delete confirmation alert.
   @State private var deletingPDF: PDFDocumentMetadata?
+
+  // State for context menu overlay.
+  @State private var contextMenuState: ContextMenuState?
+
+  // Tracks whether onDragExitedBounds has been fired for the current drag.
+  // Prevents multiple firings during a single drag gesture.
+  @State private var hasFiredBoundsExit = false
+
+  // Stores the current overlay frame for bounds checking during drag.
+  @State private var currentOverlayFrame: CGRect = .zero
+
+  // Work item for delayed bounds exit callback.
+  // When drag exits bounds, this schedules a callback after a short delay.
+  // If the drag re-enters bounds before the delay, the work item is cancelled.
+  @State private var boundsExitWorkItem: DispatchWorkItem?
+
+  // Duration to wait before contracting the overlay after drag exits bounds.
+  // Matches iOS behavior where there's a slight delay before UI collapses.
+  private let boundsExitDelay: TimeInterval = 0.25
+
+  // Animated blur fraction for smooth background blur transitions.
+  // Driven by isExpanded state changes with spring animation.
+  @State private var animatedBlurFraction: CGFloat = 0
+
+  // Tracks whether the blur is expanding (true) or contracting (false).
+  // Used to select appropriate animation duration.
+  @State private var isBlurExpanding: Bool = false
+
+  // Separate opacity state for the folder container.
+  // Animates independently from scale/position with faster timing during contraction.
+  @State private var containerOpacity: CGFloat = 0
 
   // Overlay sizing constants.
   private let overlayWidth: CGFloat = 280
@@ -62,14 +231,18 @@ struct FolderOverlay: View {
       // Corner radius interpolation for visual effect.
       let currentCornerRadius = isExpanded ? overlayCornerRadius : sourceCornerRadius
 
+      // Duration for blur animation: longer for expand, shorter for contract.
+      let blurDuration: TimeInterval = isBlurExpanding ? 0.35 : 0.2
+
       ZStack {
-        // Dim background: fades based on expansion state.
-        dismissBackground
-          .opacity(isExpanded ? 1 : 0)
+        // Background blur: intensity animates with expansion state.
+        // Hidden when drag is active so user can see dashboard drop targets.
+        dismissBackground(blurFraction: animatedBlurFraction, animationDuration: blurDuration)
 
         // The folder container always rendered at full expanded size.
         // Uses separate X/Y scales to morph from source shape to overlay shape.
         // Fades out as it contracts so it crossfades with the folder card underneath.
+        // Opacity uses a faster animation than scale during contraction for cleaner visual.
         folderContainer(cornerRadius: currentCornerRadius)
           .frame(width: expandedFrame.width, height: expandedFrame.height)
           .clipShape(RoundedRectangle(cornerRadius: currentCornerRadius, style: .continuous))
@@ -81,9 +254,64 @@ struct FolderOverlay: View {
             x: 0,
             y: isExpanded ? 8 : 4
           )
-          .opacity(isExpanded ? 1 : 0)
+          // When drag is active from this overlay, make it invisible but keep gestures working.
+          // This allows the overlay to stay at scale 1.0 (valid coordinates) while hidden.
+          // Opacity is driven by separate containerOpacity state for independent animation timing.
+          .opacity(isDragActiveFromOverlay ? 0.001 : containerOpacity)
+          // Scale and position animate with spring/easeOut timing.
+          // Opacity is animated separately via withAnimation in onChange handlers
+          // to avoid conflicting animation layers that cause ghost artifacts.
+          .animation(
+            isExpanded
+              ? .spring(response: 0.38, dampingFraction: 0.86)
+              : .easeOut(duration: 0.18),
+            value: isExpanded
+          )
+
+        // Context menu overlay for long-pressed items.
+        if let menuState = contextMenuState {
+          ContextMenuOverlay(
+            state: menuState,
+            actions: buildContextMenuActions(for: menuState),
+            onDismiss: {
+              withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
+                contextMenuState = nil
+              }
+            }
+          )
+          .zIndex(200)
+        }
       }
       .frame(width: screenBounds.width, height: screenBounds.height)
+      .onAppear {
+        // Initialize overlay frame for bounds checking during drag.
+        currentOverlayFrame = expandedFrame
+      }
+      .onChange(of: expandedFrame) { _, newFrame in
+        // Update stored frame for bounds checking during drag.
+        currentOverlayFrame = newFrame
+      }
+      .onChange(of: isExpanded) { _, expanded in
+        // Update blur fraction when expansion state changes.
+        // AnimatedBlurView handles smooth animation internally.
+        isBlurExpanding = expanded
+        animatedBlurFraction = expanded ? 1 : 0
+        // Animate container opacity in a separate transaction to avoid ghost artifacts.
+        // Slower fade-in during expansion, smooth fade-out during contraction to match scale timing.
+        withAnimation(expanded ? .easeOut(duration: 0.25) : .easeIn(duration: 0.18)) {
+          containerOpacity = expanded ? 1 : 0
+        }
+      }
+      .onChange(of: isDragActiveFromOverlay) { _, dragActive in
+        // Hide blur and container when drag becomes active (fast contract animation).
+        if dragActive {
+          isBlurExpanding = false
+          animatedBlurFraction = 0
+          withAnimation(.linear(duration: 0.08)) {
+            containerOpacity = 0
+          }
+        }
+      }
     }
     .ignoresSafeArea()
     // Notebook rename alert.
@@ -210,13 +438,56 @@ struct FolderOverlay: View {
     )
   }
 
-  // Dim background that dismisses the overlay when tapped.
-  private var dismissBackground: some View {
-    Color.black.opacity(0.15)
-      .contentShape(Rectangle())
-      .onTapGesture {
-        onDismiss()
+  // Checks if a drag position is outside the overlay bounds.
+  // If so, schedules the onDragExitedBounds callback after a short delay.
+  // If the drag re-enters bounds before the delay, the callback is cancelled.
+  private func checkDragBounds(position: CGPoint) {
+    // Only check bounds if overlay is expanded, we haven't already exited,
+    // and the frame has been properly initialized (not zero-sized).
+    guard isExpanded,
+          !hasFiredBoundsExit,
+          currentOverlayFrame.width > 0,
+          currentOverlayFrame.height > 0 else {
+      return
+    }
+    let isOutside = !currentOverlayFrame.contains(position)
+    if isOutside {
+      // Schedule the bounds exit callback if not already scheduled.
+      if boundsExitWorkItem == nil {
+        let workItem = DispatchWorkItem { [onDragExitedBounds] in
+          hasFiredBoundsExit = true
+          onDragExitedBounds?()
+        }
+        boundsExitWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + boundsExitDelay, execute: workItem)
       }
+    } else {
+      // Drag re-entered bounds, cancel the pending exit callback.
+      boundsExitWorkItem?.cancel()
+      boundsExitWorkItem = nil
+    }
+  }
+
+  // Resets bounds tracking state when a new drag starts.
+  private func resetBoundsTracking() {
+    hasFiredBoundsExit = false
+    boundsExitWorkItem?.cancel()
+    boundsExitWorkItem = nil
+  }
+
+  // Background blur that dismisses the overlay when tapped.
+  // Blur intensity animates smoothly with the overlay expansion/contraction.
+  @ViewBuilder
+  private func dismissBackground(blurFraction: CGFloat, animationDuration: TimeInterval) -> some View {
+    AnimatedBlurView(
+      blurFraction: blurFraction,
+      animationDuration: animationDuration,
+      style: .regular
+    )
+    .contentShape(Rectangle())
+    .onTapGesture {
+      onDismiss()
+    }
   }
 
   // MARK: - Folder Container
@@ -340,54 +611,154 @@ struct FolderOverlay: View {
 
   // Renders a single item card (notebook or PDF) in the folder grid.
   @ViewBuilder
-  private func folderItemCard(_ item: FolderItem, cardWidth: CGFloat, cardHeight: CGFloat) -> some View {
+  private func folderItemCard(_ item: FolderItem, cardWidth: CGFloat, cardHeight: CGFloat)
+    -> some View {
     switch item {
     case .notebook(let notebook):
-      NotebookCardButton(
-        notebook: notebook,
-        action: {
-          onNotebookTap(notebook)
-        },
-        onRename: {
+      notebookItemCard(notebook: notebook, cardWidth: cardWidth, cardHeight: cardHeight)
+    case .pdf(let pdf):
+      pdfItemCard(pdf: pdf, cardWidth: cardWidth, cardHeight: cardHeight)
+    }
+  }
+
+  // Renders a notebook card in the folder grid.
+  // Uses FolderDraggableNotebookCard which leverages UIKit's UIDragInteraction
+  // for accurate position tracking that's immune to parent view transforms.
+  @ViewBuilder
+  private func notebookItemCard(notebook: NotebookMetadata, cardWidth: CGFloat, cardHeight: CGFloat)
+    -> some View {
+    let isContextMenuActive = contextMenuState?.matchesNotebook(notebook) == true
+    let isBeingDragged = draggedNotebookID == notebook.id
+
+    FolderDraggableNotebookCard(
+      notebook: notebook,
+      cardWidth: cardWidth,
+      cardHeight: cardHeight,
+      onTap: {
+        onNotebookTap(notebook)
+      },
+      onLongPress: { frame, previewHeight in
+        // Dismiss any existing context menu and show new one.
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
+          contextMenuState = ContextMenuState(
+            item: .notebook(notebook),
+            sourceFrame: frame,
+            cardHeight: previewHeight
+          )
+        }
+      },
+      onDragStart: { draggedNotebook, frame, position in
+        // Dismiss context menu when drag starts.
+        withAnimation(.easeOut(duration: 0.15)) {
+          contextMenuState = nil
+        }
+        // Reset bounds tracking for new drag and forward to parent.
+        resetBoundsTracking()
+        onNotebookDragStart?(draggedNotebook, frame, position)
+      },
+      onDragMove: { position in
+        // Forward position and check if drag crossed overlay bounds.
+        onNotebookDragMove?(position)
+        checkDragBounds(position: position)
+      },
+      onDragEnd: { position in
+        // Always call parent drag end so DashboardView can reset drag state.
+        // DashboardView will check hasDragExitedOverlayBounds to decide whether to move.
+        onNotebookDragEnd?(position)
+      }
+    )
+    .scaleEffect(isContextMenuActive ? 1.08 : 1.0, anchor: .center)
+    // Hide the card while it's being dragged (drag overlay shows the moving card).
+    .opacity(isBeingDragged ? 0 : 1)
+  }
+
+  // Renders a PDF card in the folder grid.
+  // Uses FolderDraggablePDFCard which leverages UIKit's UIDragInteraction
+  // for accurate position tracking that's immune to parent view transforms.
+  @ViewBuilder
+  private func pdfItemCard(pdf: PDFDocumentMetadata, cardWidth: CGFloat, cardHeight: CGFloat)
+    -> some View {
+    let isContextMenuActive = contextMenuState?.matchesPDFDocument(pdf) == true
+    let isBeingDragged = draggedPDFID == pdf.id
+
+    FolderDraggablePDFCard(
+      pdf: pdf,
+      cardWidth: cardWidth,
+      cardHeight: cardHeight,
+      onTap: {
+        onPDFTap(pdf)
+      },
+      onLongPress: { frame, previewHeight in
+        // Dismiss any existing context menu and show new one.
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
+          contextMenuState = ContextMenuState(
+            item: .pdfDocument(pdf),
+            sourceFrame: frame,
+            cardHeight: previewHeight
+          )
+        }
+      },
+      onDragStart: { draggedPDF, frame, position in
+        // Dismiss context menu when drag starts.
+        withAnimation(.easeOut(duration: 0.15)) {
+          contextMenuState = nil
+        }
+        // Reset bounds tracking for new drag and forward to parent.
+        resetBoundsTracking()
+        onPDFDragStart?(draggedPDF, frame, position)
+      },
+      onDragMove: { position in
+        // Forward position and check if drag crossed overlay bounds.
+        onPDFDragMove?(position)
+        checkDragBounds(position: position)
+      },
+      onDragEnd: { position in
+        // Always call parent drag end so DashboardView can reset drag state.
+        // DashboardView will check hasDragExitedOverlayBounds to decide whether to move.
+        onPDFDragEnd?(position)
+      }
+    )
+    .scaleEffect(isContextMenuActive ? 1.08 : 1.0, anchor: .center)
+    // Hide the card while it's being dragged (drag overlay shows the moving card).
+    .opacity(isBeingDragged ? 0 : 1)
+  }
+
+  // MARK: - Context Menu Actions
+
+  // Builds context menu actions for items inside the folder.
+  private func buildContextMenuActions(for state: ContextMenuState) -> [ContextMenuAction] {
+    switch state.item {
+    case .notebook(let notebook):
+      return [
+        ContextMenuAction(title: "Rename", systemImage: "pencil") {
           renameText = notebook.displayName
           renamingNotebook = notebook
         },
-        onMoveOutOfFolder: {
+        ContextMenuAction(title: "Move Out of Folder", systemImage: "folder.badge.minus") {
           onMoveToRoot(notebook)
         },
-        onDelete: {
+        ContextMenuAction(title: "Delete", systemImage: "trash", isDestructive: true) {
           deletingNotebook = notebook
         }
-      )
-      .frame(width: cardWidth, height: cardHeight)
+      ]
 
-    case .pdf(let pdf):
-      PDFDocumentCardButton(metadata: pdf) {
-        onPDFTap(pdf)
-      }
-      .contextMenu {
-        Button {
+    case .pdfDocument(let pdf):
+      return [
+        ContextMenuAction(title: "Rename", systemImage: "pencil") {
           renameText = pdf.displayName
           renamingPDF = pdf
-        } label: {
-          Label("Rename", systemImage: "pencil")
-        }
-
-        Button {
+        },
+        ContextMenuAction(title: "Move Out of Folder", systemImage: "folder.badge.minus") {
           onMovePDFToRoot(pdf)
-        } label: {
-          Label("Move Out of Folder", systemImage: "arrow.up.doc")
-        }
-
-        Button(role: .destructive) {
+        },
+        ContextMenuAction(title: "Delete", systemImage: "trash", isDestructive: true) {
           deletingPDF = pdf
-        } label: {
-          Label("Delete", systemImage: "trash")
         }
-      } preview: {
-        PDFDocumentCardContextMenuPreview(pdfDocument: pdf)
-      }
-      .frame(width: cardWidth, height: cardHeight)
+      ]
+
+    case .folder:
+      // Folders inside folders not supported.
+      return []
     }
   }
 }

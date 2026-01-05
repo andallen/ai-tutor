@@ -63,12 +63,20 @@ struct FolderMetadata: Identifiable, Sendable {
   // Display name shown to the user.
   let displayName: String
 
-  // Cached preview image data from up to 4 contained notebooks.
-  // Empty array if folder contains no notebooks or notebooks have no previews.
+  // Cached preview image data from up to 4 contained items (notebooks and PDFs).
+  // Empty array if folder contains no items or items have no previews.
   let previewImages: [Data]
 
   // Number of notebooks contained in this folder.
   let notebookCount: Int
+
+  // Number of PDF documents contained in this folder.
+  let pdfCount: Int
+
+  // Total number of items (notebooks + PDFs) in this folder.
+  var itemCount: Int {
+    notebookCount + pdfCount
+  }
 
   // Timestamp when the folder was last modified.
   let modifiedAt: Date

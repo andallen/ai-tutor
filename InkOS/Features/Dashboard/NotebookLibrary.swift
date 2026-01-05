@@ -49,16 +49,64 @@ class NotebookLibrary: ObservableObject {
       // Silently ignore errors to keep the app usable.
     }
 
+    // Load folders first (without PDF info).
+    var folderList: [FolderMetadata] = []
     do {
-      let folderList = try await bundleManager.listFolders()
-      folders = folderList
+      folderList = try await bundleManager.listFolders()
     } catch {
       // Silently ignore errors to keep the app usable.
     }
 
-    await loadPDFDocuments()
+    // Load all PDFs to get folder membership info.
+    let allPDFs = await loadAllPDFDocuments()
+
+    // Filter to only show root-level PDFs (not in a folder).
+    pdfDocuments = allPDFs.filter { $0.folderID == nil }
+
+    // Enhance folder metadata with PDF counts and previews.
+    folders = enhanceFoldersWithPDFInfo(folders: folderList, allPDFs: allPDFs)
 
     combineItems()
+  }
+
+  // Enhances folder metadata with PDF counts and preview images.
+  // Combines notebook previews with PDF previews (up to 4 total).
+  private func enhanceFoldersWithPDFInfo(
+    folders: [FolderMetadata],
+    allPDFs: [PDFDocumentMetadata]
+  ) -> [FolderMetadata] {
+    // Group PDFs by folder ID.
+    var pdfsByFolder: [String: [PDFDocumentMetadata]] = [:]
+    for pdf in allPDFs {
+      if let folderID = pdf.folderID {
+        pdfsByFolder[folderID, default: []].append(pdf)
+      }
+    }
+
+    // Rebuild folder metadata with PDF info.
+    return folders.map { folder in
+      let pdfsInFolder = pdfsByFolder[folder.id] ?? []
+      let pdfCount = pdfsInFolder.count
+
+      // Combine notebook previews with PDF previews (up to 4 total).
+      var combinedPreviews = folder.previewImages
+      let remainingSlots = FolderConstants.maxPreviewImages - combinedPreviews.count
+      if remainingSlots > 0 {
+        let pdfPreviews = pdfsInFolder
+          .prefix(remainingSlots)
+          .compactMap { $0.previewImageData }
+        combinedPreviews.append(contentsOf: pdfPreviews)
+      }
+
+      return FolderMetadata(
+        id: folder.id,
+        displayName: folder.displayName,
+        previewImages: combinedPreviews,
+        notebookCount: folder.notebookCount,
+        pdfCount: pdfCount,
+        modifiedAt: folder.modifiedAt
+      )
+    }
   }
 
   // Loads PDF documents from the PDFNotes directory.
@@ -126,6 +174,11 @@ class NotebookLibrary: ObservableObject {
           continue
         }
       }
+
+      // Sort by modifiedAt descending (most recent first).
+      // IMPORTANT: This sort order must match the display order in FolderOverlay
+      // for thumbnail index consistency when dragging items out of folders.
+      metadata.sort { $0.modifiedAt > $1.modifiedAt }
 
       return metadata
     } catch {
