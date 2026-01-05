@@ -525,6 +525,7 @@ extension EditorViewModel: EditorDelegate {
     // Requires both editor and documentHandle to be available.
     if let handle = documentHandle {
       jiixPersistenceService = JIIXPersistenceService(
+        notebookID: handle.notebookID,
         editor: editor,
         documentHandle: handle,
         debounceDelaySeconds: JIIXPersistenceConfiguration.default.debounceDelaySeconds

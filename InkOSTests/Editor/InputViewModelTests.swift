@@ -75,6 +75,10 @@ final class MockInputToolController: ToolControllerProtocol {
   func setStyleForTool(style: String, tool: IINKPointerTool) throws {
     setStyleCallCount += 1
   }
+
+  func styleForTool(tool: IINKPointerTool) throws -> String {
+    return ""
+  }
 }
 
 // Mock IINKEditor for testing editor operations.
@@ -122,6 +126,9 @@ final class MockInputEditor: EditorProtocol {
   func performClear() throws {}
   func performUndo() {}
   func performRedo() {}
+  func pointerDown(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws {}
+  func pointerMove(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws {}
+  func pointerUp(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws {}
 }
 
 // Mock errors for testing error handling.

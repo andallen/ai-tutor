@@ -86,6 +86,10 @@ final class MockEditorVMToolController: ToolControllerProtocol {
     setStyleCallCount += 1
     lastStyle = style
   }
+
+  func styleForTool(tool: IINKPointerTool) throws -> String {
+    return ""
+  }
 }
 
 // Mock editor for testing editor operations.
@@ -152,6 +156,10 @@ final class MockEditorVMEditor: EditorProtocol {
   func performRedo() {
     redoCallCount += 1
   }
+
+  func pointerDown(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws {}
+  func pointerMove(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws {}
+  func pointerUp(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws {}
 }
 
 // Mock content part for testing part operations.
