@@ -122,6 +122,9 @@ class InputViewController: UIViewController {
   }
 
   // Captures the current display container as a preview image.
+  // Uses layer.render() instead of drawHierarchy() because the RenderView
+  // uses drawsAsynchronously=true which can cause drawHierarchy to capture
+  // empty/black content on iPad.
   func capturePreviewImage(maxPixelDimension: CGFloat) -> UIImage? {
     let bounds = containerView.bounds
     guard bounds.width > 0, bounds.height > 0 else {
@@ -146,7 +149,8 @@ class InputViewController: UIViewController {
     let image = renderer.image { context in
       UIColor.white.setFill()
       context.fill(bounds)
-      containerView.drawHierarchy(in: bounds, afterScreenUpdates: true)
+      // Use layer.render() for synchronous capture of async-drawn layers.
+      containerView.layer.render(in: context.cgContext)
     }
     return image
   }

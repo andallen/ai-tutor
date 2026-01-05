@@ -10,6 +10,7 @@ struct ContextMenuState {
   enum ItemType {
     case notebook(NotebookMetadata)
     case folder(FolderMetadata, thumbnails: [UIImage])
+    case pdfDocument(PDFDocumentMetadata)
   }
 
   let item: ItemType
@@ -30,6 +31,14 @@ struct ContextMenuState {
   func matchesFolder(_ folder: FolderMetadata) -> Bool {
     if case .folder(let folderItem, _) = item {
       return folderItem.id == folder.id
+    }
+    return false
+  }
+
+  // Checks if this state matches a specific PDF document.
+  func matchesPDFDocument(_ pdfDocument: PDFDocumentMetadata) -> Bool {
+    if case .pdfDocument(let pdfItem) = item {
+      return pdfItem.id == pdfDocument.id
     }
     return false
   }

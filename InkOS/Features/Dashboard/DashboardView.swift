@@ -118,6 +118,36 @@ struct DashboardView: View {
   // Stores folder frames for hit testing during drag.
   @State private var folderFrames: [String: CGRect] = [:]
 
+  // MARK: - PDF Drag State
+
+  // The PDF currently being dragged (nil when not dragging).
+  @State private var draggedPDF: PDFDocumentMetadata?
+
+  // The source frame of the PDF card being dragged.
+  @State private var pdfDragSourceFrame: CGRect = .zero
+
+  // The current position of the PDF drag.
+  @State private var pdfDragPosition: CGPoint = .zero
+
+  // Tracks which PDF the drag is currently over (for future folder creation with PDFs).
+  @State private var dragTargetPDFID: String?
+
+  // Stores PDF card frames for hit testing during drag.
+  @State private var pdfCardFrames: [String: CGRect] = [:]
+
+  // MARK: - Folder Drag Source Tracking
+
+  // Tracks the source folder ID when dragging a notebook out of a folder.
+  // Used to call moveNotebookToRoot when the drag ends.
+  @State private var dragSourceFolderID: String?
+
+  // Tracks the source folder ID when dragging a PDF out of a folder.
+  @State private var pdfDragSourceFolderID: String?
+
+  // Tracks whether a drag from the folder overlay has exited the overlay bounds.
+  // Used to trigger overlay dismiss animation only when drag crosses the boundary.
+  @State private var hasDragExitedOverlayBounds: Bool = false
+
   // MARK: - Folder Expansion State
 
   // Tracks which folder is currently expanded (nil when no folder is open).
@@ -171,6 +201,10 @@ struct DashboardView: View {
   // Tracks whether the AI overlay is expanded.
   @State private var isAIOverlayExpanded = false
 
+  // Screen bounds for layout calculations.
+  // Updated from GeometryReader to avoid deprecated UIScreen.main usage.
+  @State private var screenBounds: CGRect = .zero
+
   var body: some View {
     mainContent
       .modifier(
@@ -206,7 +240,7 @@ struct DashboardView: View {
   // MARK: - Main Content
 
   private var mainContent: some View {
-    GeometryReader { _ in
+    GeometryReader { geometry in
       ZStack(alignment: .topLeading) {
         // Keeps the background uniform and bright.
         Color.white
@@ -269,7 +303,41 @@ struct DashboardView: View {
             },
             onDismiss: {
               closeFolder()
-            }
+            },
+            // Notebook drag callbacks for dragging out of folder.
+            onNotebookDragStart: { notebook, frame, position in
+              handleFolderNotebookDragStart(notebook: notebook, frame: frame, position: position)
+            },
+            onNotebookDragMove: { position in
+              handleDragMove(position: position)
+            },
+            onNotebookDragEnd: { position in
+              handleFolderNotebookDragEnd(position: position)
+            },
+            // PDF drag callbacks for dragging out of folder.
+            onPDFDragStart: { pdf, frame, position in
+              handleFolderPDFDragStart(pdf: pdf, frame: frame, position: position)
+            },
+            onPDFDragMove: { position in
+              handlePDFDragMove(position: position)
+            },
+            onPDFDragEnd: { position in
+              handleFolderPDFDragEnd(position: position)
+            },
+            // Called when drag crosses overlay bounds.
+            onDragExitedBounds: {
+              hasDragExitedOverlayBounds = true
+              // Update folder thumbnails to exclude the dragged item before showing the folder card.
+              updateFolderThumbnailsForDragExit()
+              closeFolder(keepingDrag: true)
+            },
+            // True when a drag has exited the overlay bounds.
+            // Only hides the overlay after drag crosses the boundary, not on drag start.
+            isDragActiveFromOverlay: hasDragExitedOverlayBounds,
+            // IDs of items being dragged from this folder.
+            // Used to hide the original cards while dragging (so they appear to move, not duplicate).
+            draggedNotebookID: dragSourceFolderID != nil ? draggedNotebook?.id : nil,
+            draggedPDFID: pdfDragSourceFolderID != nil ? draggedPDF?.id : nil
           )
           .zIndex(100)
         }
@@ -292,6 +360,12 @@ struct DashboardView: View {
             .zIndex(400)
         }
 
+        // Drag overlay showing the PDF card following the finger.
+        if let pdf = draggedPDF {
+          pdfDragOverlay(for: pdf)
+            .zIndex(400)
+        }
+
         // AI overlay, dim background, and button at bottom-right corner.
         // The overlay expands from the button with liquid glass animation.
         // Tapping outside or tapping the button again dismisses the overlay.
@@ -301,6 +375,14 @@ struct DashboardView: View {
       // Updates the reference-type store so UIKit can query current frames at dismiss time.
       .onPreferenceChange(CardFramePreferenceKey.self) { frames in
         cardFrameStore.frames.merge(frames) { _, new in new }
+      }
+      // Update screen bounds from geometry for folder appearance animation calculations.
+      .onChange(of: geometry.frame(in: .global)) { _, newFrame in
+        screenBounds = newFrame
+      }
+      // Collect PDF card frame preferences for drag hit testing.
+      .onPreferenceChange(PDFCardFramePreferenceKey.self) { frames in
+        pdfCardFrames.merge(frames) { _, new in new }
       }
     }
   }
@@ -546,8 +628,11 @@ struct DashboardView: View {
     let isContextMenuActive = contextMenuState?.matchesNotebook(notebook) == true
     // Check if this notebook is currently being dragged.
     let isBeingDragged = draggedNotebook?.id == notebook.id
-    // Check if another notebook is being dragged over this one.
-    let isDragTarget = dragTargetNotebookID == notebook.id && draggedNotebook?.id != notebook.id
+    // Check if another item (notebook or PDF) is being dragged over this notebook.
+    let isNotebookDragTarget =
+      dragTargetNotebookID == notebook.id && draggedNotebook?.id != notebook.id
+    let isPDFDragTarget = dragTargetNotebookID == notebook.id && draggedPDF != nil
+    let isDragTarget = isNotebookDragTarget || isPDFDragTarget
 
     // ZStack to layer the underlay behind the card without scaling it.
     ZStack {
@@ -652,13 +737,21 @@ struct DashboardView: View {
       isExpanded: isExpanded
     )
 
+    // Check if an item is being dragged out of this folder.
+    // Only count as dragged out after the drag has exited the overlay bounds.
+    let isDraggingFromThisFolder = hasDragExitedOverlayBounds && (
+      dragSourceFolderID == folder.id || pdfDragSourceFolderID == folder.id
+    )
+    let draggedOutCount = isDraggingFromThisFolder ? 1 : 0
+
     let config = FolderCardConfiguration(
       folder: folder,
       thumbnails: thumbnails,
       isExpanded: isExpanded,
       isContextMenuActive: isContextMenuActive,
       isTargeted: isTargeted,
-      appearanceOffset: appearanceOffset
+      appearanceOffset: appearanceOffset,
+      draggedOutCount: draggedOutCount
     )
 
     folderCardButton(config: config)
@@ -670,7 +763,6 @@ struct DashboardView: View {
     guard isExpanded, let cardFrame = folderFrames[folder.id] else {
       return .zero
     }
-    let screenBounds = UIScreen.main.bounds
     let screenCenter = CGPoint(x: screenBounds.midX, y: screenBounds.midY)
     let cardCenter = CGPoint(x: cardFrame.midX, y: cardFrame.midY)
     let fullOffset = CGSize(
@@ -693,6 +785,9 @@ struct DashboardView: View {
     let isContextMenuActive: Bool
     let isTargeted: Bool
     let appearanceOffset: CGSize
+    // Number of items being dragged out of this folder.
+    // Used to reduce displayed item count while drag is in progress.
+    let draggedOutCount: Int
   }
 
   // Builds the folder card button with all its handlers and modifiers.
@@ -719,7 +814,8 @@ struct DashboardView: View {
         )
       },
       previewOpacity: (config.isExpanded && isFolderCardHidden) ? 0 : 1,
-      appearanceOffset: config.appearanceOffset
+      appearanceOffset: config.appearanceOffset,
+      draggedOutCount: config.draggedOutCount
     )
     .background(folderFrameCapture(for: config.folder))
     .zIndex(config.isContextMenuActive ? 300 : 0)
@@ -753,34 +849,84 @@ struct DashboardView: View {
 
   @ViewBuilder
   private func pdfDocumentCardView(pdfDocument: PDFDocumentMetadata) -> some View {
-    PDFDocumentCardButton(metadata: pdfDocument) {
-      guard let uuid = UUID(uuidString: pdfDocument.id) else { return }
-      openPDFDocument(documentID: uuid)
+    // Check if this PDF's context menu is currently shown.
+    let isContextMenuActive = contextMenuState?.matchesPDFDocument(pdfDocument) == true
+    // Check if this PDF is currently being dragged.
+    let isBeingDragged = draggedPDF?.id == pdfDocument.id
+    // Check if another item (PDF or notebook) is being dragged over this PDF (for folder creation).
+    let isPDFDragTarget = dragTargetPDFID == pdfDocument.id && draggedPDF?.id != pdfDocument.id
+    let isNotebookDragTarget = dragTargetPDFID == pdfDocument.id && draggedNotebook != nil
+    let isDragTarget = isPDFDragTarget || isNotebookDragTarget
+
+    // ZStack to layer the underlay behind the card without scaling it.
+    ZStack {
+      // Grey underlay that stays at full size when the card contracts.
+      dropTargetUnderlay(isActive: isDragTarget)
+
+      // The PDF card that scales down when targeted.
+      pdfCardButton(for: pdfDocument, isDragTarget: isDragTarget)
+        .scaleEffect(
+          isContextMenuActive ? 1.08 : (isDragTarget ? 0.82 : 1.0),
+          anchor: .center
+        )
+        .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isContextMenuActive)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isDragTarget)
     }
-    .contextMenu {
-      Button {
+    .background(pdfCardFrameCapture(for: pdfDocument))
+    .opacity(isBeingDragged ? 0 : 1)
+    .zIndex(isContextMenuActive ? 300 : 0)
+  }
+
+  // Builds the PDF card button with all its handlers.
+  @ViewBuilder
+  private func pdfCardButton(for pdfDocument: PDFDocumentMetadata, isDragTarget: Bool) -> some View {
+    PDFDocumentCardButton(
+      metadata: pdfDocument,
+      action: {
+        guard let uuid = UUID(uuidString: pdfDocument.id) else { return }
+        openPDFDocument(documentID: uuid)
+      },
+      onRename: {
         renameText = pdfDocument.displayName
         renamingPDF = pdfDocument
-      } label: {
-        Label("Rename", systemImage: "pencil")
-      }
-
-      if !library.folders.isEmpty {
-        Button {
+      },
+      onMoveToFolder: library.folders.isEmpty
+        ? nil
+        : {
           movingPDF = pdfDocument
-        } label: {
-          Label("Move to Folder", systemImage: "folder")
-        }
-      }
-
-      Button(role: .destructive) {
+        },
+      onDelete: {
         deletingPDF = pdfDocument
-      } label: {
-        Label("Delete", systemImage: "trash")
-      }
-    } preview: {
-      // Shows only the card in the preview, keeping the title visible in place.
-      PDFDocumentCardContextMenuPreview(pdfDocument: pdfDocument)
+      },
+      onLongPress: { frame, cardHeight in
+        contextMenuState = ContextMenuState(
+          item: .pdfDocument(pdfDocument),
+          sourceFrame: frame,
+          cardHeight: cardHeight
+        )
+      },
+      onDragStart: { pdf, frame, position in
+        handlePDFDragStart(pdf: pdf, frame: frame, position: position)
+      },
+      onDragMove: { position in
+        handlePDFDragMove(position: position)
+      },
+      onDragEnd: { position in
+        handlePDFDragEnd(position: position)
+      },
+      titleOpacity: isDragTarget ? 0 : 1
+    )
+  }
+
+  // Captures the PDF card's frame for drag hit testing.
+  @ViewBuilder
+  private func pdfCardFrameCapture(for pdfDocument: PDFDocumentMetadata) -> some View {
+    GeometryReader { geometry in
+      Color.clear
+        .preference(
+          key: PDFCardFramePreferenceKey.self,
+          value: [pdfDocument.id: geometry.frame(in: .global)]
+        )
     }
   }
 
@@ -934,15 +1080,26 @@ struct DashboardView: View {
     }
   }
 
-  // Closes the expanded folder with reverse animation back to the source card.
-  private func closeFolder() {
+  // Closes the folder overlay with animation.
+  // When keepingDrag is true, the folder closes visually but stays in the hierarchy
+  // until the drag completes, so the gesture can still receive end events.
+  private func closeFolder(keepingDrag: Bool = false) {
     // Card animation (opacity + movement) is handled in FolderCard.swift.
     // Setting isFolderCardHidden triggers the card's internal animations.
     isFolderCardHidden = false
 
     // Overlay contraction animation.
+    // When keepingDrag is true, the overlay fades to opacity 0.001 via isDragActiveFromOverlay,
+    // but we still animate the collapse so the visual transition looks natural.
+    // The drag continues to work because we use translation-based positioning.
     withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
       isOverlayExpanded = false
+    }
+
+    // When keeping drag, don't remove from hierarchy - cleanupFolderOverlay handles that.
+    // The overlay stays in hierarchy (invisible) so gestures keep receiving events.
+    if keepingDrag {
+      return
     }
 
     // Remove overlay from hierarchy after animation completes.
@@ -952,6 +1109,17 @@ struct DashboardView: View {
       expandedFolderPDFs = []
       expandedFolderSourceFrame = .zero
     }
+  }
+
+  // Cleans up the folder overlay state after a drag that exited bounds completes.
+  // Removes the overlay from the hierarchy without animation since it's already invisible.
+  private func cleanupFolderOverlay() {
+    isOverlayExpanded = false
+    hasDragExitedOverlayBounds = false
+    expandedFolder = nil
+    expandedFolderNotebooks = []
+    expandedFolderPDFs = []
+    expandedFolderSourceFrame = .zero
   }
 
   // Opens a notebook from within the expanded folder overlay.
@@ -1096,6 +1264,47 @@ struct DashboardView: View {
     folderThumbnails = thumbnails
   }
 
+  // Updates folder thumbnails to exclude the dragged item (notebook or PDF).
+  // Called when a drag exits the folder overlay bounds to immediately reflect
+  // the removal in the folder card's thumbnail preview.
+  // Thumbnail order: notebooks first (up to 4), then PDFs fill remaining slots.
+  private func updateFolderThumbnailsForDragExit() {
+    // Determine the source folder ID (could be from notebook or PDF drag).
+    let folderID = dragSourceFolderID ?? pdfDragSourceFolderID
+    guard let folderID = folderID else {
+      return
+    }
+
+    var thumbnails = folderThumbnails[folderID] ?? []
+    guard !thumbnails.isEmpty else {
+      return
+    }
+
+    // Calculate how many notebook thumbnails are in the combined preview.
+    // Notebooks come first, up to 4.
+    let notebookThumbnailCount = min(expandedFolderNotebooks.count, 4)
+
+    if let notebook = draggedNotebook {
+      // Dragging a notebook - find its index in the notebook list.
+      if let index = expandedFolderNotebooks.firstIndex(where: { $0.id == notebook.id }) {
+        if index < notebookThumbnailCount && index < thumbnails.count {
+          thumbnails.remove(at: index)
+          folderThumbnails[folderID] = thumbnails
+        }
+      }
+    } else if let pdf = draggedPDF {
+      // Dragging a PDF - find its index and calculate combined position.
+      // PDF thumbnails come after notebook thumbnails.
+      if let pdfIndex = expandedFolderPDFs.firstIndex(where: { $0.id == pdf.id }) {
+        let combinedIndex = notebookThumbnailCount + pdfIndex
+        if combinedIndex < 4 && combinedIndex < thumbnails.count {
+          thumbnails.remove(at: combinedIndex)
+          folderThumbnails[folderID] = thumbnails
+        }
+      }
+    }
+  }
+
   // MARK: - Drag Overlay
 
   // Builds the floating card overlay that follows the finger during drag.
@@ -1158,6 +1367,19 @@ struct DashboardView: View {
       }
     }
 
+    // Check which PDF (if any) the finger is over.
+    // Uses pdfCardFrames (populated via preferences) for PDF positions.
+    var foundPDFTarget: String?
+    if foundFolderTarget == nil && foundNotebookTarget == nil {
+      let existingPDFIDs = Set(library.pdfDocuments.map { $0.id })
+      for (pdfID, frame) in pdfCardFrames {
+        if existingPDFIDs.contains(pdfID) && frame.contains(position) {
+          foundPDFTarget = pdfID
+          break
+        }
+      }
+    }
+
     // Update folder target with animation if changed.
     if dragTargetFolderID != foundFolderTarget {
       withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
@@ -1169,6 +1391,13 @@ struct DashboardView: View {
     if dragTargetNotebookID != foundNotebookTarget {
       withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
         dragTargetNotebookID = foundNotebookTarget
+      }
+    }
+
+    // Update PDF target with animation if changed.
+    if dragTargetPDFID != foundPDFTarget {
+      withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+        dragTargetPDFID = foundPDFTarget
       }
     }
   }
@@ -1204,6 +1433,17 @@ struct DashboardView: View {
       return
     }
 
+    // Check if we're over a PDF to create a folder.
+    if let targetPDFID = dragTargetPDFID,
+      let targetPDF = library.pdfDocuments.first(where: { $0.id == targetPDFID }) {
+      // Create folder from the notebook and PDF.
+      createFolderFromNotebookAndPDF(
+        draggedNotebook: notebook,
+        targetPDF: targetPDF
+      )
+      return
+    }
+
     // No valid target, just reset.
     resetDragState()
   }
@@ -1214,9 +1454,177 @@ struct DashboardView: View {
       draggedNotebook = nil
       dragTargetFolderID = nil
       dragTargetNotebookID = nil
+      dragTargetPDFID = nil
     }
     dragSourceFrame = .zero
     dragPosition = .zero
+    dragSourceFolderID = nil
+    hasDragExitedOverlayBounds = false
+  }
+
+  // MARK: - Folder Drag Handlers
+
+  // Called when a notebook drag starts from within the folder overlay.
+  private func handleFolderNotebookDragStart(
+    notebook: NotebookMetadata, frame: CGRect, position: CGPoint
+  ) {
+    // Dismiss context menu when drag starts.
+    withAnimation(.easeOut(duration: 0.15)) {
+      contextMenuState = nil
+    }
+
+    // Set up drag state, including the source folder ID.
+    draggedNotebook = notebook
+    dragSourceFrame = frame
+    dragPosition = position
+    dragSourceFolderID = expandedFolder?.id
+  }
+
+  // Called when a notebook drag from a folder ends.
+  private func handleFolderNotebookDragEnd(position: CGPoint) {
+    guard let notebook = draggedNotebook,
+      let sourceFolderID = dragSourceFolderID
+    else {
+      resetDragState()
+      cleanupFolderOverlay()
+      return
+    }
+
+    // If drag never exited overlay bounds, just reset state (card snaps back).
+    // The folder overlay is still open, so no move happens.
+    guard hasDragExitedOverlayBounds else {
+      resetDragState()
+      return
+    }
+
+    Task { @MainActor in
+      if let targetFolderID = dragTargetFolderID {
+        // Move to target folder (via root since no direct folder-to-folder API).
+        await library.moveNotebookToRoot(notebookID: notebook.id, fromFolderID: sourceFolderID)
+        await library.moveNotebookToFolder(notebookID: notebook.id, folderID: targetFolderID)
+      } else if let targetNotebookID = dragTargetNotebookID,
+        let targetNotebook = library.notebooks.first(where: { $0.id == targetNotebookID }) {
+        // Move to root, then create folder with target notebook.
+        await library.moveNotebookToRoot(notebookID: notebook.id, fromFolderID: sourceFolderID)
+        await createFolderFromNotebooksAsync(
+          draggedNotebook: notebook, targetNotebook: targetNotebook)
+      } else if let targetPDFID = dragTargetPDFID,
+        let targetPDF = library.pdfDocuments.first(where: { $0.id == targetPDFID }) {
+        // Move to root, then create folder with target PDF.
+        await library.moveNotebookToRoot(notebookID: notebook.id, fromFolderID: sourceFolderID)
+        await createFolderFromNotebookAndPDFAsync(notebook: notebook, pdf: targetPDF)
+      } else {
+        // Drop on empty space - move to root.
+        await library.moveNotebookToRoot(notebookID: notebook.id, fromFolderID: sourceFolderID)
+      }
+      await library.loadBundles()
+      resetDragState()
+      cleanupFolderOverlay()
+    }
+  }
+
+  // Called when a PDF drag starts from within the folder overlay.
+  private func handleFolderPDFDragStart(pdf: PDFDocumentMetadata, frame: CGRect, position: CGPoint) {
+    // Dismiss context menu when drag starts.
+    withAnimation(.easeOut(duration: 0.15)) {
+      contextMenuState = nil
+    }
+
+    // Set up drag state, including the source folder ID.
+    draggedPDF = pdf
+    pdfDragSourceFrame = frame
+    pdfDragPosition = position
+    pdfDragSourceFolderID = expandedFolder?.id
+  }
+
+  // Called when a PDF drag from a folder ends.
+  private func handleFolderPDFDragEnd(position: CGPoint) {
+    guard let pdf = draggedPDF,
+      pdfDragSourceFolderID != nil
+    else {
+      resetPDFDragState()
+      cleanupFolderOverlay()
+      return
+    }
+
+    // If drag never exited overlay bounds, just reset state (card snaps back).
+    // The folder overlay is still open, so no move happens.
+    guard hasDragExitedOverlayBounds else {
+      resetPDFDragState()
+      return
+    }
+
+    Task { @MainActor in
+      if let targetFolderID = dragTargetFolderID {
+        // Move to target folder (via root since no direct folder-to-folder API).
+        await library.movePDFDocumentToRoot(documentID: pdf.id)
+        await library.movePDFDocumentToFolder(documentID: pdf.id, folderID: targetFolderID)
+      } else if let targetNotebookID = dragTargetNotebookID,
+        let targetNotebook = library.notebooks.first(where: { $0.id == targetNotebookID }) {
+        // Move to root, then create folder with target notebook.
+        await library.movePDFDocumentToRoot(documentID: pdf.id)
+        await createFolderFromPDFAndNotebookAsync(pdf: pdf, notebook: targetNotebook)
+      } else if let targetPDFID = dragTargetPDFID,
+        let targetPDF = library.pdfDocuments.first(where: { $0.id == targetPDFID }) {
+        // Move to root, then create folder with target PDF.
+        await library.movePDFDocumentToRoot(documentID: pdf.id)
+        await createFolderFromTwoPDFsAsync(draggedPDF: pdf, targetPDF: targetPDF)
+      } else {
+        // Drop on empty space - move to root.
+        await library.movePDFDocumentToRoot(documentID: pdf.id)
+      }
+      await library.loadBundles()
+      resetPDFDragState()
+      cleanupFolderOverlay()
+    }
+  }
+
+  // Async helper to create folder from two notebooks.
+  private func createFolderFromNotebooksAsync(
+    draggedNotebook: NotebookMetadata,
+    targetNotebook: NotebookMetadata
+  ) async {
+    let folderID = await library.createFolder(displayName: "Untitled Folder")
+    if let folderID {
+      await library.moveNotebookToFolder(notebookID: draggedNotebook.id, folderID: folderID)
+      await library.moveNotebookToFolder(notebookID: targetNotebook.id, folderID: folderID)
+    }
+  }
+
+  // Async helper to create folder from notebook and PDF.
+  private func createFolderFromNotebookAndPDFAsync(
+    notebook: NotebookMetadata,
+    pdf: PDFDocumentMetadata
+  ) async {
+    let folderID = await library.createFolder(displayName: "Untitled Folder")
+    if let folderID {
+      await library.moveNotebookToFolder(notebookID: notebook.id, folderID: folderID)
+      await library.movePDFDocumentToFolder(documentID: pdf.id, folderID: folderID)
+    }
+  }
+
+  // Async helper to create folder from PDF and notebook.
+  private func createFolderFromPDFAndNotebookAsync(
+    pdf: PDFDocumentMetadata,
+    notebook: NotebookMetadata
+  ) async {
+    let folderID = await library.createFolder(displayName: "Untitled Folder")
+    if let folderID {
+      await library.movePDFDocumentToFolder(documentID: pdf.id, folderID: folderID)
+      await library.moveNotebookToFolder(notebookID: notebook.id, folderID: folderID)
+    }
+  }
+
+  // Async helper to create folder from two PDFs.
+  private func createFolderFromTwoPDFsAsync(
+    draggedPDF: PDFDocumentMetadata,
+    targetPDF: PDFDocumentMetadata
+  ) async {
+    let folderID = await library.createFolder(displayName: "Untitled Folder")
+    if let folderID {
+      await library.movePDFDocumentToFolder(documentID: draggedPDF.id, folderID: folderID)
+      await library.movePDFDocumentToFolder(documentID: targetPDF.id, folderID: folderID)
+    }
   }
 
   // Creates a new folder from two notebooks.
@@ -1250,6 +1658,253 @@ struct DashboardView: View {
     }
   }
 
+  // Creates a new folder from a notebook and a PDF.
+  private func createFolderFromNotebookAndPDF(
+    draggedNotebook: NotebookMetadata,
+    targetPDF: PDFDocumentMetadata
+  ) {
+    // Reset drag state immediately.
+    withAnimation(.easeOut(duration: 0.2)) {
+      self.draggedNotebook = nil
+      dragTargetPDFID = nil
+    }
+    dragSourceFrame = .zero
+    dragPosition = .zero
+    dragTargetFolderID = nil
+
+    // Create the folder and move items.
+    Task { @MainActor in
+      // Create an untitled folder.
+      let folderID = await library.createFolder(displayName: "Untitled Folder")
+
+      // Move both items to the new folder.
+      if let folderID {
+        await library.moveNotebookToFolder(notebookID: draggedNotebook.id, folderID: folderID)
+        await library.movePDFDocumentToFolder(documentID: targetPDF.id, folderID: folderID)
+      }
+
+      // Reload to show the new folder.
+      await library.loadBundles()
+      await loadFolderThumbnails()
+    }
+  }
+
+  // MARK: - PDF Drag Overlay
+
+  // Builds the floating PDF card overlay that follows the finger during drag.
+  @ViewBuilder
+  private func pdfDragOverlay(for pdf: PDFDocumentMetadata) -> some View {
+    let cardWidth = pdfDragSourceFrame.width
+    let cardHeight = pdfDragSourceFrame.height - 36  // Subtract title area height.
+
+    PDFDocumentCardPreview(metadata: pdf, dimOpacity: 0)
+      .frame(width: cardWidth, height: cardHeight)
+      .background(Color(.systemGray5))
+      .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+      .shadow(color: Color.black.opacity(0.25), radius: 12, x: 0, y: 8)
+      .scaleEffect(1.05)
+      // Position the card centered under the finger.
+      .position(x: pdfDragPosition.x, y: pdfDragPosition.y - cardHeight / 2 - 20)
+      .allowsHitTesting(false)
+  }
+
+  // MARK: - PDF Drag Handlers
+
+  // Called when a drag starts after long press on a PDF card.
+  private func handlePDFDragStart(pdf: PDFDocumentMetadata, frame: CGRect, position: CGPoint) {
+    // Dismiss context menu when drag starts.
+    withAnimation(.easeOut(duration: 0.15)) {
+      contextMenuState = nil
+    }
+
+    // Set up drag state.
+    draggedPDF = pdf
+    pdfDragSourceFrame = frame
+    pdfDragPosition = position
+  }
+
+  // Called during PDF drag as the finger moves.
+  private func handlePDFDragMove(position: CGPoint) {
+    pdfDragPosition = position
+
+    // Check which folder (if any) the finger is over.
+    var foundFolderTarget: String?
+    for (folderID, frame) in folderFrames where frame.contains(position) {
+      foundFolderTarget = folderID
+      break
+    }
+
+    // Check which notebook (if any) the finger is over.
+    // Uses cardFrameStore.frames (populated via preferences) for notebook positions.
+    var foundNotebookTarget: String?
+    if foundFolderTarget == nil {
+      let existingNotebookIDs = Set(library.notebooks.map { $0.id })
+      for (notebookID, frame) in cardFrameStore.frames {
+        if existingNotebookIDs.contains(notebookID) && frame.contains(position) {
+          foundNotebookTarget = notebookID
+          break
+        }
+      }
+    }
+
+    // Check which PDF (if any) the finger is over (excluding the dragged one).
+    // Uses pdfCardFrames (populated via preferences) for PDF positions.
+    var foundPDFTarget: String?
+    if foundFolderTarget == nil && foundNotebookTarget == nil, let draggedID = draggedPDF?.id {
+      let existingPDFIDs = Set(library.pdfDocuments.map { $0.id })
+      for (pdfID, frame) in pdfCardFrames {
+        if pdfID != draggedID
+          && existingPDFIDs.contains(pdfID)
+          && frame.contains(position) {
+          foundPDFTarget = pdfID
+          break
+        }
+      }
+    }
+
+    // Update folder target with animation if changed.
+    if dragTargetFolderID != foundFolderTarget {
+      withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+        dragTargetFolderID = foundFolderTarget
+      }
+    }
+
+    // Update notebook target with animation if changed.
+    if dragTargetNotebookID != foundNotebookTarget {
+      withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+        dragTargetNotebookID = foundNotebookTarget
+      }
+    }
+
+    // Update PDF target with animation if changed.
+    if dragTargetPDFID != foundPDFTarget {
+      withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+        dragTargetPDFID = foundPDFTarget
+      }
+    }
+  }
+
+  // Called when PDF drag ends (finger released).
+  private func handlePDFDragEnd(position: CGPoint) {
+    guard let pdf = draggedPDF else {
+      resetPDFDragState()
+      return
+    }
+
+    // Check if we're over a folder.
+    if let targetFolderID = dragTargetFolderID {
+      // Move PDF to the existing folder.
+      Task {
+        await library.movePDFDocumentToFolder(documentID: pdf.id, folderID: targetFolderID)
+        await library.loadBundles()
+        await loadFolderThumbnails()
+      }
+      resetPDFDragState()
+      return
+    }
+
+    // Check if we're over a notebook to create a folder.
+    if let targetNotebookID = dragTargetNotebookID,
+      let targetNotebook = library.notebooks.first(where: { $0.id == targetNotebookID }) {
+      // Create folder from the PDF and notebook.
+      createFolderFromPDFAndNotebook(
+        draggedPDF: pdf,
+        targetNotebook: targetNotebook
+      )
+      return
+    }
+
+    // Check if we're over another PDF to create a folder.
+    if let targetPDFID = dragTargetPDFID,
+      let targetPDF = library.pdfDocuments.first(where: { $0.id == targetPDFID }) {
+      // Create folder from the two PDFs.
+      createFolderFromTwoPDFs(
+        draggedPDF: pdf,
+        targetPDF: targetPDF
+      )
+      return
+    }
+
+    // No valid target, just reset.
+    resetPDFDragState()
+  }
+
+  // Resets all PDF drag-related state.
+  private func resetPDFDragState() {
+    withAnimation(.easeOut(duration: 0.2)) {
+      draggedPDF = nil
+      dragTargetFolderID = nil
+      dragTargetPDFID = nil
+      dragTargetNotebookID = nil
+    }
+    pdfDragSourceFrame = .zero
+    pdfDragPosition = .zero
+    pdfDragSourceFolderID = nil
+    hasDragExitedOverlayBounds = false
+  }
+
+  // Creates a new folder from a PDF and a notebook.
+  private func createFolderFromPDFAndNotebook(
+    draggedPDF: PDFDocumentMetadata,
+    targetNotebook: NotebookMetadata
+  ) {
+    // Reset drag state immediately.
+    withAnimation(.easeOut(duration: 0.2)) {
+      self.draggedPDF = nil
+      dragTargetNotebookID = nil
+    }
+    pdfDragSourceFrame = .zero
+    pdfDragPosition = .zero
+    dragTargetFolderID = nil
+
+    // Create the folder and move items.
+    Task { @MainActor in
+      // Create an untitled folder.
+      let folderID = await library.createFolder(displayName: "Untitled Folder")
+
+      // Move both items to the new folder.
+      if let folderID {
+        await library.movePDFDocumentToFolder(documentID: draggedPDF.id, folderID: folderID)
+        await library.moveNotebookToFolder(notebookID: targetNotebook.id, folderID: folderID)
+      }
+
+      // Reload to show the new folder.
+      await library.loadBundles()
+      await loadFolderThumbnails()
+    }
+  }
+
+  // Creates a new folder from two PDFs.
+  private func createFolderFromTwoPDFs(
+    draggedPDF: PDFDocumentMetadata,
+    targetPDF: PDFDocumentMetadata
+  ) {
+    // Reset drag state immediately.
+    withAnimation(.easeOut(duration: 0.2)) {
+      self.draggedPDF = nil
+      dragTargetPDFID = nil
+    }
+    pdfDragSourceFrame = .zero
+    pdfDragPosition = .zero
+    dragTargetFolderID = nil
+
+    // Create the folder and move both PDFs.
+    Task { @MainActor in
+      // Create an untitled folder.
+      let folderID = await library.createFolder(displayName: "Untitled Folder")
+
+      // Move both PDFs to the new folder.
+      if let folderID {
+        await library.movePDFDocumentToFolder(documentID: draggedPDF.id, folderID: folderID)
+        await library.movePDFDocumentToFolder(documentID: targetPDF.id, folderID: folderID)
+      }
+
+      // Reload to show the new folder.
+      await library.loadBundles()
+      await loadFolderThumbnails()
+    }
+  }
+
   // MARK: - Context Menu Actions
 
   // Builds the context menu actions for the given menu state.
@@ -1259,6 +1914,8 @@ struct DashboardView: View {
       return buildNotebookContextMenuActions(for: notebook)
     case .folder(let folder, _):
       return buildFolderContextMenuActions(for: folder)
+    case .pdfDocument(let pdfDocument):
+      return buildPDFContextMenuActions(for: pdfDocument)
     }
   }
 
@@ -1308,6 +1965,37 @@ struct DashboardView: View {
         deletingFolder = folder
       },
     ]
+  }
+
+  // Builds context menu actions for a PDF document.
+  private func buildPDFContextMenuActions(for pdfDocument: PDFDocumentMetadata)
+    -> [ContextMenuAction] {
+    var actions: [ContextMenuAction] = [
+      ContextMenuAction(title: "Rename", systemImage: "pencil") {
+        renameText = pdfDocument.displayName
+        renamingPDF = pdfDocument
+      }
+    ]
+
+    // Add "Move to Folder" if folders exist.
+    if !library.folders.isEmpty {
+      actions.append(
+        ContextMenuAction(title: "Move to Folder", systemImage: "folder") {
+          movingPDF = pdfDocument
+        })
+    }
+
+    actions.append(
+      ContextMenuAction(
+        title: "Delete",
+        systemImage: "trash",
+        isDestructive: true
+      ) {
+        deletingPDF = pdfDocument
+      }
+    )
+
+    return actions
   }
 }
 // swiftlint:enable type_body_length
@@ -1637,6 +2325,17 @@ struct PDFImportModifier: ViewModifier {
 
 // Preference key for collecting notebook card frames for hero animation.
 struct CardFramePreferenceKey: PreferenceKey {
+  static var defaultValue: [String: CGRect] = [:]
+
+  static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
+    value.merge(nextValue()) { _, new in new }
+  }
+}
+
+// MARK: - PDF Card Frame Preference Key
+
+// Preference key for collecting PDF card frames for drag hit testing.
+struct PDFCardFramePreferenceKey: PreferenceKey {
   static var defaultValue: [String: CGRect] = [:]
 
   static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
