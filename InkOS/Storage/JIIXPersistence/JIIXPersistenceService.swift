@@ -8,10 +8,14 @@ import Foundation
 
 // Actor managing debounced JIIX persistence to file system.
 // Uses debounce mechanism to avoid excessive exports during rapid editing.
+// Posts .notebookContentSaved notification after successful saves for indexing.
 actor JIIXPersistenceService {
 
   // The debounce delay in seconds before triggering an export after content changes.
   let debounceDelaySeconds: Double
+
+  // The notebook ID for notification posting.
+  private let notebookID: String
 
   // The editor used for JIIX export. Held as a reference to the protocol.
   // Access requires MainActor hop since EditorExportProtocol is MainActor-isolated.
@@ -44,10 +48,12 @@ actor JIIXPersistenceService {
 
   // Creates a new persistence service with the specified dependencies.
   init(
+    notebookID: String,
     editor: any EditorExportProtocol,
     documentHandle: any JIIXDocumentHandleProtocol,
     debounceDelaySeconds: Double
   ) {
+    self.notebookID = notebookID
     self.editor = editor
     self.documentHandle = documentHandle
     // Use absolute value to handle negative delay edge case.
@@ -134,6 +140,9 @@ actor JIIXPersistenceService {
 
       // Clear pending changes flag on successful save.
       _hasPendingChanges = false
+
+      // Post notification for indexing.
+      await postContentSavedNotification()
     } catch {
       // Export or save failed; pending changes remain.
     }
@@ -222,6 +231,22 @@ actor JIIXPersistenceService {
     // Clear pending changes flag on successful save.
     _hasPendingChanges = false
     _isExporting = false
+
+    // Post notification for indexing.
+    await postContentSavedNotification()
+  }
+
+  // Posts a notification that content was saved successfully.
+  // Called after successful debounced or immediate saves.
+  private func postContentSavedNotification() async {
+    let capturedNotebookID = notebookID
+    await MainActor.run {
+      NotificationCenter.default.post(
+        name: .notebookContentSaved,
+        object: nil,
+        userInfo: [IndexingNotificationKey.documentID: capturedNotebookID]
+      )
+    }
   }
 
   // Returns the current JIIX content as a string.

@@ -5,6 +5,7 @@
 
 import Testing
 import Foundation
+import CoreGraphics
 @testable import InkOS
 
 // MARK: - Mock Types
@@ -48,6 +49,15 @@ final class MockDocumentHandlePackage: ContentPackageProtocol {
   }
 
   func createNewPart(with type: String) throws -> any ContentPartProtocol {
+    if shouldThrowOnCreatePart {
+      throw MockError.partCreationFailed
+    }
+    let part = MockDocumentHandlePart(type: type)
+    parts.append(part)
+    return part
+  }
+
+  func createNewPart(with type: String, fixedSize: CGSize) throws -> any ContentPartProtocol {
     if shouldThrowOnCreatePart {
       throw MockError.partCreationFailed
     }

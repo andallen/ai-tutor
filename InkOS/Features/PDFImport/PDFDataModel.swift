@@ -280,7 +280,26 @@ actor ImportCoordinator: ImportCoordinatorProtocol {
     generatePreview(pdfDocument: pdfDocument, to: documentDirectoryURL)
 
     cleanupRequired = false
+
+    // Post notification for indexing.
+    await postPDFImportedNotification(noteDocument)
+
     return noteDocument
+  }
+
+  // Posts a notification that a PDF was imported successfully.
+  private func postPDFImportedNotification(_ document: NoteDocument) async {
+    await MainActor.run {
+      NotificationCenter.default.post(
+        name: .pdfDocumentImported,
+        object: nil,
+        userInfo: [
+          IndexingNotificationKey.documentID: document.documentID.uuidString,
+          "displayName": document.displayName,
+          "modifiedAt": document.modifiedAt
+        ]
+      )
+    }
   }
 
   private func createMyScriptPackage(
