@@ -154,7 +154,8 @@ class InputViewModel {
 
   // MARK: - Reactive Properties
 
-  @Published var inputMode: InputMode = .forcePen
+  // Auto mode detects input type: stylus → .pen, finger → .touch.
+  @Published var inputMode: InputMode = .auto
   @Published var displayViewController: DisplayViewController?
   @Published var smartGuideViewController: SmartGuideViewController?
   @Published var neboInputView: InputView?
@@ -464,52 +465,9 @@ class InputViewModel {
         let actualFactor = clampedScale / currentScale
         do {
           try renderer.performZoom(at: center, by: actualFactor)
-
-          // Enforce viewport bounds after zoom to prevent drift.
-          // Zoom adjusts viewOffset internally to keep the center point fixed,
-          // but does not enforce document bounds, allowing progressive drift.
-          var currentOffset = renderer.viewOffset
-
-          // Store desired offsets before SDK clamping since clampViewOffset may restrict them.
-          let desiredXOffset = currentOffset.x
-          // When totalContentHeight is set (PDF mode), preserve Y because SDK clamps based on
-          // ink content bounds which is more restrictive than our PDF page bounds.
-          let desiredYOffset = currentOffset.y
-          let hasPDFBounds = totalContentHeight > 0
-
-          // Let SDK clamp offsets. We'll override with our custom bounds.
-          if var clampedOffset = Optional(currentOffset) {
-            self.editor?.clampEditorViewOffset(&clampedOffset)
-            currentOffset = clampedOffset
+          if let iinkRenderer = renderer as? IINKRenderer {
+            enforceViewportBoundsAfterZoom(renderer: iinkRenderer)
           }
-
-          // Restore X and apply custom horizontal bounds.
-          currentOffset.x = desiredXOffset
-
-          // Enforce horizontal bounds: left edge at 0, right edge at maxXOffset.
-          if currentOffset.x < 0 {
-            currentOffset.x = 0
-          }
-          let maxXOffset = calculateMaxXOffset()
-          if currentOffset.x > maxXOffset {
-            currentOffset.x = maxXOffset
-          }
-
-          // When PDF bounds are set, use our own Y clamping instead of SDK's.
-          if hasPDFBounds {
-            currentOffset.y = desiredYOffset
-          }
-
-          // Enforce top edge at 0.
-          if currentOffset.y < 0 {
-            currentOffset.y = 0
-          }
-          // Enforce bottom edge when totalContentHeight is set.
-          let maxYOffset = calculateMaxYOffset()
-          if maxYOffset > 0 && currentOffset.y > maxYOffset {
-            currentOffset.y = maxYOffset
-          }
-          renderer.viewOffset = currentOffset
         } catch {
           // Silently ignore zoom errors.
         }
@@ -527,6 +485,54 @@ class InputViewModel {
     default:
       break
     }
+  }
+
+  // Enforces viewport bounds after zoom to prevent drift.
+  // Zoom adjusts viewOffset internally to keep the center point fixed,
+  // but does not enforce document bounds, allowing progressive drift.
+  private func enforceViewportBoundsAfterZoom(renderer: IINKRenderer) {
+    var currentOffset = renderer.viewOffset
+
+    // Store desired offsets before SDK clamping since clampViewOffset may restrict them.
+    let desiredXOffset = currentOffset.x
+    // When totalContentHeight is set (PDF mode), preserve Y because SDK clamps based on
+    // ink content bounds which is more restrictive than our PDF page bounds.
+    let desiredYOffset = currentOffset.y
+    let hasPDFBounds = totalContentHeight > 0
+
+    // Let SDK clamp offsets. We'll override with our custom bounds.
+    if var clampedOffset = Optional(currentOffset) {
+      self.editor?.clampEditorViewOffset(&clampedOffset)
+      currentOffset = clampedOffset
+    }
+
+    // Restore X and apply custom horizontal bounds.
+    currentOffset.x = desiredXOffset
+
+    // Enforce horizontal bounds: left edge at 0, right edge at maxXOffset.
+    if currentOffset.x < 0 {
+      currentOffset.x = 0
+    }
+    let maxXOffset = calculateMaxXOffset()
+    if currentOffset.x > maxXOffset {
+      currentOffset.x = maxXOffset
+    }
+
+    // When PDF bounds are set, use our own Y clamping instead of SDK's.
+    if hasPDFBounds {
+      currentOffset.y = desiredYOffset
+    }
+
+    // Enforce top edge at 0.
+    if currentOffset.y < 0 {
+      currentOffset.y = 0
+    }
+    // Enforce bottom edge when totalContentHeight is set.
+    let maxYOffset = calculateMaxYOffset()
+    if maxYOffset > 0 && currentOffset.y > maxYOffset {
+      currentOffset.y = maxYOffset
+    }
+    renderer.viewOffset = currentOffset
   }
 
   func setEditorViewSize(size: CGSize) {
@@ -664,9 +670,30 @@ class InputViewModel {
     let maxXOffset = calculateMaxXOffset()
     let maxYOffset = calculateMaxYOffset()
 
-    // Track whether each axis is still active (decelerating or in overscroll).
+    // Handle deceleration and spring-back for each axis independently.
+    let xAxisActive = applyDecelerationToXAxis(
+      nextOffset: &nextOffset, deltaTime: deltaTime, maxXOffset: maxXOffset)
+    let yAxisActive = applyDecelerationToYAxis(
+      nextOffset: &nextOffset, deltaTime: deltaTime, maxYOffset: maxYOffset)
+
+    editor.editorRenderer.viewOffset = nextOffset
+    self.originalViewOffset = nextOffset
+
+    // Stop deceleration only when both axes are done.
+    if !xAxisActive && !yAxisActive {
+      stopDeceleration()
+    }
+
+    NotificationCenter.default.post(name: DisplayViewController.refreshNotification, object: nil)
+  }
+
+  // Applies deceleration and spring-back to horizontal axis.
+  // Returns true if axis is still active (decelerating or in overscroll).
+  private func applyDecelerationToXAxis(
+    nextOffset: inout CGPoint, deltaTime: CFTimeInterval, maxXOffset: CGFloat
+  ) -> Bool {
     var xAxisActive = true
-    var yAxisActive = true
+    let springFactor: CGFloat = 0.008
 
     // Handle horizontal axis: apply velocity then check bounds.
     nextOffset.x -= CGFloat(self.decelerationVelocityX) * CGFloat(deltaTime)
@@ -691,6 +718,49 @@ class InputViewModel {
       xAxisActive = false
     }
 
+    // Apply spring-back if currently in overscroll.
+    if self.overscrollX != 0 {
+      applySpringBackToXAxis(
+        nextOffset: &nextOffset, maxXOffset: maxXOffset, springFactor: springFactor)
+      xAxisActive = true
+    }
+
+    return xAxisActive
+  }
+
+  // Applies spring-back effect to horizontal axis when in overscroll.
+  private func applySpringBackToXAxis(
+    nextOffset: inout CGPoint, maxXOffset: CGFloat, springFactor: CGFloat
+  ) {
+    if self.overscrollX < 0 {
+      // Overscrolled past left (offset is negative).
+      nextOffset.x *= (1 - springFactor)
+      self.overscrollX = nextOffset.x
+      if abs(nextOffset.x) < 0.3 {
+        nextOffset.x = 0
+        self.overscrollX = 0
+      }
+    } else {
+      // Overscrolled past right (offset is past maxXOffset).
+      let currentOverscroll = nextOffset.x - maxXOffset
+      let newOverscroll = currentOverscroll * (1 - springFactor)
+      nextOffset.x = maxXOffset + newOverscroll
+      self.overscrollX = newOverscroll
+      if abs(newOverscroll) < 0.3 {
+        nextOffset.x = maxXOffset
+        self.overscrollX = 0
+      }
+    }
+  }
+
+  // Applies deceleration and spring-back to vertical axis.
+  // Returns true if axis is still active (decelerating or in overscroll).
+  private func applyDecelerationToYAxis(
+    nextOffset: inout CGPoint, deltaTime: CFTimeInterval, maxYOffset: CGFloat
+  ) -> Bool {
+    var yAxisActive = true
+    let springFactor: CGFloat = 0.008
+
     // Handle vertical axis: apply velocity then check bounds.
     nextOffset.y -= CGFloat(self.decelerationVelocityY) * CGFloat(deltaTime)
 
@@ -714,69 +784,39 @@ class InputViewModel {
       yAxisActive = false
     }
 
-    // Apply spring-back to any axis currently in overscroll.
-    // This allows one axis to spring back while the other continues decelerating.
-    // Use a gentle spring factor for smooth, natural-feeling return to bounds.
-    // Factor of 0.008 at 60fps gives approximately 1.5-2 second return time.
-    let springFactor: CGFloat = 0.008
-
-    if self.overscrollX != 0 {
-      // Ease X back toward the boundary.
-      if self.overscrollX < 0 {
-        // Overscrolled past left (offset is negative).
-        nextOffset.x = nextOffset.x * (1 - springFactor)
-        self.overscrollX = nextOffset.x
-        if abs(nextOffset.x) < 0.3 {
-          nextOffset.x = 0
-          self.overscrollX = 0
-        }
-      } else {
-        // Overscrolled past right (offset is past maxXOffset).
-        let currentOverscroll = nextOffset.x - maxXOffset
-        let newOverscroll = currentOverscroll * (1 - springFactor)
-        nextOffset.x = maxXOffset + newOverscroll
-        self.overscrollX = newOverscroll
-        if abs(newOverscroll) < 0.3 {
-          nextOffset.x = maxXOffset
-          self.overscrollX = 0
-        }
-      }
-      xAxisActive = true
-    }
-
+    // Apply spring-back if currently in overscroll.
     if self.overscrollY != 0 {
-      // Ease Y back toward the boundary.
-      if self.overscrollY < 0 {
-        // Overscrolled past top (offset is negative).
-        nextOffset.y = nextOffset.y * (1 - springFactor)
-        self.overscrollY = nextOffset.y
-        if abs(nextOffset.y) < 0.3 {
-          nextOffset.y = 0
-          self.overscrollY = 0
-        }
-      } else {
-        // Overscrolled past bottom (offset is past maxYOffset).
-        let currentOverscroll = nextOffset.y - maxYOffset
-        let newOverscroll = currentOverscroll * (1 - springFactor)
-        nextOffset.y = maxYOffset + newOverscroll
-        self.overscrollY = newOverscroll
-        if abs(newOverscroll) < 0.3 {
-          nextOffset.y = maxYOffset
-          self.overscrollY = 0
-        }
-      }
+      applySpringBackToYAxis(
+        nextOffset: &nextOffset, maxYOffset: maxYOffset, springFactor: springFactor)
       yAxisActive = true
     }
 
-    editor.editorRenderer.viewOffset = nextOffset
-    self.originalViewOffset = nextOffset
+    return yAxisActive
+  }
 
-    // Stop deceleration only when both axes are done.
-    if !xAxisActive && !yAxisActive {
-      stopDeceleration()
+  // Applies spring-back effect to vertical axis when in overscroll.
+  private func applySpringBackToYAxis(
+    nextOffset: inout CGPoint, maxYOffset: CGFloat, springFactor: CGFloat
+  ) {
+    if self.overscrollY < 0 {
+      // Overscrolled past top (offset is negative).
+      nextOffset.y *= (1 - springFactor)
+      self.overscrollY = nextOffset.y
+      if abs(nextOffset.y) < 0.3 {
+        nextOffset.y = 0
+        self.overscrollY = 0
+      }
+    } else {
+      // Overscrolled past bottom (offset is past maxYOffset).
+      let currentOverscroll = nextOffset.y - maxYOffset
+      let newOverscroll = currentOverscroll * (1 - springFactor)
+      nextOffset.y = maxYOffset + newOverscroll
+      self.overscrollY = newOverscroll
+      if abs(newOverscroll) < 0.3 {
+        nextOffset.y = maxYOffset
+        self.overscrollY = 0
+      }
     }
-
-    NotificationCenter.default.post(name: DisplayViewController.refreshNotification, object: nil)
   }
 
   private func stopDeceleration() {

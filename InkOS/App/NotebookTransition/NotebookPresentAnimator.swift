@@ -30,7 +30,8 @@ class NotebookPresentAnimator: NSObject, UIViewControllerAnimatedTransitioning {
 
   // MARK: - UIViewControllerAnimatedTransitioning
 
-  func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
+  func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?)
+    -> TimeInterval {
     return 0.42
   }
 
@@ -163,7 +164,9 @@ class NotebookPresentAnimator: NSObject, UIViewControllerAnimatedTransitioning {
 
   // Creates a blur overlay with an animator for controlling blur intensity.
   // Returns the overlay view and animator as a tuple.
-  private func createBlurOverlay(frame: CGRect) -> (overlay: UIVisualEffectView, animator: UIViewPropertyAnimator) {
+  private func createBlurOverlay(frame: CGRect) -> (
+    overlay: UIVisualEffectView, animator: UIViewPropertyAnimator
+  ) {
     // Create a visual effect view without an effect initially.
     let blurView = UIVisualEffectView(effect: nil)
     blurView.frame = frame
@@ -186,13 +189,14 @@ class NotebookPresentAnimator: NSObject, UIViewControllerAnimatedTransitioning {
     let startTime = CACurrentMediaTime()
 
     // Use a display link for smooth blur animation.
-    let displayLink = CADisplayLink(target: BlurAnimationHelper(
-      animator: animator,
-      startTime: startTime,
-      duration: blurDuration,
-      fromValue: 0,
-      toValue: 1
-    ), selector: #selector(BlurAnimationHelper.update))
+    let displayLink = CADisplayLink(
+      target: BlurAnimationHelper(
+        animator: animator,
+        startTime: startTime,
+        duration: blurDuration,
+        fromValue: 0,
+        toValue: 1
+      ), selector: #selector(BlurAnimationHelper.update))
     displayLink.add(to: .main, forMode: .common)
   }
 
@@ -216,7 +220,7 @@ class NotebookPresentAnimator: NSObject, UIViewControllerAnimatedTransitioning {
 
   // Animates UI elements in with staggered timing.
   private func animateUIElementsIn(editorVC: EditorViewController?, duration: TimeInterval) {
-    // Navigation bar slides down from top.
+    // Home button slides down from top.
     UIView.animate(
       withDuration: duration * 0.45,
       delay: duration * 0.5,
@@ -224,7 +228,7 @@ class NotebookPresentAnimator: NSObject, UIViewControllerAnimatedTransitioning {
       initialSpringVelocity: 0,
       options: []
     ) {
-      editorVC?.setNavigationBarVisible(true, animated: false)
+      editorVC?.setHomeButtonVisible(true, animated: false)
     }
 
     // Tool palette slides up from bottom.
@@ -238,7 +242,7 @@ class NotebookPresentAnimator: NSObject, UIViewControllerAnimatedTransitioning {
       editorVC?.setToolPaletteVisible(true, animated: false)
     }
 
-    // Editing toolbar slides up from bottom.
+    // Editing toolbar slides down from top (now positioned at top right).
     UIView.animate(
       withDuration: duration * 0.4,
       delay: duration * 0.6,
@@ -247,6 +251,17 @@ class NotebookPresentAnimator: NSObject, UIViewControllerAnimatedTransitioning {
       options: []
     ) {
       editorVC?.setEditingToolbarVisible(true, animated: false)
+    }
+
+    // AI button fades in.
+    UIView.animate(
+      withDuration: duration * 0.4,
+      delay: duration * 0.55,
+      usingSpringWithDamping: 0.85,
+      initialSpringVelocity: 0,
+      options: []
+    ) {
+      editorVC?.setAIButtonVisible(true, animated: false)
     }
   }
 
@@ -323,8 +338,10 @@ class BlurAnimationHelper: NSObject {
   private let toValue: CGFloat
   private var displayLink: CADisplayLink?
 
-  init(animator: UIViewPropertyAnimator, startTime: CFTimeInterval, duration: TimeInterval,
-       fromValue: CGFloat, toValue: CGFloat) {
+  init(
+    animator: UIViewPropertyAnimator, startTime: CFTimeInterval, duration: TimeInterval,
+    fromValue: CGFloat, toValue: CGFloat
+  ) {
     self.animator = animator
     self.startTime = startTime
     self.duration = duration

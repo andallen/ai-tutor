@@ -14,7 +14,6 @@ class EditorViewController: UIViewController {
 
   private var editorContainerView: UIView!
 
-  private var inputTypeSegmentedControl: UISegmentedControl?
   private var viewModel: EditorViewModel = EditorViewModel()
   private var editorViewController: InputViewController?
   private var cancellables: Set<AnyCancellable> = []
@@ -24,14 +23,18 @@ class EditorViewController: UIViewController {
   private var hasPreparedForExit = false
   // Stores the floating tool palette attached to the canvas view.
   private var toolPaletteView: ToolPaletteView?
-  // Stores the editing toolbar anchored to the bottom right.
+  // Stores the home button at top left.
+  private var homeButtonView: HomeButtonView?
+  // Stores the editing toolbar anchored to the top right.
   private var editingToolbarView: EditingToolbarView?
-  // Tracks the current visibility state of the editing toolbar.
-  private var isEditingToolbarVisible = true
-  // Tracks whether touch mode is active for tap-to-dismiss behavior.
-  private var isTouchModeEnabled = false
-  // Stores the tap gesture that dismisses the tool palette.
-  private var outsideTapRecognizer: UITapGestureRecognizer?
+  // Stores the AI button at bottom right.
+  private var aiButtonView: AIButtonView?
+  // Stores the AI overlay that expands from the AI button.
+  private var aiOverlayView: AIOverlayView?
+  // Stores the dim background behind the AI overlay.
+  private var aiOverlayDimView: UIView?
+  // Tap gesture recognizer to dismiss the tool palette when tapping outside with a finger.
+  private var paletteDismissTapRecognizer: UITapGestureRecognizer?
 
   // Handler called when the editor requests dismissal.
   // When set, this replaces the default dismiss behavior to allow SwiftUI to control the transition.
@@ -51,10 +54,12 @@ class EditorViewController: UIViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    self.configureNavigationItems()
+    self.hideNavigationBar()
+    self.configureHomeButton()
     self.configureToolPalette()
+    self.configurePaletteDismissTap()
     self.configureEditingToolbar()
-    self.configureTapToDismissPalette()
+    self.configureAIButton()
     self.bindViewModel()
     guard let documentHandle = documentHandle else {
       self.viewModel.presentMissingNotebookError()
@@ -117,73 +122,32 @@ class EditorViewController: UIViewController {
     self.viewModel.setEditorViewSize(bounds: self.view.bounds)
   }
 
-  // MARK: - Actions
-
-  @objc private func inputTypeSegmentedControlValueChanged(_ sender: UISegmentedControl) {
-    guard let inputMode = InputMode(rawValue: sender.selectedSegmentIndex) else { return }
-    isTouchModeEnabled = inputMode == .forceTouch
-    self.viewModel.updateInputMode(newInputMode: inputMode)
-  }
-
   // MARK: - Navigation
 
-  private func configureNavigationItems() {
-    configureNavigationBarAppearance()
-    // Provide a clear way to return to the Dashboard.
-    let backImage = UIImage(systemName: "house")?.withRenderingMode(.alwaysTemplate)
-    let backItem = UIBarButtonItem(
-      image: backImage,
-      style: .plain,
-      target: self,
-      action: #selector(backButtonTapped)
-    )
-    backItem.accessibilityLabel = "Home"
-    backItem.tintColor = offBlack
-    if backImage == nil {
-      backItem.title = "Home"
+  // Hides the navigation bar since all UI is now floating views.
+  private func hideNavigationBar() {
+    navigationController?.setNavigationBarHidden(true, animated: false)
+  }
+
+  // Adds the home button as a floating circular glass button at top left.
+  private func configureHomeButton() {
+    let buttonView = HomeButtonView(accentColor: offBlack)
+    buttonView.translatesAutoresizingMaskIntoConstraints = false
+    buttonView.tapped = { [weak self] in
+      self?.backButtonTapped()
     }
-    self.navigationItem.leftBarButtonItem = backItem
-    // Center the pen and touch toggle in the navigation bar.
-    let segmentedControl = UISegmentedControl(items: ["Pen", "Touch"])
-    segmentedControl.selectedSegmentIndex = 0
-    segmentedControl.addTarget(
-      self,
-      action: #selector(inputTypeSegmentedControlValueChanged(_:)),
-      for: .valueChanged
-    )
-    isTouchModeEnabled = false
-    let titleAttributes: [NSAttributedString.Key: Any] = [
-      .foregroundColor: offBlack
-    ]
-    segmentedControl.setTitleTextAttributes(titleAttributes, for: .normal)
-    segmentedControl.setTitleTextAttributes(titleAttributes, for: .selected)
-    segmentedControl.selectedSegmentTintColor = offBlack.withAlphaComponent(0.12)
-    self.inputTypeSegmentedControl = segmentedControl
-    self.navigationItem.titleView = segmentedControl
-    self.navigationItem.rightBarButtonItem = nil
-  }
+    view.addSubview(buttonView)
 
-  // Removes bar button backgrounds so only the icon glyphs show.
-  private func configureNavigationBarAppearance() {
-    let appearance = UINavigationBarAppearance()
-    // Clear the bar fill so the canvas sits behind the controls.
-    appearance.configureWithTransparentBackground()
-    appearance.backgroundColor = .clear
-    appearance.shadowColor = .clear
-    let buttonAppearance = appearance.buttonAppearance
-    clearBarButtonItemBackground(buttonAppearance)
-    appearance.buttonAppearance = buttonAppearance
-    navigationController?.navigationBar.isTranslucent = true
-    navigationItem.standardAppearance = appearance
-    navigationItem.scrollEdgeAppearance = appearance
-    navigationItem.compactAppearance = appearance
-  }
-
-  // Clears the background visuals for a bar button item appearance.
-  private func clearBarButtonItemBackground(_ appearance: UIBarButtonItemAppearance) {
-    appearance.normal.backgroundImage = UIImage()
-    appearance.highlighted.backgroundImage = UIImage()
-    appearance.disabled.backgroundImage = UIImage()
+    // Position at top left, aligned with safe area.
+    buttonView.leadingAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.leadingAnchor,
+      constant: 20
+    ).isActive = true
+    buttonView.topAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.topAnchor,
+      constant: 4
+    ).isActive = true
+    homeButtonView = buttonView
   }
 
   private func configureToolPalette() {
@@ -199,7 +163,8 @@ class EditorViewController: UIViewController {
       self?.viewModel.updateInkWidth(width: width, for: tool)
     }
     paletteView.expansionChanged = { [weak self] isExpanded in
-      self?.updateEditingToolbarVisibility(isExpanded == false, animated: true)
+      // AI button slides down when palette expands.
+      self?.setAIButtonVisible(isExpanded == false, animated: true)
     }
     view.addSubview(paletteView)
 
@@ -213,12 +178,40 @@ class EditorViewController: UIViewController {
     ).isActive = true
     paletteView.bottomAnchor.constraint(
       equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-      constant: -8
+      constant: 0
     ).isActive = true
     toolPaletteView = paletteView
   }
 
-  // Adds the editing toolbar to the bottom right of the screen.
+  // Configures tap gesture to collapse the tool palette when tapping outside with a finger.
+  private func configurePaletteDismissTap() {
+    let tapRecognizer = UITapGestureRecognizer(
+      target: self,
+      action: #selector(handlePaletteDismissTap(_:))
+    )
+    // Only respond to finger touches, not Apple Pencil.
+    tapRecognizer.allowedTouchTypes = [UITouch.TouchType.direct.rawValue as NSNumber]
+    // Allow simultaneous recognition so it doesn't interfere with drawing.
+    tapRecognizer.cancelsTouchesInView = false
+    tapRecognizer.delegate = self
+    view.addGestureRecognizer(tapRecognizer)
+    paletteDismissTapRecognizer = tapRecognizer
+  }
+
+  // Handles taps outside the tool palette to collapse it.
+  @objc private func handlePaletteDismissTap(_ recognizer: UITapGestureRecognizer) {
+    guard let paletteView = toolPaletteView, paletteView.isExpanded else {
+      return
+    }
+    // Only collapse if the tap is outside the palette.
+    let location = recognizer.location(in: view)
+    if paletteView.containsInteraction(at: location, in: view) == false {
+      paletteView.setToolbarVisible(false, animated: true)
+    }
+  }
+
+  // Adds the editing toolbar as a floating view at top right.
+  // Positioned directly in the view hierarchy for full control over rendering.
   private func configureEditingToolbar() {
     let toolbarView = EditingToolbarView(accentColor: offBlack)
     toolbarView.translatesAutoresizingMaskIntoConstraints = false
@@ -233,75 +226,130 @@ class EditorViewController: UIViewController {
     }
     view.addSubview(toolbarView)
 
+    // Position at top right, aligned with safe area.
     toolbarView.trailingAnchor.constraint(
       equalTo: view.safeAreaLayoutGuide.trailingAnchor,
       constant: -20
     ).isActive = true
-    toolbarView.bottomAnchor.constraint(
-      equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-      constant: -4
+    toolbarView.topAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.topAnchor,
+      constant: 4
     ).isActive = true
     editingToolbarView = toolbarView
   }
 
-  // Shows or hides the editing toolbar while keeping its layout constraints intact.
-  private func updateEditingToolbarVisibility(_ visible: Bool, animated: Bool) {
-    guard let toolbarView = editingToolbarView else {
-      return
+  // Adds the AI button to the bottom right of the screen.
+  private func configureAIButton() {
+    let buttonView = AIButtonView()
+    buttonView.translatesAutoresizingMaskIntoConstraints = false
+    buttonView.tapped = { [weak self] in
+      self?.toggleAIOverlay()
     }
-    guard visible != isEditingToolbarVisible else {
-      return
-    }
-    isEditingToolbarVisible = visible
-    let offset = max(toolbarView.bounds.height, 36) + 12
-    if visible {
-      toolbarView.isHidden = false
-      toolbarView.alpha = 0
-      toolbarView.transform = CGAffineTransform(translationX: 0, y: offset)
-    }
+    view.addSubview(buttonView)
 
-    let animations = {
-      toolbarView.alpha = visible ? 1 : 0
-      toolbarView.transform = visible ? .identity : CGAffineTransform(translationX: 0, y: offset)
-    }
+    buttonView.trailingAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.trailingAnchor,
+      constant: -20
+    ).isActive = true
+    buttonView.bottomAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+      constant: 0
+    ).isActive = true
+    aiButtonView = buttonView
 
-    let completion: (Bool) -> Void = { _ in
-      if visible == false {
-        toolbarView.isHidden = true
-      }
-    }
+    // Configure the overlay after the button is set up.
+    configureAIOverlay()
+  }
 
-    if animated {
+  // Configures the AI overlay and tap-to-dismiss layer.
+  private func configureAIOverlay() {
+    guard let buttonView = aiButtonView else { return }
+
+    // Create invisible tap catcher that covers the entire view (no dimming).
+    let dimView = UIView()
+    dimView.backgroundColor = UIColor.clear
+    dimView.isHidden = true
+    dimView.frame = view.bounds
+    dimView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    // Insert below the AI button so the button stays on top.
+    view.insertSubview(dimView, belowSubview: buttonView)
+    aiOverlayDimView = dimView
+
+    // Add tap gesture for dismissal.
+    let tapRecognizer = UITapGestureRecognizer(
+      target: self,
+      action: #selector(handleOverlayDismissTap(_:))
+    )
+    dimView.addGestureRecognizer(tapRecognizer)
+
+    // Create overlay view.
+    let overlayView = AIOverlayView()
+    // Insert below the AI button so the button appears embedded.
+    view.insertSubview(overlayView, belowSubview: buttonView)
+    aiOverlayView = overlayView
+  }
+
+  // Toggles the AI overlay visibility.
+  private func toggleAIOverlay() {
+    guard let overlayView = aiOverlayView,
+      let buttonView = aiButtonView,
+      let dimView = aiOverlayDimView
+    else { return }
+
+    let buttonFrame = buttonView.convert(buttonView.bounds, to: view)
+
+    if overlayView.isExpanded {
+      // Collapse the overlay.
+      dimView.isHidden = true
       UIView.animate(
-        withDuration: 0.22,
+        withDuration: 0.32,
         delay: 0,
-        options: [.curveEaseInOut],
-        animations: animations,
-        completion: completion
-      )
+        usingSpringWithDamping: 0.88,
+        initialSpringVelocity: 0
+      ) {
+        // Show button glass as overlay collapses.
+        buttonView.isGlassHidden = false
+      }
+      overlayView.collapse(to: buttonFrame, animated: true)
     } else {
-      animations()
-      completion(true)
+      // Expand the overlay.
+      dimView.isHidden = false
+      UIView.animate(
+        withDuration: 0.38,
+        delay: 0,
+        usingSpringWithDamping: 0.86,
+        initialSpringVelocity: 0
+      ) {
+        // Hide button glass so it appears embedded in overlay.
+        buttonView.isGlassHidden = true
+      }
+      overlayView.expand(from: buttonFrame, in: self.view.bounds, animated: true)
     }
+  }
+
+  // Handles taps on the dim background to dismiss the overlay.
+  @objc private func handleOverlayDismissTap(_ recognizer: UITapGestureRecognizer) {
+    guard let overlayView = aiOverlayView, overlayView.isExpanded else { return }
+    toggleAIOverlay()
   }
 
   // MARK: - Transition UI Control
 
-  // Controls the visibility of the navigation bar for hero transitions.
-  // Uses transform to slide the bar up/down without affecting layout.
-  func setNavigationBarVisible(_ visible: Bool, animated: Bool) {
-    guard let navBar = navigationController?.navigationBar else {
+  // Controls the visibility of the home button for hero transitions.
+  // Uses transform to slide the button up (negative offset) since it is at top left.
+  func setHomeButtonVisible(_ visible: Bool, animated: Bool) {
+    guard let buttonView = homeButtonView else {
       return
     }
     let offset: CGFloat = visible ? 0 : -60
     if animated {
-      UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut]) {
-        navBar.transform = CGAffineTransform(translationX: 0, y: offset)
-        navBar.alpha = visible ? 1 : 0
+      UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseInOut]) {
+        buttonView.transform = CGAffineTransform(translationX: 0, y: offset)
+        buttonView.alpha = visible ? 1 : 0
       }
     } else {
-      navBar.transform = CGAffineTransform(translationX: 0, y: offset)
-      navBar.alpha = visible ? 1 : 0
+      buttonView.transform = CGAffineTransform(translationX: 0, y: offset)
+      buttonView.alpha = visible ? 1 : 0
     }
   }
 
@@ -324,14 +372,14 @@ class EditorViewController: UIViewController {
   }
 
   // Controls the visibility of the editing toolbar for hero transitions.
-  // Uses transform to slide the toolbar up/down without affecting layout.
+  // Uses transform to slide the toolbar up (negative offset) since it is at top right.
   func setEditingToolbarVisible(_ visible: Bool, animated: Bool) {
     guard let toolbarView = editingToolbarView else {
       return
     }
-    let offset: CGFloat = visible ? 0 : 60
+    let offset: CGFloat = visible ? 0 : -60
     if animated {
-      UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut]) {
+      UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseInOut]) {
         toolbarView.transform = CGAffineTransform(translationX: 0, y: offset)
         toolbarView.alpha = visible ? 1 : 0
       }
@@ -341,20 +389,41 @@ class EditorViewController: UIViewController {
     }
   }
 
+  // Controls the visibility of the AI button.
+  // Sets visibility directly without animation.
+  // Also collapses the AI overlay when hiding the button.
+  func setAIButtonVisible(_ visible: Bool, animated: Bool) {
+    guard let buttonView = aiButtonView else {
+      return
+    }
+    // Collapse the AI overlay if it's expanded and the button is being hidden.
+    if visible == false, let overlayView = aiOverlayView, overlayView.isExpanded {
+      let buttonFrame = buttonView.convert(buttonView.bounds, to: view)
+      overlayView.collapse(to: buttonFrame, animated: false)
+      if let dimView = aiOverlayDimView {
+        dimView.alpha = 0
+        dimView.isHidden = true
+      }
+    }
+    buttonView.alpha = visible ? 1 : 0
+  }
+
   // Hides all UI elements for the hero transition animation.
   // Called at the start of the present animation.
   func hideAllUIForTransition() {
-    setNavigationBarVisible(false, animated: false)
+    setHomeButtonVisible(false, animated: false)
     setToolPaletteVisible(false, animated: false)
     setEditingToolbarVisible(false, animated: false)
+    setAIButtonVisible(false, animated: false)
   }
 
   // Shows all UI elements after the hero transition completes.
   // Ensures everything is visible and in the correct position.
   func showAllUIAfterTransition(animated: Bool) {
-    setNavigationBarVisible(true, animated: animated)
+    setHomeButtonVisible(true, animated: animated)
     setToolPaletteVisible(true, animated: animated)
     setEditingToolbarVisible(true, animated: animated)
+    setAIButtonVisible(true, animated: animated)
   }
 
   // Captures the current editor content as a preview image.
@@ -363,31 +432,11 @@ class EditorViewController: UIViewController {
     return editorViewController?.capturePreviewImage(maxPixelDimension: maxPixelDimension)
   }
 
-  // Adds a tap gesture that dismisses the tool palette in touch mode.
-  private func configureTapToDismissPalette() {
-    let recognizer = UITapGestureRecognizer(target: self, action: #selector(handleOutsideTap(_:)))
-    recognizer.cancelsTouchesInView = false
-    recognizer.delegate = self
-    view.addGestureRecognizer(recognizer)
-    outsideTapRecognizer = recognizer
-  }
-
-  // Handles taps outside the tool palette when touch mode is enabled.
-  @objc private func handleOutsideTap(_ recognizer: UITapGestureRecognizer) {
-    guard isTouchModeEnabled else {
-      return
-    }
-    guard let toolPaletteView = toolPaletteView, toolPaletteView.isExpanded else {
-      return
-    }
-    toolPaletteView.setToolbarVisible(false, animated: true)
-  }
-
   @objc private func backButtonTapped() {
     prepareForExit()
     // Check for custom UIKit transition coordinator first.
     if let navController = navigationController as? EditorNavigationController,
-       let coordinator = navController.notebookTransitionCoordinator {
+      let coordinator = navController.notebookTransitionCoordinator {
       coordinator.dismiss()
       return
     }
@@ -418,23 +467,17 @@ class EditorViewController: UIViewController {
     self.documentHandle = documentHandle
   }
 }
+// swiftlint:enable type_body_length
+
+// MARK: - UIGestureRecognizerDelegate
 
 extension EditorViewController: UIGestureRecognizerDelegate {
-
-  // Allows the tap recognizer only when the palette is open and the touch is outside it.
-  func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch)
-    -> Bool {
-    guard isTouchModeEnabled else {
-      return false
-    }
-    guard let toolPaletteView = toolPaletteView, toolPaletteView.isExpanded else {
-      return false
-    }
-    let location = touch.location(in: view)
-    if toolPaletteView.containsInteraction(at: location, in: view) {
-      return false
-    }
-    return true
+  // Allows the palette dismiss tap gesture to work simultaneously with other gestures.
+  func gestureRecognizer(
+    _ gestureRecognizer: UIGestureRecognizer,
+    shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+  ) -> Bool {
+    // Allow simultaneous recognition for the palette dismiss tap.
+    return gestureRecognizer == paletteDismissTapRecognizer
   }
 }
-// swiftlint:enable type_body_length

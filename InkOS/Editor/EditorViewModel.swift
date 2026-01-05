@@ -52,18 +52,17 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
   private var selectedHighlighterWidth: CGFloat = 5.0
   // Tracks the selected tool so it can be re-applied when the editor is available.
   private var selectedTool: ToolPaletteView.ToolSelection = .pen
-  // Tracks the active input mode so touch tools can follow the toggle state.
-  private var inputMode: InputMode = .forcePen
+  // Auto mode: stylus writes, finger navigates (HAND tool).
+  private var inputMode: InputMode = .auto
 
   func setupModel(engineProvider: EngineProvider, documentHandle: DocumentHandle) {
     // Set documentHandle BEFORE creating the editor so it's available in didCreateEditor.
     self.documentHandle = documentHandle
     self.title = documentHandle.initialManifest.displayName
 
-    // We want the Pen mode for this GetStarted sample code. It lets the user use either its mouse or fingers to draw.
-    // If you have got an iPad Pro with an Apple Pencil, please set this value to InputModeAuto for a better experience.
+    // Auto mode: stylus writes with the selected tool, finger navigates with HAND tool.
     let inputViewModel: InputViewModel = InputViewModel(
-      engine: engineProvider.engine, inputMode: .forcePen, editorDelegate: self,
+      engine: engineProvider.engine, inputMode: .auto, editorDelegate: self,
       smartGuideDelegate: nil, smartGuideDisabled: true)
     self.editorViewController = InputViewController(viewModel: inputViewModel)
     self.loadNotebookPartIfReady()
@@ -232,12 +231,6 @@ class EditorViewModel {  // swiftlint:disable:this type_body_length
   // Switches the Notebook to highlighter mode.
   func selectHighlighterTool() {
     editorViewController?.selectHighlighterTool()
-  }
-
-  func updateInputMode(newInputMode: InputMode) {
-    inputMode = newInputMode
-    self.editorViewController?.updateInputMode(newInputMode: newInputMode)
-    applyToolSelectionIfPossible()
   }
 
   // Switches the active tool to match the palette selection.

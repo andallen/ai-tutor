@@ -33,22 +33,17 @@ final class ToolPaletteView: UIView {
   private let symbolPointSize: CGFloat = 18
   // Sets the gap between the toolbar and the combined accessory pill.
   private let accessorySpacing: CGFloat = 8
-  // Sets the size of the standalone pencil toolbar container.
-  private let pencilButtonSize: CGFloat = 36
+  // Sets the size of the standalone pencil button.
+  private let pencilButtonSize: CGFloat = 48
 
   // Holds the glass background for the toolbar pill.
   private let toolbarView = UIVisualEffectView()
   // Holds the tool icons in one line.
   private let toolbarStackView = UIStackView()
-  // Hosts the standalone pencil bar button to match the navigation bar styling.
-  private let pencilToolbar = UIToolbar()
-  // Stores the standalone pencil bar button item.
-  private lazy var pencilBarButton = UIBarButtonItem(
-    image: UIImage(systemName: "pencil"),
-    style: .plain,
-    target: self,
-    action: #selector(pencilTapped)
-  )
+  // Holds the glass background for the pencil button.
+  private let pencilGlassView = UIVisualEffectView()
+  // Stores the standalone pencil button.
+  private let pencilButton = UIButton(type: .system)
   // Stores the pen toolbar button.
   private lazy var penButton = makeToolbarButton(
     systemName: "pencil.tip",
@@ -163,8 +158,8 @@ final class ToolPaletteView: UIView {
 
   override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
     var hitFrames: [CGRect] = []
-    if pencilToolbar.isHidden == false {
-      hitFrames.append(pencilToolbar.frame)
+    if pencilGlassView.isHidden == false {
+      hitFrames.append(pencilGlassView.frame)
     }
     if toolbarView.isHidden == false {
       hitFrames.append(toolbarView.frame)
@@ -211,31 +206,50 @@ final class ToolPaletteView: UIView {
     heightAnchor.constraint(equalToConstant: containerHeight).isActive = true
   }
 
-  // Configures the standalone pencil toggle button.
+  // Configures the standalone pencil toggle button with glass background.
   private func configurePencilButton() {
-    // Matches the navigation bar bar button styling by using a toolbar container.
-    let appearance = UIToolbarAppearance()
-    appearance.configureWithTransparentBackground()
-    appearance.backgroundColor = .clear
-    appearance.shadowColor = .clear
-    pencilBarButton.accessibilityLabel = "Show tools"
-    // Increases the pencil symbol so it reads clearly in the bar button.
-    let pencilSymbolConfig = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
-    pencilBarButton.image = UIImage(systemName: "pencil", withConfiguration: pencilSymbolConfig)
-    pencilToolbar.standardAppearance = appearance
-    if #available(iOS 15.0, *) {
-      pencilToolbar.scrollEdgeAppearance = appearance
+    // Configure glass background.
+    pencilGlassView.translatesAutoresizingMaskIntoConstraints = false
+    pencilGlassView.layer.cornerRadius = pencilButtonSize / 2
+    pencilGlassView.layer.cornerCurve = .continuous
+    pencilGlassView.clipsToBounds = true
+    if #available(iOS 26.0, *) {
+      let effect = UIGlassEffect(style: .regular)
+      effect.isInteractive = false
+      pencilGlassView.effect = effect
+    } else {
+      pencilGlassView.effect = UIBlurEffect(style: .systemMaterial)
     }
-    pencilToolbar.isTranslucent = true
-    pencilToolbar.tintColor = accentColor
-    pencilToolbar.setItems([pencilBarButton], animated: false)
-    pencilToolbar.translatesAutoresizingMaskIntoConstraints = false
-    addSubview(pencilToolbar)
+    addSubview(pencilGlassView)
 
-    pencilToolbar.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8).isActive = true
-    pencilToolbar.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
-    pencilToolbar.widthAnchor.constraint(equalToConstant: pencilButtonSize).isActive = true
-    pencilToolbar.heightAnchor.constraint(equalToConstant: pencilButtonSize).isActive = true
+    // Position glass background.
+    pencilGlassView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8).isActive = true
+    pencilGlassView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+    pencilGlassView.widthAnchor.constraint(equalToConstant: pencilButtonSize).isActive = true
+    pencilGlassView.heightAnchor.constraint(equalToConstant: pencilButtonSize).isActive = true
+
+    // Configure button inside glass view.
+    pencilButton.translatesAutoresizingMaskIntoConstraints = false
+    pencilButton.backgroundColor = UIColor.clear
+    pencilButton.tintColor = accentColor
+    pencilButton.accessibilityLabel = "Show tools"
+    pencilButton.addTarget(self, action: #selector(pencilTapped), for: .touchUpInside)
+
+    // Set pencil icon.
+    let configuration = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
+    let image = UIImage(systemName: "pencil", withConfiguration: configuration)
+    pencilButton.setImage(image, for: .normal)
+
+    pencilGlassView.contentView.addSubview(pencilButton)
+
+    // Pin button to fill glass background.
+    pencilButton.leadingAnchor.constraint(equalTo: pencilGlassView.contentView.leadingAnchor)
+      .isActive = true
+    pencilButton.trailingAnchor.constraint(equalTo: pencilGlassView.contentView.trailingAnchor)
+      .isActive = true
+    pencilButton.topAnchor.constraint(equalTo: pencilGlassView.contentView.topAnchor).isActive = true
+    pencilButton.bottomAnchor.constraint(equalTo: pencilGlassView.contentView.bottomAnchor).isActive =
+      true
   }
 
   // Configures the glass toolbar pill that holds the tool icons.
@@ -428,13 +442,13 @@ final class ToolPaletteView: UIView {
       toolbarView.isHidden = false
       toolbarView.alpha = 0
       toolbarView.transform = CGAffineTransform(translationX: 0, y: offset)
-      pencilToolbar.isHidden = false
-      pencilToolbar.alpha = 1
-      pencilToolbar.transform = .identity
+      pencilGlassView.isHidden = false
+      pencilGlassView.alpha = 1
+      pencilGlassView.transform = .identity
     } else {
-      pencilToolbar.isHidden = false
-      pencilToolbar.alpha = 1
-      pencilToolbar.transform = CGAffineTransform(translationX: 0, y: pencilOffset)
+      pencilGlassView.isHidden = false
+      pencilGlassView.alpha = 1
+      pencilGlassView.transform = CGAffineTransform(translationX: 0, y: pencilOffset)
     }
 
     let animations = { [weak self] in
@@ -442,14 +456,14 @@ final class ToolPaletteView: UIView {
       self.toolbarView.alpha = visible ? 1 : 0
       self.toolbarView.transform =
         visible ? .identity : CGAffineTransform(translationX: 0, y: offset)
-      self.pencilToolbar.transform =
+      self.pencilGlassView.transform =
         visible ? CGAffineTransform(translationX: 0, y: pencilOffset) : .identity
     }
 
     let animationCompletion: (Bool) -> Void = { [weak self] _ in
       guard let self = self else { return }
       self.toolbarView.isHidden = visible == false
-      self.pencilToolbar.isHidden = visible
+      self.pencilGlassView.isHidden = visible
       completion?()
     }
 

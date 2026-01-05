@@ -11,6 +11,29 @@ final class CardFrameStore {
   var frames: [String: CGRect] = [:]
 }
 
+// MARK: - AI Button Wrapper
+
+// Wraps AIButtonView for use in SwiftUI. The button appears at the bottom-right
+// of the dashboard and notebook editor views.
+struct AIButtonRepresentable: UIViewRepresentable {
+  // Callback invoked when the button is tapped.
+  var tapped: (() -> Void)?
+  // When true, hides the glass background so only the black circle is visible.
+  var isGlassHidden: Bool = false
+
+  func makeUIView(context: Context) -> AIButtonView {
+    let button = AIButtonView()
+    button.tapped = tapped
+    button.isGlassHidden = isGlassHidden
+    return button
+  }
+
+  func updateUIView(_ uiView: AIButtonView, context: Context) {
+    uiView.tapped = tapped
+    uiView.isGlassHidden = isGlassHidden
+  }
+}
+
 // The Dashboard shows a list of Notebooks and Folders, providing create, rename, delete, and open actions.
 // It does not contain storage logic. It forwards user actions to the Notebook Library.
 // swiftlint:disable file_length type_body_length
@@ -141,6 +164,13 @@ struct DashboardView: View {
   // Tracks the active context menu state (nil when no menu is shown).
   @State private var contextMenuState: ContextMenuState?
 
+  // MARK: - AI Button State
+
+  // Controls visibility of the AI button. Fades out during notebook transitions.
+  @State private var isAIButtonVisible = true
+  // Tracks whether the AI overlay is expanded.
+  @State private var isAIOverlayExpanded = false
+
   var body: some View {
     mainContent
       .modifier(
@@ -261,6 +291,11 @@ struct DashboardView: View {
           dragOverlay(for: notebook)
             .zIndex(400)
         }
+
+        // AI overlay, dim background, and button at bottom-right corner.
+        // The overlay expands from the button with liquid glass animation.
+        // Tapping outside or tapping the button again dismisses the overlay.
+        aiOverlaySection
       }
       // Collect card frame preferences for hero transitions.
       // Updates the reference-type store so UIKit can query current frames at dismiss time.
@@ -322,6 +357,111 @@ struct DashboardView: View {
         }
       }
     }
+  }
+
+  // MARK: - AI Overlay Section
+
+  // Combines the AI button and liquid glass overlay.
+  // The overlay expands from the button's bottom-right corner, always covering the button.
+  // The button glass fades in sync with the overlay animation; the black circle stays visible.
+  private var aiOverlaySection: some View {
+    GeometryReader { geometry in
+      let buttonSize: CGFloat = 48
+      let buttonRadius: CGFloat = buttonSize / 2
+
+      // Button center position.
+      let buttonX = geometry.size.width - geometry.safeAreaInsets.trailing - 20 - buttonRadius
+      let buttonY = geometry.size.height - geometry.safeAreaInsets.bottom - buttonSize
+
+      // Button's bottom-right corner (anchor point for overlay animation).
+      let buttonBottomRightX = buttonX + buttonRadius
+      let buttonBottomRightY = buttonY + buttonRadius
+
+      ZStack {
+        // Tap catcher to dismiss overlay (no visible dimming).
+        if isAIOverlayExpanded {
+          Color.clear
+            .contentShape(Rectangle())
+            .ignoresSafeArea()
+            .onTapGesture {
+              withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+                isAIOverlayExpanded = false
+              }
+            }
+            .zIndex(0)
+        }
+
+        // Liquid glass overlay anchored to button's bottom-right corner.
+        // Always in hierarchy so animation is smooth (no transition).
+        aiOverlayGlass(
+          buttonBottomRightX: buttonBottomRightX,
+          buttonBottomRightY: buttonBottomRightY
+        )
+        .zIndex(1)
+
+        // AI button stays fully visible at all times - no changes during overlay animation.
+        AIButtonRepresentable(
+          tapped: {
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+              isAIOverlayExpanded.toggle()
+            }
+          },
+          isGlassHidden: false
+        )
+        .frame(width: buttonSize, height: buttonSize)
+        .position(x: buttonX, y: buttonY)
+        .zIndex(2)
+      }
+    }
+    .ignoresSafeArea()
+    .opacity(isAIButtonVisible ? 1 : 0)
+    .animation(.easeInOut(duration: 0.22), value: isAIButtonVisible)
+    .zIndex(150)
+    .allowsHitTesting(isAIButtonVisible)
+    .onChange(of: isAIButtonVisible) { _, visible in
+      // Collapse overlay when AI button is hidden (during notebook transitions).
+      if visible == false && isAIOverlayExpanded {
+        isAIOverlayExpanded = false
+      }
+    }
+  }
+
+  // The liquid glass overlay panel that expands from the button's bottom-right corner.
+  // Scales from bottom-trailing so the corner stays fixed during animation.
+  @ViewBuilder
+  private func aiOverlayGlass(
+    buttonBottomRightX: CGFloat,
+    buttonBottomRightY: CGFloat
+  ) -> some View {
+    let overlayWidth: CGFloat = 360
+    let overlayHeight: CGFloat = 400
+    let cornerRadius: CGFloat = 24
+    let buttonSize: CGFloat = 48
+
+    // Position overlay so its bottom-right corner aligns with button's bottom-right corner.
+    let overlayCenterX = buttonBottomRightX - overlayWidth / 2
+    let overlayCenterY = buttonBottomRightY - overlayHeight / 2
+
+    // Collapsed scale (overlay shrinks to button size).
+    let collapsedScale = buttonSize / overlayWidth
+
+    Group {
+      if #available(iOS 26.0, *) {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+          .fill(Color.clear)
+          .glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
+          .frame(width: overlayWidth, height: overlayHeight)
+      } else {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+          .fill(.ultraThinMaterial)
+          .frame(width: overlayWidth, height: overlayHeight)
+      }
+    }
+    .position(x: overlayCenterX, y: overlayCenterY)
+    .scaleEffect(isAIOverlayExpanded ? 1.0 : collapsedScale, anchor: .bottomTrailing)
+    .opacity(isAIOverlayExpanded ? 1 : 0)
+    .animation(.spring(response: 0.38, dampingFraction: 0.86), value: isAIOverlayExpanded)
+    .allowsHitTesting(isAIOverlayExpanded)
   }
 
   // MARK: - Loading State
@@ -714,15 +854,21 @@ struct DashboardView: View {
           }
         }
         coordinator.onDismiss = { [weak library] _ in
+          // Fade the AI button back in when the notebook closes.
+          isAIButtonVisible = true
           // Refresh the dashboard after dismissal to show updated previews.
           Task {
             await library?.loadBundles()
           }
         }
 
+        // Fade the AI button out as the notebook opens.
+        isAIButtonVisible = false
+
         // Get the root view controller and present.
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-          let rootVC = windowScene.windows.first?.rootViewController {
+          let rootVC = windowScene.windows.first?.rootViewController
+        {
           coordinator.present(from: rootVC)
         }
 
@@ -1004,7 +1150,8 @@ struct DashboardView: View {
       for (notebookID, frame) in cardFrameStore.frames {
         if notebookID != draggedID
           && existingNotebookIDs.contains(notebookID)
-          && frame.contains(position) {
+          && frame.contains(position)
+        {
           foundNotebookTarget = notebookID
           break
         }
@@ -1047,7 +1194,8 @@ struct DashboardView: View {
 
     // Check if we're over another notebook to create a folder.
     if let targetNotebookID = dragTargetNotebookID,
-      let targetNotebook = library.notebooks.first(where: { $0.id == targetNotebookID }) {
+      let targetNotebook = library.notebooks.first(where: { $0.id == targetNotebookID })
+    {
       // Create folder from the two notebooks.
       createFolderFromNotebooks(
         draggedNotebook: notebook,
@@ -1116,7 +1264,8 @@ struct DashboardView: View {
 
   // Builds context menu actions for a notebook.
   private func buildNotebookContextMenuActions(for notebook: NotebookMetadata)
-    -> [ContextMenuAction] {
+    -> [ContextMenuAction]
+  {
     var actions: [ContextMenuAction] = [
       ContextMenuAction(title: "Rename", systemImage: "pencil") {
         renameText = notebook.displayName
@@ -1157,7 +1306,7 @@ struct DashboardView: View {
         isDestructive: true
       ) {
         deletingFolder = folder
-      }
+      },
     ]
   }
 }
@@ -1283,6 +1432,7 @@ struct DashboardSheetModifiers: ViewModifier {
         onDismiss: { activeSession = nil },
         content: { session in
           EditorHostView(documentHandle: session.handle)
+            .ignoresSafeArea()
         }
       )
       .fullScreenCover(

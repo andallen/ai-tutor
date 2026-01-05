@@ -22,10 +22,6 @@ final class PDFEditorViewController: UIViewController {
   private let configurationProvider = DefaultRawContentConfigurationProvider()
   // Applies configuration to the engine.
   private let configurationApplier = RawContentConfigurationApplier()
-  // Tracks whether touch mode is active for tap-to-dismiss behavior.
-  private var isTouchModeEnabled = false
-  // Stores the tap gesture that dismisses the tool palette.
-  private var outsideTapRecognizer: UITapGestureRecognizer?
   // Tracks the current pen color hex string.
   private var selectedPenColorHex = "#000000"
   // Tracks the current highlighter color hex string.
@@ -40,6 +36,8 @@ final class PDFEditorViewController: UIViewController {
   private var editingToolbarView: EditingToolbarView?
   // Tracks visibility state of the editing toolbar.
   private var isEditingToolbarVisible = true
+  // Tap gesture recognizer to dismiss the tool palette when tapping outside with a finger.
+  private var paletteDismissTapRecognizer: UITapGestureRecognizer?
 
   // Handler called when the editor requests dismissal.
   var dismissHandler: (() -> Void)?
@@ -63,8 +61,8 @@ final class PDFEditorViewController: UIViewController {
     configureNavigationBar()
     setupInputViewController()
     configureToolPalette()
+    configurePaletteDismissTap()
     configureEditingToolbar()
-    configureTapToDismissPalette()
     loadDocument()
   }
 
@@ -88,16 +86,6 @@ final class PDFEditorViewController: UIViewController {
     backItem.tintColor = offBlack
     navigationItem.leftBarButtonItem = backItem
 
-    // Pen/Touch toggle.
-    let segmentedControl = UISegmentedControl(items: ["Pen", "Touch"])
-    segmentedControl.selectedSegmentIndex = 0
-    segmentedControl.addTarget(
-      self,
-      action: #selector(inputModeChanged),
-      for: .valueChanged
-    )
-    navigationItem.titleView = segmentedControl
-
     // Document title.
     title = viewModel.session.noteDocument.displayName
   }
@@ -111,9 +99,10 @@ final class PDFEditorViewController: UIViewController {
 
     // Create InputViewModel with the background renderer for PDF pages.
     // Pass self as editorDelegate to receive didCreateEditor callback for configuration.
+    // Auto mode: stylus writes with the selected tool, finger navigates with HAND tool.
     let inputViewModel = InputViewModel(
       engine: engine,
-      inputMode: .forcePen,
+      inputMode: .auto,
       editorDelegate: self,
       smartGuideDelegate: nil,
       smartGuideDisabled: true
@@ -179,6 +168,33 @@ final class PDFEditorViewController: UIViewController {
     }
 
     self.toolPalette = palette
+  }
+
+  // Configures tap gesture to collapse the tool palette when tapping outside with a finger.
+  private func configurePaletteDismissTap() {
+    let tapRecognizer = UITapGestureRecognizer(
+      target: self,
+      action: #selector(handlePaletteDismissTap(_:))
+    )
+    // Only respond to finger touches, not Apple Pencil.
+    tapRecognizer.allowedTouchTypes = [UITouch.TouchType.direct.rawValue as NSNumber]
+    // Allow simultaneous recognition so it doesn't interfere with drawing.
+    tapRecognizer.cancelsTouchesInView = false
+    tapRecognizer.delegate = self
+    view.addGestureRecognizer(tapRecognizer)
+    paletteDismissTapRecognizer = tapRecognizer
+  }
+
+  // Handles taps outside the tool palette to collapse it.
+  @objc private func handlePaletteDismissTap(_ recognizer: UITapGestureRecognizer) {
+    guard let palette = toolPalette, palette.isExpanded else {
+      return
+    }
+    // Only collapse if the tap is outside the palette.
+    let location = recognizer.location(in: view)
+    if palette.containsInteraction(at: location, in: view) == false {
+      palette.setToolbarVisible(false, animated: true)
+    }
   }
 
   // Adds the editing toolbar (undo/redo/clear) to the bottom right of the screen.
@@ -289,16 +305,13 @@ final class PDFEditorViewController: UIViewController {
       }
     }
   }
+}
 
-  @objc private func inputModeChanged(_ sender: UISegmentedControl) {
-    let mode: InputMode = sender.selectedSegmentIndex == 0 ? .forcePen : .forceTouch
-    isTouchModeEnabled = mode == .forceTouch
-    inputVM?.updateInputMode(newInputMode: mode)
-    // Reapply touch tool based on new input mode.
-    applyTouchToolForCurrentMode()
-  }
+// MARK: - Tool Handling
 
-  private func handleToolSelection(_ tool: ToolPaletteView.ToolSelection) {
+extension PDFEditorViewController {
+
+  fileprivate func handleToolSelection(_ tool: ToolPaletteView.ToolSelection) {
     selectedTool = tool
     switch tool {
     case .pen:
@@ -308,29 +321,10 @@ final class PDFEditorViewController: UIViewController {
     case .highlighter:
       inputVM?.selectHighlighterTool()
     }
-    // Also apply the tool to touch pointer type based on current mode.
-    applyTouchToolForCurrentMode()
-  }
-
-  // Applies the correct tool to the touch pointer type based on input mode.
-  // In forcePen mode, touch uses the same tool as pen.
-  // In forceTouch mode, touch uses the hand tool for panning.
-  private func applyTouchToolForCurrentMode() {
-    guard let editor = inputVM?.editor else { return }
-    let tool = mapToolSelectionToPointerTool(selectedTool)
-    do {
-      if isTouchModeEnabled {
-        try editor.editorToolController.setToolForPointerType(tool: .hand, pointerType: .touch)
-      } else {
-        try editor.editorToolController.setToolForPointerType(tool: tool, pointerType: .touch)
-      }
-    } catch {
-      // Silently ignore tool setting errors.
-    }
   }
 
   // Handles color selection changes from the tool palette.
-  private func handleColorSelection(tool: ToolPaletteView.ToolSelection, hex: String) {
+  fileprivate func handleColorSelection(tool: ToolPaletteView.ToolSelection, hex: String) {
     switch tool {
     case .pen:
       selectedPenColorHex = hex
@@ -344,68 +338,31 @@ final class PDFEditorViewController: UIViewController {
   }
 
   // Handles thickness changes from the tool palette.
-  private func handleThicknessChange(tool: ToolPaletteView.ToolSelection, width: CGFloat) {
+  fileprivate func handleThicknessChange(tool: ToolPaletteView.ToolSelection, width: CGFloat) {
     switch tool {
     case .pen:
       selectedPenWidth = width
       inputVM?.setToolStyle(colorHex: selectedPenColorHex, width: width, tool: .toolPen)
     case .highlighter:
       selectedHighlighterWidth = width
-      inputVM?.setToolStyle(colorHex: selectedHighlighterColorHex, width: width, tool: .toolHighlighter)
+      inputVM?.setToolStyle(
+        colorHex: selectedHighlighterColorHex, width: width, tool: .toolHighlighter)
     case .eraser:
       break
     }
   }
 
-  private func showError(_ message: String) {
+  fileprivate func showError(_ message: String) {
     let alert = UIAlertController(
       title: "Error",
       message: message,
       preferredStyle: .alert
     )
-    alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
-      self?.backButtonTapped()
-    })
+    alert.addAction(
+      UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+        self?.backButtonTapped()
+      })
     present(alert, animated: true)
-  }
-
-  // Adds a tap gesture that dismisses the tool palette in touch mode.
-  private func configureTapToDismissPalette() {
-    let recognizer = UITapGestureRecognizer(target: self, action: #selector(handleOutsideTap(_:)))
-    recognizer.cancelsTouchesInView = false
-    recognizer.delegate = self
-    view.addGestureRecognizer(recognizer)
-    outsideTapRecognizer = recognizer
-  }
-
-  // Handles taps outside the tool palette when touch mode is enabled.
-  @objc private func handleOutsideTap(_ recognizer: UITapGestureRecognizer) {
-    guard isTouchModeEnabled else {
-      return
-    }
-    guard let toolPalette = toolPalette, toolPalette.isExpanded else {
-      return
-    }
-    toolPalette.setToolbarVisible(false, animated: true)
-  }
-}
-
-extension PDFEditorViewController: UIGestureRecognizerDelegate {
-
-  // Allows the tap recognizer only when the palette is open and the touch is outside it.
-  func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch)
-    -> Bool {
-    guard isTouchModeEnabled else {
-      return false
-    }
-    guard let toolPalette = toolPalette, toolPalette.isExpanded else {
-      return false
-    }
-    let location = touch.location(in: view)
-    if toolPalette.containsInteraction(at: location, in: view) {
-      return false
-    }
-    return true
   }
 }
 
@@ -429,16 +386,11 @@ extension PDFEditorViewController: EditorDelegate {
     }
 
     // Apply initial tool selection for both pointer types.
-    // This ensures the pen works immediately without requiring toolbar interaction.
+    // Pen uses the selected tool, touch uses HAND for navigation (auto mode).
     let tool = mapToolSelectionToPointerTool(selectedTool)
     do {
       try editor.toolController.setToolForPointerType(tool: tool, pointerType: .pen)
-      // In forcePen mode, touch also uses the same tool; in forceTouch, touch uses hand.
-      if isTouchModeEnabled {
-        try editor.toolController.setToolForPointerType(tool: .hand, pointerType: .touch)
-      } else {
-        try editor.toolController.setToolForPointerType(tool: tool, pointerType: .touch)
-      }
+      try editor.toolController.setToolForPointerType(tool: .hand, pointerType: .touch)
     } catch {
       // Silently ignore tool setting errors.
     }
@@ -491,5 +443,18 @@ extension PDFEditorViewController: EditorDelegate {
 
   func onError(editor: IINKEditor, blockId: String, message: String) {
     // Log errors but don't interrupt the user.
+  }
+}
+
+// MARK: - UIGestureRecognizerDelegate
+
+extension PDFEditorViewController: UIGestureRecognizerDelegate {
+  // Allows the palette dismiss tap gesture to work simultaneously with other gestures.
+  func gestureRecognizer(
+    _ gestureRecognizer: UIGestureRecognizer,
+    shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+  ) -> Bool {
+    // Allow simultaneous recognition for the palette dismiss tap.
+    return gestureRecognizer == paletteDismissTapRecognizer
   }
 }

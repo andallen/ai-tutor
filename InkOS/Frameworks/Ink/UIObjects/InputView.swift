@@ -17,7 +17,8 @@ class InputView: UIView {
   // MARK: - Properties
 
   weak var editor: IINKEditor?
-  var inputMode: InputMode = .forcePen
+  // Auto mode detects input type: stylus → .pen, finger → .touch.
+  var inputMode: InputMode = .auto
   private var trackPressure: Bool = false
   private var cancelled: Bool = false
   private var touchesBegan: Bool = false
@@ -41,10 +42,6 @@ class InputView: UIView {
     let relativeTime: TimeInterval = ProcessInfo.processInfo.systemUptime
     let absoluteTime: TimeInterval = NSTimeIntervalSince1970
     self.eventTimeOffset = absoluteTime - relativeTime
-  }
-
-  override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-    return super.hitTest(point, with: event)
   }
 
   // MARK: - Touches
