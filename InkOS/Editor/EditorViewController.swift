@@ -2,6 +2,7 @@
 
 import Combine
 import Foundation
+import SwiftUI
 import UIKit
 
 // This is the Main ViewController of the project.
@@ -27,14 +28,21 @@ class EditorViewController: UIViewController {
   private var homeButtonView: HomeButtonView?
   // Stores the editing toolbar anchored to the top right.
   private var editingToolbarView: EditingToolbarView?
-  // Stores the AI button at bottom right.
-  private var aiButtonView: AIButtonView?
-  // Stores the AI overlay that expands from the AI button.
-  private var aiOverlayView: AIOverlayView?
-  // Stores the dim background behind the AI overlay.
-  private var aiOverlayDimView: UIView?
   // Tap gesture recognizer to dismiss the tool palette when tapping outside with a finger.
   private var paletteDismissTapRecognizer: UITapGestureRecognizer?
+
+  // Stores the AI button at bottom right.
+  private var aiButtonView: AIButtonView?
+  // Stores the AI glass overlay panel.
+  private var aiOverlayView: UIVisualEffectView?
+  // Stores the chat input hosting controller embedded in the overlay.
+  private var aiChatHostingController: UIHostingController<AIChatInputBar>?
+  // Tracks whether the AI overlay is currently expanded.
+  private var isAIOverlayExpanded = false
+  // Text entered in the AI chat input bar.
+  private var aiChatText: String = ""
+  // Tap catcher view for dismissing the overlay.
+  private var aiOverlayTapCatcher: UIView?
 
   // Handler called when the editor requests dismissal.
   // When set, this replaces the default dismiss behavior to allow SwiftUI to control the transition.
@@ -60,6 +68,7 @@ class EditorViewController: UIViewController {
     self.configurePaletteDismissTap()
     self.configureEditingToolbar()
     self.configureAIButton()
+    self.configureAIOverlay()
     self.bindViewModel()
     guard let documentHandle = documentHandle else {
       self.viewModel.presentMissingNotebookError()
@@ -162,10 +171,6 @@ class EditorViewController: UIViewController {
     paletteView.thicknessChanged = { [weak self] tool, width in
       self?.viewModel.updateInkWidth(width: width, for: tool)
     }
-    paletteView.expansionChanged = { [weak self] isExpanded in
-      // AI button slides down when palette expands.
-      self?.setAIButtonVisible(isExpanded == false, animated: true)
-    }
     view.addSubview(paletteView)
 
     paletteView.leadingAnchor.constraint(
@@ -238,7 +243,8 @@ class EditorViewController: UIViewController {
     editingToolbarView = toolbarView
   }
 
-  // Adds the AI button to the bottom right of the screen.
+  // Adds the AI button as a floating circular glass button at bottom right.
+  // Position matches the Dashboard: 24pt from right edge, 24pt from bottom.
   private func configureAIButton() {
     let buttonView = AIButtonView()
     buttonView.translatesAutoresizingMaskIntoConstraints = false
@@ -247,90 +253,216 @@ class EditorViewController: UIViewController {
     }
     view.addSubview(buttonView)
 
+    // Position at bottom right, aligned with safe area.
     buttonView.trailingAnchor.constraint(
       equalTo: view.safeAreaLayoutGuide.trailingAnchor,
-      constant: -20
+      constant: -24
     ).isActive = true
     buttonView.bottomAnchor.constraint(
       equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-      constant: 0
+      constant: -24
     ).isActive = true
     aiButtonView = buttonView
-
-    // Configure the overlay after the button is set up.
-    configureAIOverlay()
   }
 
-  // Configures the AI overlay and tap-to-dismiss layer.
+  // Configures the AI overlay panel that slides up from the bottom.
+  // The overlay is a glass panel with a chat input bar at the bottom.
   private func configureAIOverlay() {
-    guard let buttonView = aiButtonView else { return }
+    let overlayWidth: CGFloat = 400
+    let overlayHeight: CGFloat = 560
+    let cornerRadius: CGFloat = 24
 
-    // Create invisible tap catcher that covers the entire view (no dimming).
-    let dimView = UIView()
-    dimView.backgroundColor = UIColor.clear
-    dimView.isHidden = true
-    dimView.frame = view.bounds
-    dimView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-    // Insert below the AI button so the button stays on top.
-    view.insertSubview(dimView, belowSubview: buttonView)
-    aiOverlayDimView = dimView
+    // Create tap catcher to dismiss overlay when tapping outside.
+    let tapCatcher = UIView()
+    tapCatcher.backgroundColor = .clear
+    tapCatcher.isHidden = true
+    tapCatcher.translatesAutoresizingMaskIntoConstraints = false
+    let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleAIOverlayDismissTap))
+    tapCatcher.addGestureRecognizer(tapGesture)
+    view.addSubview(tapCatcher)
+    NSLayoutConstraint.activate([
+      tapCatcher.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      tapCatcher.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+      tapCatcher.topAnchor.constraint(equalTo: view.topAnchor),
+      tapCatcher.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+    ])
+    aiOverlayTapCatcher = tapCatcher
 
-    // Add tap gesture for dismissal.
-    let tapRecognizer = UITapGestureRecognizer(
-      target: self,
-      action: #selector(handleOverlayDismissTap(_:))
-    )
-    dimView.addGestureRecognizer(tapRecognizer)
+    // Create the glass overlay view.
+    let overlayView = UIVisualEffectView()
+    overlayView.translatesAutoresizingMaskIntoConstraints = false
+    overlayView.layer.cornerRadius = cornerRadius
+    overlayView.layer.cornerCurve = .continuous
+    overlayView.clipsToBounds = true
 
-    // Create overlay view.
-    let overlayView = AIOverlayView()
-    // Insert below the AI button so the button appears embedded.
-    view.insertSubview(overlayView, belowSubview: buttonView)
-    aiOverlayView = overlayView
-  }
-
-  // Toggles the AI overlay visibility.
-  private func toggleAIOverlay() {
-    guard let overlayView = aiOverlayView,
-      let buttonView = aiButtonView,
-      let dimView = aiOverlayDimView
-    else { return }
-
-    let buttonFrame = buttonView.convert(buttonView.bounds, to: view)
-
-    if overlayView.isExpanded {
-      // Collapse the overlay.
-      dimView.isHidden = true
-      UIView.animate(
-        withDuration: 0.32,
-        delay: 0,
-        usingSpringWithDamping: 0.88,
-        initialSpringVelocity: 0
-      ) {
-        // Show button glass as overlay collapses.
-        buttonView.isGlassHidden = false
-      }
-      overlayView.collapse(to: buttonFrame, animated: true)
+    // Apply glass effect on iOS 26+, blur fallback otherwise.
+    if #available(iOS 26.0, *) {
+      let effect = UIGlassEffect(style: .regular)
+      effect.isInteractive = false
+      overlayView.effect = effect
     } else {
-      // Expand the overlay.
-      dimView.isHidden = false
-      UIView.animate(
-        withDuration: 0.38,
-        delay: 0,
-        usingSpringWithDamping: 0.86,
-        initialSpringVelocity: 0
-      ) {
-        // Hide button glass so it appears embedded in overlay.
-        buttonView.isGlassHidden = true
-      }
-      overlayView.expand(from: buttonFrame, in: self.view.bounds, animated: true)
+      overlayView.effect = UIBlurEffect(style: .systemMaterial)
+    }
+
+    view.addSubview(overlayView)
+
+    // Position overlay at bottom-right, trailing and bottom edges aligned with button edges.
+    // This matches the Dashboard positioning where overlay's corner aligns with button's corner.
+    NSLayoutConstraint.activate([
+      overlayView.widthAnchor.constraint(equalToConstant: overlayWidth),
+      overlayView.heightAnchor.constraint(equalToConstant: overlayHeight),
+      overlayView.trailingAnchor.constraint(
+        equalTo: view.safeAreaLayoutGuide.trailingAnchor,
+        constant: -24
+      ),
+      overlayView.bottomAnchor.constraint(
+        equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+        constant: -24
+      )
+    ])
+
+    // Start hidden below screen.
+    overlayView.transform = CGAffineTransform(translationX: 0, y: overlayHeight + 100)
+    overlayView.isHidden = true
+    aiOverlayView = overlayView
+
+    // Add chat input bar at the bottom of the overlay.
+    configureChatInputBar(in: overlayView, overlayHeight: overlayHeight)
+
+    // Bring AI button to front so it's above the overlay.
+    if let buttonView = aiButtonView {
+      view.bringSubviewToFront(buttonView)
     }
   }
 
-  // Handles taps on the dim background to dismiss the overlay.
-  @objc private func handleOverlayDismissTap(_ recognizer: UITapGestureRecognizer) {
-    guard let overlayView = aiOverlayView, overlayView.isExpanded else { return }
-    toggleAIOverlay()
+  // Embeds the SwiftUI chat input bar at the bottom of the overlay.
+  private func configureChatInputBar(in overlayView: UIVisualEffectView, overlayHeight: CGFloat) {
+    let chatBar = AIChatInputBar(
+      text: Binding(
+        get: { [weak self] in self?.aiChatText ?? "" },
+        set: { [weak self] in self?.aiChatText = $0 }
+      ),
+      onSend: { [weak self] in
+        self?.handleAIChatSend()
+      }
+    )
+
+    let hostingController = UIHostingController(rootView: chatBar)
+    hostingController.view.backgroundColor = .clear
+    hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+    overlayView.contentView.addSubview(hostingController.view)
+
+    // Pin chat bar to bottom with horizontal padding.
+    NSLayoutConstraint.activate([
+      hostingController.view.leadingAnchor.constraint(
+        equalTo: overlayView.contentView.leadingAnchor,
+        constant: 16
+      ),
+      hostingController.view.trailingAnchor.constraint(
+        equalTo: overlayView.contentView.trailingAnchor,
+        constant: -16
+      ),
+      hostingController.view.bottomAnchor.constraint(
+        equalTo: overlayView.contentView.bottomAnchor,
+        constant: -16
+      ),
+      hostingController.view.heightAnchor.constraint(equalToConstant: 52)
+    ])
+
+    aiChatHostingController = hostingController
+  }
+
+  // Toggles the AI overlay visibility with slide animation.
+  private func toggleAIOverlay() {
+    isAIOverlayExpanded.toggle()
+    updateAIOverlayVisibility(animated: true)
+  }
+
+  // Updates the overlay and button state based on isAIOverlayExpanded.
+  private func updateAIOverlayVisibility(animated: Bool) {
+    guard let overlayView = aiOverlayView,
+          let buttonView = aiButtonView,
+          let tapCatcher = aiOverlayTapCatcher else { return }
+
+    let overlayHeight: CGFloat = 560
+    let slideDistance: CGFloat = overlayHeight + 100
+
+    if isAIOverlayExpanded {
+      overlayView.isHidden = false
+      tapCatcher.isHidden = false
+    }
+
+    let animations = {
+      // Slide overlay up/down.
+      overlayView.transform = self.isAIOverlayExpanded
+        ? .identity
+        : CGAffineTransform(translationX: 0, y: slideDistance)
+
+      // Yield the button (slides down when overlay is open).
+      buttonView.isYielded = self.isAIOverlayExpanded
+    }
+
+    let completion: (Bool) -> Void = { _ in
+      if !self.isAIOverlayExpanded {
+        overlayView.isHidden = true
+        tapCatcher.isHidden = true
+      }
+    }
+
+    if animated {
+      UIView.animate(
+        withDuration: 0.35,
+        delay: 0,
+        usingSpringWithDamping: 0.85,
+        initialSpringVelocity: 0,
+        options: [],
+        animations: animations,
+        completion: completion
+      )
+    } else {
+      animations()
+      completion(true)
+    }
+  }
+
+  // Handles tap outside the overlay to dismiss it.
+  @objc private func handleAIOverlayDismissTap() {
+    if isAIOverlayExpanded {
+      isAIOverlayExpanded = false
+      updateAIOverlayVisibility(animated: true)
+    }
+  }
+
+  // Handles the send action from the AI chat input bar.
+  private func handleAIChatSend() {
+    let message = aiChatText.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !message.isEmpty else { return }
+    // Clear the text field after sending.
+    aiChatText = ""
+  }
+
+  // Controls the visibility of the AI button for hero transitions.
+  // Uses transform to slide the button down (positive offset) since it is at bottom right.
+  func setAIButtonVisible(_ visible: Bool, animated: Bool) {
+    guard let buttonView = aiButtonView else {
+      return
+    }
+    let offset: CGFloat = visible ? 0 : 80
+    if animated {
+      UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseInOut]) {
+        buttonView.transform = CGAffineTransform(translationX: 0, y: offset)
+        buttonView.alpha = visible ? 1 : 0
+      }
+    } else {
+      buttonView.transform = CGAffineTransform(translationX: 0, y: offset)
+      buttonView.alpha = visible ? 1 : 0
+    }
+
+    // Collapse overlay when hiding button.
+    if !visible && isAIOverlayExpanded {
+      isAIOverlayExpanded = false
+      updateAIOverlayVisibility(animated: false)
+    }
   }
 
   // MARK: - Transition UI Control
@@ -387,25 +519,6 @@ class EditorViewController: UIViewController {
       toolbarView.transform = CGAffineTransform(translationX: 0, y: offset)
       toolbarView.alpha = visible ? 1 : 0
     }
-  }
-
-  // Controls the visibility of the AI button.
-  // Sets visibility directly without animation.
-  // Also collapses the AI overlay when hiding the button.
-  func setAIButtonVisible(_ visible: Bool, animated: Bool) {
-    guard let buttonView = aiButtonView else {
-      return
-    }
-    // Collapse the AI overlay if it's expanded and the button is being hidden.
-    if visible == false, let overlayView = aiOverlayView, overlayView.isExpanded {
-      let buttonFrame = buttonView.convert(buttonView.bounds, to: view)
-      overlayView.collapse(to: buttonFrame, animated: false)
-      if let dimView = aiOverlayDimView {
-        dimView.alpha = 0
-        dimView.isHidden = true
-      }
-    }
-    buttonView.alpha = visible ? 1 : 0
   }
 
   // Hides all UI elements for the hero transition animation.

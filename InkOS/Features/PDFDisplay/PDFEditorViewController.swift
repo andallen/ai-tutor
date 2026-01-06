@@ -3,6 +3,7 @@
 // Reuses existing InputViewController for pen/touch input and rendering.
 
 import Combine
+import SwiftUI
 import UIKit
 
 // View controller for annotating PDF documents.
@@ -11,6 +12,8 @@ final class PDFEditorViewController: UIViewController {
 
   // MARK: - Properties
 
+  // Container view that fills the entire screen, ignoring safe areas.
+  private var editorContainerView: UIView!
   private let viewModel: PDFEditorViewModel
   // Named to avoid conflict with UIViewController.inputViewController.
   private var editorInputVC: InputViewController?
@@ -34,10 +37,23 @@ final class PDFEditorViewController: UIViewController {
   private var selectedTool: ToolPaletteView.ToolSelection = .pen
   // Stores the editing toolbar for undo/redo/clear actions.
   private var editingToolbarView: EditingToolbarView?
-  // Tracks visibility state of the editing toolbar.
-  private var isEditingToolbarVisible = true
   // Tap gesture recognizer to dismiss the tool palette when tapping outside with a finger.
   private var paletteDismissTapRecognizer: UITapGestureRecognizer?
+  // Stores the home button at top left.
+  private var homeButtonView: HomeButtonView?
+
+  // Stores the AI button at bottom right.
+  private var aiButtonView: AIButtonView?
+  // Stores the AI glass overlay panel.
+  private var aiOverlayView: UIVisualEffectView?
+  // Stores the chat input hosting controller embedded in the overlay.
+  private var aiChatHostingController: UIHostingController<AIChatInputBar>?
+  // Tracks whether the AI overlay is currently expanded.
+  private var isAIOverlayExpanded = false
+  // Text entered in the AI chat input bar.
+  private var aiChatText: String = ""
+  // Tap catcher view for dismissing the overlay.
+  private var aiOverlayTapCatcher: UIView?
 
   // Handler called when the editor requests dismissal.
   var dismissHandler: (() -> Void)?
@@ -55,14 +71,28 @@ final class PDFEditorViewController: UIViewController {
 
   // MARK: - Lifecycle
 
+  override func loadView() {
+    super.loadView()
+    // Creates the editor container view programmatically to fill entire screen.
+    // This ensures content extends under the home indicator like the normal note view.
+    let containerView = UIView(frame: UIScreen.main.bounds)
+    containerView.backgroundColor = UIColor.white
+    containerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    self.view.addSubview(containerView)
+    self.editorContainerView = containerView
+  }
+
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .white
-    configureNavigationBar()
+    hideNavigationBar()
     setupInputViewController()
+    configureHomeButton()
     configureToolPalette()
     configurePaletteDismissTap()
     configureEditingToolbar()
+    configureAIButton()
+    configureAIOverlay()
     loadDocument()
   }
 
@@ -73,21 +103,30 @@ final class PDFEditorViewController: UIViewController {
 
   // MARK: - Setup
 
-  private func configureNavigationBar() {
-    // Back/home button.
-    let backImage = UIImage(systemName: "house")?.withRenderingMode(.alwaysTemplate)
-    let backItem = UIBarButtonItem(
-      image: backImage,
-      style: .plain,
-      target: self,
-      action: #selector(backButtonTapped)
-    )
-    backItem.accessibilityLabel = "Home"
-    backItem.tintColor = offBlack
-    navigationItem.leftBarButtonItem = backItem
+  // Hides the navigation bar since all UI is now floating views.
+  private func hideNavigationBar() {
+    navigationController?.setNavigationBarHidden(true, animated: false)
+  }
 
-    // Document title.
-    title = viewModel.session.noteDocument.displayName
+  // Adds the home button as a floating circular glass button at top left.
+  private func configureHomeButton() {
+    let buttonView = HomeButtonView(accentColor: offBlack)
+    buttonView.translatesAutoresizingMaskIntoConstraints = false
+    buttonView.tapped = { [weak self] in
+      self?.backButtonTapped()
+    }
+    view.addSubview(buttonView)
+
+    // Position at top left, aligned with safe area.
+    buttonView.leadingAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.leadingAnchor,
+      constant: 20
+    ).isActive = true
+    buttonView.topAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.topAnchor,
+      constant: 4
+    ).isActive = true
+    homeButtonView = buttonView
   }
 
   private func setupInputViewController() {
@@ -116,14 +155,10 @@ final class PDFEditorViewController: UIViewController {
     let inputVC = InputViewController(viewModel: inputViewModel)
     self.editorInputVC = inputVC
 
-    // Add as child view controller.
+    // Add as child view controller to the container view.
     addChild(inputVC)
-    view.addSubview(inputVC.view)
+    editorContainerView.addSubview(inputVC.view)
     inputVC.view.frame = view.bounds
-    inputVC.view.autoresizingMask = [
-      UIView.AutoresizingMask.flexibleWidth,
-      UIView.AutoresizingMask.flexibleHeight
-    ]
     inputVC.didMove(toParent: self)
   }
 
@@ -144,7 +179,7 @@ final class PDFEditorViewController: UIViewController {
     ).isActive = true
     palette.bottomAnchor.constraint(
       equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-      constant: -8
+      constant: 0
     ).isActive = true
 
     // Wire up tool selection.
@@ -160,11 +195,6 @@ final class PDFEditorViewController: UIViewController {
     // Wire up thickness changes.
     palette.thicknessChanged = { [weak self] tool, width in
       self?.handleThicknessChange(tool: tool, width: width)
-    }
-
-    // Hide editing toolbar when palette expands, show when it collapses.
-    palette.expansionChanged = { [weak self] isExpanded in
-      self?.updateEditingToolbarVisibility(isExpanded == false, animated: true)
     }
 
     self.toolPalette = palette
@@ -197,7 +227,8 @@ final class PDFEditorViewController: UIViewController {
     }
   }
 
-  // Adds the editing toolbar (undo/redo/clear) to the bottom right of the screen.
+  // Adds the editing toolbar as a floating view at top right.
+  // Positioned directly in the view hierarchy for full control over rendering.
   private func configureEditingToolbar() {
     let toolbarView = EditingToolbarView(accentColor: offBlack)
     toolbarView.translatesAutoresizingMaskIntoConstraints = false
@@ -212,49 +243,190 @@ final class PDFEditorViewController: UIViewController {
     }
     view.addSubview(toolbarView)
 
+    // Position at top right, aligned with safe area.
     toolbarView.trailingAnchor.constraint(
       equalTo: view.safeAreaLayoutGuide.trailingAnchor,
       constant: -20
     ).isActive = true
-    toolbarView.bottomAnchor.constraint(
-      equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-      constant: -4
+    toolbarView.topAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.topAnchor,
+      constant: 4
     ).isActive = true
     editingToolbarView = toolbarView
   }
 
-  // Shows or hides the editing toolbar with animation.
-  private func updateEditingToolbarVisibility(_ visible: Bool, animated: Bool) {
-    guard let toolbarView = editingToolbarView else {
-      return
+  // Adds the AI button as a floating circular glass button at bottom right.
+  // Position matches the normal note view: 24pt from right edge, 24pt from bottom.
+  private func configureAIButton() {
+    let buttonView = AIButtonView()
+    buttonView.translatesAutoresizingMaskIntoConstraints = false
+    buttonView.tapped = { [weak self] in
+      self?.toggleAIOverlay()
     }
-    guard visible != isEditingToolbarVisible else {
-      return
+    view.addSubview(buttonView)
+
+    // Position at bottom right, aligned with safe area.
+    buttonView.trailingAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.trailingAnchor,
+      constant: -24
+    ).isActive = true
+    buttonView.bottomAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+      constant: -24
+    ).isActive = true
+    aiButtonView = buttonView
+  }
+
+  // Configures the AI overlay panel that slides up from the bottom.
+  // The overlay is a glass panel with a chat input bar at the bottom.
+  private func configureAIOverlay() {
+    let overlayWidth: CGFloat = 400
+    let overlayHeight: CGFloat = 560
+    let cornerRadius: CGFloat = 24
+
+    // Create tap catcher to dismiss overlay when tapping outside.
+    let tapCatcher = UIView()
+    tapCatcher.backgroundColor = .clear
+    tapCatcher.isHidden = true
+    tapCatcher.translatesAutoresizingMaskIntoConstraints = false
+    let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleAIOverlayDismissTap))
+    tapCatcher.addGestureRecognizer(tapGesture)
+    view.addSubview(tapCatcher)
+    NSLayoutConstraint.activate([
+      tapCatcher.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      tapCatcher.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+      tapCatcher.topAnchor.constraint(equalTo: view.topAnchor),
+      tapCatcher.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+    ])
+    aiOverlayTapCatcher = tapCatcher
+
+    // Create the glass overlay view.
+    let overlayView = UIVisualEffectView()
+    overlayView.translatesAutoresizingMaskIntoConstraints = false
+    overlayView.layer.cornerRadius = cornerRadius
+    overlayView.layer.cornerCurve = .continuous
+    overlayView.clipsToBounds = true
+
+    // Apply glass effect on iOS 26+, blur fallback otherwise.
+    if #available(iOS 26.0, *) {
+      let effect = UIGlassEffect(style: .regular)
+      effect.isInteractive = false
+      overlayView.effect = effect
+    } else {
+      overlayView.effect = UIBlurEffect(style: .systemMaterial)
     }
-    isEditingToolbarVisible = visible
-    let offset = max(toolbarView.bounds.height, 36) + 12
-    if visible {
-      toolbarView.isHidden = false
-      toolbarView.alpha = 0
-      toolbarView.transform = CGAffineTransform(translationX: 0, y: offset)
+
+    view.addSubview(overlayView)
+
+    // Position overlay at bottom-right, trailing and bottom edges aligned with button edges.
+    NSLayoutConstraint.activate([
+      overlayView.widthAnchor.constraint(equalToConstant: overlayWidth),
+      overlayView.heightAnchor.constraint(equalToConstant: overlayHeight),
+      overlayView.trailingAnchor.constraint(
+        equalTo: view.safeAreaLayoutGuide.trailingAnchor,
+        constant: -24
+      ),
+      overlayView.bottomAnchor.constraint(
+        equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+        constant: -24
+      )
+    ])
+
+    // Start hidden below screen.
+    overlayView.transform = CGAffineTransform(translationX: 0, y: overlayHeight + 100)
+    overlayView.isHidden = true
+    aiOverlayView = overlayView
+
+    // Add chat input bar at the bottom of the overlay.
+    configureChatInputBar(in: overlayView)
+
+    // Bring AI button to front so it's above the overlay.
+    if let buttonView = aiButtonView {
+      view.bringSubviewToFront(buttonView)
+    }
+  }
+
+  // Embeds the SwiftUI chat input bar at the bottom of the overlay.
+  private func configureChatInputBar(in overlayView: UIVisualEffectView) {
+    let chatBar = AIChatInputBar(
+      text: Binding(
+        get: { [weak self] in self?.aiChatText ?? "" },
+        set: { [weak self] in self?.aiChatText = $0 }
+      ),
+      onSend: { [weak self] in
+        self?.handleAIChatSend()
+      }
+    )
+
+    let hostingController = UIHostingController(rootView: chatBar)
+    hostingController.view.backgroundColor = .clear
+    hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+    overlayView.contentView.addSubview(hostingController.view)
+
+    // Pin chat bar to bottom with horizontal padding.
+    NSLayoutConstraint.activate([
+      hostingController.view.leadingAnchor.constraint(
+        equalTo: overlayView.contentView.leadingAnchor,
+        constant: 16
+      ),
+      hostingController.view.trailingAnchor.constraint(
+        equalTo: overlayView.contentView.trailingAnchor,
+        constant: -16
+      ),
+      hostingController.view.bottomAnchor.constraint(
+        equalTo: overlayView.contentView.bottomAnchor,
+        constant: -16
+      ),
+      hostingController.view.heightAnchor.constraint(equalToConstant: 52)
+    ])
+
+    aiChatHostingController = hostingController
+  }
+
+  // Toggles the AI overlay visibility with slide animation.
+  private func toggleAIOverlay() {
+    isAIOverlayExpanded.toggle()
+    updateAIOverlayVisibility(animated: true)
+  }
+
+  // Updates the overlay and button state based on isAIOverlayExpanded.
+  private func updateAIOverlayVisibility(animated: Bool) {
+    guard let overlayView = aiOverlayView,
+          let buttonView = aiButtonView,
+          let tapCatcher = aiOverlayTapCatcher else { return }
+
+    let overlayHeight: CGFloat = 560
+    let slideDistance: CGFloat = overlayHeight + 100
+
+    if isAIOverlayExpanded {
+      overlayView.isHidden = false
+      tapCatcher.isHidden = false
     }
 
     let animations = {
-      toolbarView.alpha = visible ? 1 : 0
-      toolbarView.transform = visible ? .identity : CGAffineTransform(translationX: 0, y: offset)
+      // Slide overlay up/down.
+      overlayView.transform = self.isAIOverlayExpanded
+        ? .identity
+        : CGAffineTransform(translationX: 0, y: slideDistance)
+
+      // Yield the button (slides down when overlay is open).
+      buttonView.isYielded = self.isAIOverlayExpanded
     }
 
     let completion: (Bool) -> Void = { _ in
-      if visible == false {
-        toolbarView.isHidden = true
+      if !self.isAIOverlayExpanded {
+        overlayView.isHidden = true
+        tapCatcher.isHidden = true
       }
     }
 
     if animated {
       UIView.animate(
-        withDuration: 0.22,
+        withDuration: 0.35,
         delay: 0,
-        options: [.curveEaseInOut],
+        usingSpringWithDamping: 0.85,
+        initialSpringVelocity: 0,
+        options: [],
         animations: animations,
         completion: completion
       )
@@ -262,6 +434,22 @@ final class PDFEditorViewController: UIViewController {
       animations()
       completion(true)
     }
+  }
+
+  // Handles tap outside the overlay to dismiss it.
+  @objc private func handleAIOverlayDismissTap() {
+    if isAIOverlayExpanded {
+      isAIOverlayExpanded = false
+      updateAIOverlayVisibility(animated: true)
+    }
+  }
+
+  // Handles the send action from the AI chat input bar.
+  private func handleAIChatSend() {
+    let message = aiChatText.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !message.isEmpty else { return }
+    // Clear the text field after sending.
+    aiChatText = ""
   }
 
   private func loadDocument() {
