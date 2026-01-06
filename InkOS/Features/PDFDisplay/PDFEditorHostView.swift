@@ -20,6 +20,7 @@ struct PDFEditorHostView: UIViewControllerRepresentable {
     let editorVC = PDFEditorViewController(viewModel: viewModel)
     editorVC.dismissHandler = onDismiss
 
+    // Use UINavigationController to match EditorHostView.
     let navController = UINavigationController(rootViewController: editorVC)
     navController.modalPresentationStyle = .fullScreen
     return navController

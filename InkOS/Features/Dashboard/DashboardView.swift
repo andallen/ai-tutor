@@ -18,19 +18,23 @@ final class CardFrameStore {
 struct AIButtonRepresentable: UIViewRepresentable {
   // Callback invoked when the button is tapped.
   var tapped: (() -> Void)?
-  // When true, hides the glass background so only the black circle is visible.
-  var isGlassHidden: Bool = false
+  // When true, the circle yields toward upper-left. When false, it returns to center.
+  var isYielded: Bool = false
+  // Duration for the return animation. Defaults to standard timing.
+  var returnAnimationDuration: TimeInterval = 0.44
 
   func makeUIView(context: Context) -> AIButtonView {
     let button = AIButtonView()
     button.tapped = tapped
-    button.isGlassHidden = isGlassHidden
+    button.isYielded = isYielded
+    button.returnAnimationDuration = returnAnimationDuration
     return button
   }
 
   func updateUIView(_ uiView: AIButtonView, context: Context) {
     uiView.tapped = tapped
-    uiView.isGlassHidden = isGlassHidden
+    uiView.returnAnimationDuration = returnAnimationDuration
+    uiView.isYielded = isYielded
   }
 }
 
@@ -198,8 +202,10 @@ struct DashboardView: View {
 
   // Controls visibility of the AI button. Fades out during notebook transitions.
   @State private var isAIButtonVisible = true
-  // Tracks whether the AI overlay is expanded.
+  // Tracks whether the AI overlay is expanded (slides up when true).
   @State private var isAIOverlayExpanded = false
+  // Text entered in the AI chat input bar.
+  @State private var aiChatText: String = ""
 
   // Screen bounds for layout calculations.
   // Updated from GeometryReader to avoid deprecated UIScreen.main usage.
@@ -445,15 +451,15 @@ struct DashboardView: View {
 
   // Combines the AI button and liquid glass overlay.
   // The overlay expands from the button's bottom-right corner, always covering the button.
-  // The button glass fades in sync with the overlay animation; the black circle stays visible.
+  // The AI circle button and overlay section.
   private var aiOverlaySection: some View {
     GeometryReader { geometry in
-      let buttonSize: CGFloat = 48
+      let buttonSize: CGFloat = 36
       let buttonRadius: CGFloat = buttonSize / 2
 
-      // Button center position.
-      let buttonX = geometry.size.width - geometry.safeAreaInsets.trailing - 20 - buttonRadius
-      let buttonY = geometry.size.height - geometry.safeAreaInsets.bottom - buttonSize
+      // Button center position - bottom right, horizontally aligned with plus button column.
+      let buttonX = geometry.size.width - geometry.safeAreaInsets.trailing - 24 - buttonRadius
+      let buttonY = geometry.size.height - geometry.safeAreaInsets.bottom - buttonRadius - 24
 
       // Button's bottom-right corner (anchor point for overlay animation).
       let buttonBottomRightX = buttonX + buttonRadius
@@ -466,9 +472,7 @@ struct DashboardView: View {
             .contentShape(Rectangle())
             .ignoresSafeArea()
             .onTapGesture {
-              withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
-                isAIOverlayExpanded = false
-              }
+              isAIOverlayExpanded = false
             }
             .zIndex(0)
         }
@@ -481,14 +485,12 @@ struct DashboardView: View {
         )
         .zIndex(1)
 
-        // AI button stays fully visible at all times - no changes during overlay animation.
+        // AI button triggers overlay slide.
         AIButtonRepresentable(
           tapped: {
-            withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
-              isAIOverlayExpanded.toggle()
-            }
+            isAIOverlayExpanded.toggle()
           },
-          isGlassHidden: false
+          isYielded: isAIOverlayExpanded
         )
         .frame(width: buttonSize, height: buttonSize)
         .position(x: buttonX, y: buttonY)
@@ -510,40 +512,65 @@ struct DashboardView: View {
 
   // The liquid glass overlay panel that expands from the button's bottom-right corner.
   // Scales from bottom-trailing so the corner stays fixed during animation.
+  // Contains the chat input bar at the bottom.
   @ViewBuilder
   private func aiOverlayGlass(
     buttonBottomRightX: CGFloat,
     buttonBottomRightY: CGFloat
   ) -> some View {
-    let overlayWidth: CGFloat = 360
-    let overlayHeight: CGFloat = 400
+    let overlayWidth: CGFloat = 400
+    let overlayHeight: CGFloat = 560
     let cornerRadius: CGFloat = 24
-    let buttonSize: CGFloat = 48
 
     // Position overlay so its bottom-right corner aligns with button's bottom-right corner.
     let overlayCenterX = buttonBottomRightX - overlayWidth / 2
     let overlayCenterY = buttonBottomRightY - overlayHeight / 2
 
-    // Collapsed scale (overlay shrinks to button size).
-    let collapsedScale = buttonSize / overlayWidth
+    // Slide distance (off screen when collapsed).
+    let slideDistance: CGFloat = overlayHeight + 100
 
-    Group {
-      if #available(iOS 26.0, *) {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-          .fill(Color.clear)
-          .glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
-          .frame(width: overlayWidth, height: overlayHeight)
-      } else {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-          .fill(.ultraThinMaterial)
-          .frame(width: overlayWidth, height: overlayHeight)
+    ZStack {
+      // Glass background.
+      Group {
+        if #available(iOS 26.0, *) {
+          RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(Color.clear)
+            .glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
+        } else {
+          RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(.ultraThinMaterial)
+        }
+      }
+
+      // Overlay content with chat bar at bottom.
+      VStack {
+        Spacer()
+
+        // Chat input bar.
+        AIChatInputBar(text: $aiChatText) {
+          // Handle send action.
+          handleAIChatSend()
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 16)
       }
     }
+    .frame(width: overlayWidth, height: overlayHeight)
     .position(x: overlayCenterX, y: overlayCenterY)
-    .scaleEffect(isAIOverlayExpanded ? 1.0 : collapsedScale, anchor: .bottomTrailing)
-    .opacity(isAIOverlayExpanded ? 1 : 0)
-    .animation(.spring(response: 0.38, dampingFraction: 0.86), value: isAIOverlayExpanded)
+    .offset(y: isAIOverlayExpanded ? 0 : slideDistance)
+    .animation(.spring(response: 0.35, dampingFraction: 0.85, blendDuration: 0), value: isAIOverlayExpanded)
     .allowsHitTesting(isAIOverlayExpanded)
+  }
+
+  // Handles the send action from the AI chat input bar.
+  private func handleAIChatSend() {
+    // Placeholder for send functionality.
+    // Will be implemented when AI backend is connected.
+    let message = aiChatText.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !message.isEmpty else { return }
+
+    // Clear the text field after sending.
+    aiChatText = ""
   }
 
   // MARK: - Loading State
@@ -2128,6 +2155,7 @@ struct DashboardSheetModifiers: ViewModifier {
         onDismiss: { activePDFSession = nil },
         content: { session in
           PDFEditorHostView(session: session)
+            .ignoresSafeArea()
         }
       )
       .sheet(item: $movingNotebook) { notebook in

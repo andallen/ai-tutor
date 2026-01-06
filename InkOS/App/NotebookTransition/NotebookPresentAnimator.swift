@@ -253,9 +253,9 @@ class NotebookPresentAnimator: NSObject, UIViewControllerAnimatedTransitioning {
       editorVC?.setEditingToolbarVisible(true, animated: false)
     }
 
-    // AI button fades in.
+    // AI button slides up from bottom (positioned at bottom right).
     UIView.animate(
-      withDuration: duration * 0.4,
+      withDuration: duration * 0.45,
       delay: duration * 0.55,
       usingSpringWithDamping: 0.85,
       initialSpringVelocity: 0,
@@ -263,6 +263,7 @@ class NotebookPresentAnimator: NSObject, UIViewControllerAnimatedTransitioning {
     ) {
       editorVC?.setAIButtonVisible(true, animated: false)
     }
+
   }
 
   // Groups all the views and components needed for transition cleanup.
