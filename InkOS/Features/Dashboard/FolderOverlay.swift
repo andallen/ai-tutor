@@ -160,6 +160,9 @@ struct FolderOverlay: View {
   // Used to hide the original card while dragging (so it appears to move, not duplicate).
   let draggedPDFID: String?
 
+  // Namespace for matched geometry effects when cards move between dashboard and folder overlay.
+  let cardNamespace: Namespace.ID
+
   // State for notebook rename alert.
   @State private var renamingNotebook: NotebookMetadata?
   @State private var renameText: String = ""
@@ -297,17 +300,18 @@ struct FolderOverlay: View {
         isBlurExpanding = expanded
         animatedBlurFraction = expanded ? 1 : 0
         // Animate container opacity in a separate transaction to avoid ghost artifacts.
-        // Slower fade-in during expansion, smooth fade-out during contraction to match scale timing.
-        withAnimation(expanded ? .easeOut(duration: 0.25) : .easeIn(duration: 0.18)) {
+        // Slower fade-in during expansion, faster fade-out during contraction to complete before scale finishes.
+        withAnimation(expanded ? .easeOut(duration: 0.25) : .easeIn(duration: 0.12)) {
           containerOpacity = expanded ? 1 : 0
         }
       }
       .onChange(of: isDragActiveFromOverlay) { _, dragActive in
-        // Hide blur and container when drag becomes active (fast contract animation).
+        // Hide blur and container when drag becomes active.
+        // Uses the same animation timing as normal close for visual consistency.
         if dragActive {
           isBlurExpanding = false
           animatedBlurFraction = 0
-          withAnimation(.linear(duration: 0.08)) {
+          withAnimation(.easeIn(duration: 0.12)) {
             containerOpacity = 0
           }
         }
@@ -406,7 +410,7 @@ struct FolderOverlay: View {
 
   // Calculates the expanded overlay frame centered on screen.
   private func calculateExpandedFrame(in screenBounds: CGRect) -> CGRect {
-    let gridSpacing: CGFloat = 10
+    let gridSpacing: CGFloat = 22
     let cardAspectRatio: CGFloat = 0.72
     let columns = 2
 
@@ -473,6 +477,26 @@ struct FolderOverlay: View {
     hasFiredBoundsExit = false
     boundsExitWorkItem?.cancel()
     boundsExitWorkItem = nil
+  }
+
+  // Handles drag end with immediate bounds check.
+  // If the final position is outside bounds and callback hasn't fired yet,
+  // fires it immediately before calling the parent's onDragEnd.
+  // This ensures that quick releases outside bounds still trigger the move.
+  private func finalizeDragBounds(position: CGPoint) {
+    // Cancel any pending delayed callback.
+    boundsExitWorkItem?.cancel()
+    boundsExitWorkItem = nil
+
+    // If we haven't already fired the bounds exit and position is outside bounds,
+    // fire immediately so the parent knows to move the item.
+    if !hasFiredBoundsExit,
+       currentOverlayFrame.width > 0,
+       currentOverlayFrame.height > 0,
+       !currentOverlayFrame.contains(position) {
+      hasFiredBoundsExit = true
+      onDragExitedBounds?()
+    }
   }
 
   // Background blur that dismisses the overlay when tapped.
@@ -576,7 +600,7 @@ struct FolderOverlay: View {
     let columns = 2
     let totalItems = notebooks.count + pdfDocuments.count
     let rows = (totalItems + columns - 1) / columns
-    let gridSpacing: CGFloat = 10
+    let gridSpacing: CGFloat = 22
     let cardAspectRatio: CGFloat = 0.72
 
     // Calculate card width based on available space minus padding and spacing.
@@ -607,6 +631,7 @@ struct FolderOverlay: View {
     .padding(.horizontal, contentPadding)
     .padding(.top, 8)
     .padding(.bottom, contentPadding)
+    .animation(.spring(response: 0.4, dampingFraction: 0.75), value: notebooks.count + pdfDocuments.count)
   }
 
   // Renders a single item card (notebook or PDF) in the folder grid.
@@ -662,14 +687,27 @@ struct FolderOverlay: View {
         checkDragBounds(position: position)
       },
       onDragEnd: { position in
+        // Check if final position is outside bounds and fire callback immediately if needed.
+        // This handles quick releases that happen before the boundsExitDelay fires.
+        finalizeDragBounds(position: position)
         // Always call parent drag end so DashboardView can reset drag state.
         // DashboardView will check hasDragExitedOverlayBounds to decide whether to move.
         onNotebookDragEnd?(position)
       }
     )
+    // Folder overlay cards are secondary views - use isSource: false to avoid conflicts
+    // with dashboard cards when items move between folder and root during drag operations.
+    .matchedGeometryEffect(
+      id: "notebook-\(notebook.id)",
+      in: cardNamespace,
+      isSource: false
+    )
+    .transition(.scale.combined(with: .opacity))
     .scaleEffect(isContextMenuActive ? 1.08 : 1.0, anchor: .center)
     // Hide the card while it's being dragged (drag overlay shows the moving card).
     .opacity(isBeingDragged ? 0 : 1)
+    // Prevent animation on visibility change to avoid ghost card effect.
+    .animation(nil, value: isBeingDragged)
   }
 
   // Renders a PDF card in the folder grid.
@@ -713,14 +751,27 @@ struct FolderOverlay: View {
         checkDragBounds(position: position)
       },
       onDragEnd: { position in
+        // Check if final position is outside bounds and fire callback immediately if needed.
+        // This handles quick releases that happen before the boundsExitDelay fires.
+        finalizeDragBounds(position: position)
         // Always call parent drag end so DashboardView can reset drag state.
         // DashboardView will check hasDragExitedOverlayBounds to decide whether to move.
         onPDFDragEnd?(position)
       }
     )
+    // Folder overlay cards are secondary views - use isSource: false to avoid conflicts
+    // with dashboard cards when items move between folder and root during drag operations.
+    .matchedGeometryEffect(
+      id: "pdf-\(pdf.id)",
+      in: cardNamespace,
+      isSource: false
+    )
+    .transition(.scale.combined(with: .opacity))
     .scaleEffect(isContextMenuActive ? 1.08 : 1.0, anchor: .center)
     // Hide the card while it's being dragged (drag overlay shows the moving card).
     .opacity(isBeingDragged ? 0 : 1)
+    // Prevent animation on visibility change to avoid ghost card effect.
+    .animation(nil, value: isBeingDragged)
   }
 
   // MARK: - Context Menu Actions

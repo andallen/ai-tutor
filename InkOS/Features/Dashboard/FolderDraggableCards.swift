@@ -28,6 +28,7 @@ struct FolderDraggableNotebookCard: View {
   @State private var cardFrame: CGRect = .zero
   @State private var isDragging = false
 
+  // CONSISTENCY: These values must match all card types
   private let cardCornerRadius: CGFloat = 10
   private let titleAreaHeight: CGFloat = 36
 
@@ -36,6 +37,7 @@ struct FolderDraggableNotebookCard: View {
       content: cardContent,
       onTouchDown: {
         // Dim immediately on touch down.
+        // CONSISTENCY: Dim timing and opacity must match all card types
         withAnimation(.easeOut(duration: 0.06)) {
           dimOpacity = 0.12
         }
@@ -92,7 +94,9 @@ struct FolderDraggableNotebookCard: View {
         .shadow(color: Color.black.opacity(0.14), radius: 7, x: 0, y: 4)
         .overlay(sweepOverlay)
         // Scale up slightly when pressed (before drag starts).
+        // CONSISTENCY: Press scale (1.04) must match all card types
         .scaleEffect(dimOpacity > 0 && !isDragging ? 1.04 : 1.0)
+        // CONSISTENCY: Press animation must match all card types
         .animation(.spring(response: 0.15, dampingFraction: 0.75), value: dimOpacity > 0 && !isDragging)
 
       // Title below the card.
@@ -176,6 +180,7 @@ struct FolderDraggablePDFCard: View {
   @State private var cardFrame: CGRect = .zero
   @State private var isDragging = false
 
+  // CONSISTENCY: These values must match all card types
   private let cardCornerRadius: CGFloat = 10
   private let titleAreaHeight: CGFloat = 36
 
@@ -184,6 +189,7 @@ struct FolderDraggablePDFCard: View {
       content: cardContent,
       onTouchDown: {
         // Dim immediately on touch down.
+        // CONSISTENCY: Dim timing and opacity must match all card types
         withAnimation(.easeOut(duration: 0.06)) {
           dimOpacity = 0.12
         }
@@ -240,7 +246,9 @@ struct FolderDraggablePDFCard: View {
         .shadow(color: Color.black.opacity(0.14), radius: 7, x: 0, y: 4)
         .overlay(sweepOverlay)
         // Scale up slightly when pressed (before drag starts).
+        // CONSISTENCY: Press scale (1.04) must match all card types
         .scaleEffect(dimOpacity > 0 && !isDragging ? 1.04 : 1.0)
+        // CONSISTENCY: Press animation must match all card types
         .animation(.spring(response: 0.15, dampingFraction: 0.75), value: dimOpacity > 0 && !isDragging)
 
       // Title below the card.

@@ -61,6 +61,7 @@ struct FolderCardButton: View {
   // Tracks whether the context menu was triggered to prevent button action on release.
   @State private var didTriggerContextMenu = false
 
+  // CONSISTENCY: These values must match NotebookCardButton and PDFDocumentCardButton
   private let cardCornerRadius: CGFloat = 10
   private let titleAreaHeight: CGFloat = 36
   // Keeps a paper-like portrait ratio for the overall container.
@@ -122,8 +123,10 @@ struct FolderCardButton: View {
     }
     .aspectRatio(cardAspectRatio, contentMode: .fit)
     // Scale animation applies to both card and title together.
-    .scaleEffect(isPressed ? 1.07 : 1.0)
-    .animation(.spring(response: 0.18, dampingFraction: 0.7), value: isPressed)
+    // CONSISTENCY: Matches NotebookCardButton and PDFDocumentCardButton press scale.
+    .scaleEffect(isPressed ? 1.04 : 1.0)
+    // CONSISTENCY: Matches NotebookCardButton and PDFDocumentCardButton press animation.
+    .animation(.spring(response: 0.15, dampingFraction: 0.75), value: isPressed)
     // Detects touch down/up for scale and sweep animations.
     .simultaneousGesture(
       DragGesture(minimumDistance: 0)
@@ -361,13 +364,13 @@ struct FolderCardTitle: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 1) {
       Text(folder.displayName)
-        .font(.system(size: 12, weight: .semibold))
+        .font(.system(size: 14, weight: .semibold))
         .foregroundStyle(Color.ink)
         .lineLimit(1)
         .truncationMode(.tail)
 
       Text(itemCountLabel)
-        .font(.system(size: 10, weight: .medium))
+        .font(.system(size: 11, weight: .medium))
         .foregroundStyle(Color.inkSubtle)
         .lineLimit(1)
     }

@@ -193,6 +193,7 @@ struct NotebookCardButton: View {
   // current position, which is immune to parent scale transforms.
   @State private var dragStartGlobalPosition: CGPoint = .zero
 
+  // CONSISTENCY: These values must match PDFDocumentCardButton and FolderCardButton
   private let cardCornerRadius: CGFloat = 10
   private let titleAreaHeight: CGFloat = 36
   // Keeps a paper-like portrait ratio for the overall container.
@@ -257,7 +258,9 @@ struct NotebookCardButton: View {
       )
       .contentShape(shape)
       // Scale up slightly when pressed (before drag starts).
+      // CONSISTENCY: Press scale (1.04) must match PDFDocumentCardButton and FolderCardButton
       .scaleEffect(dimOpacity > 0 && !isDragging ? 1.04 : 1.0)
+      // CONSISTENCY: Press animation must match PDFDocumentCardButton and FolderCardButton
       .animation(.spring(response: 0.15, dampingFraction: 0.75), value: dimOpacity > 0 && !isDragging)
   }
 
@@ -304,6 +307,7 @@ struct NotebookCardButton: View {
       isDragging = false
 
       // Dim immediately on touch down.
+      // CONSISTENCY: Dim timing and opacity must match all card types
       withAnimation(.easeOut(duration: 0.06)) {
         dimOpacity = 0.12
       }
@@ -453,14 +457,14 @@ struct NotebookCardTitle: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 1) {
       Text(notebook.displayName)
-        .font(.system(size: 12, weight: .semibold))
+        .font(.system(size: 14, weight: .semibold))
         .foregroundStyle(Color.ink)
         .lineLimit(1)
         .truncationMode(.tail)
 
       if let subtitle = formattedAccessDate {
         Text(subtitle)
-          .font(.system(size: 10, weight: .medium))
+          .font(.system(size: 11, weight: .medium))
           .foregroundStyle(Color.inkSubtle)
           .lineLimit(1)
           .truncationMode(.tail)
@@ -617,6 +621,7 @@ struct PDFDocumentCardButton: View {
   // current position, which is immune to parent scale transforms.
   @State private var dragStartGlobalPosition: CGPoint = .zero
 
+  // CONSISTENCY: These values must match NotebookCardButton and FolderCardButton
   private let cardCornerRadius: CGFloat = 10
   private let titleAreaHeight: CGFloat = 36
   // Keeps a paper-like portrait ratio for the overall container.
@@ -681,7 +686,9 @@ struct PDFDocumentCardButton: View {
       )
       .contentShape(shape)
       // Scale up slightly when pressed (before drag starts).
+      // CONSISTENCY: Press scale (1.04) must match NotebookCardButton and FolderCardButton
       .scaleEffect(dimOpacity > 0 && !isDragging ? 1.04 : 1.0)
+      // CONSISTENCY: Press animation must match NotebookCardButton and FolderCardButton
       .animation(.spring(response: 0.15, dampingFraction: 0.75), value: dimOpacity > 0 && !isDragging)
   }
 
@@ -728,6 +735,7 @@ struct PDFDocumentCardButton: View {
       isDragging = false
 
       // Dim immediately on touch down.
+      // CONSISTENCY: Dim timing and opacity must match all card types
       withAnimation(.easeOut(duration: 0.06)) {
         dimOpacity = 0.12
       }
@@ -876,13 +884,13 @@ struct PDFDocumentCardTitle: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 1) {
       Text(metadata.displayName)
-        .font(.system(size: 12, weight: .semibold))
+        .font(.system(size: 14, weight: .semibold))
         .foregroundStyle(Color.ink)
         .lineLimit(1)
         .truncationMode(.tail)
 
       Text(pageCountText)
-        .font(.system(size: 10, weight: .medium))
+        .font(.system(size: 11, weight: .medium))
         .foregroundStyle(Color.inkSubtle)
         .lineLimit(1)
     }
