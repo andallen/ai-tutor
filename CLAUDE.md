@@ -24,6 +24,22 @@ InkOS/
 │   │       └── NotebookTransitionCoordinator.swift
 │   │
 │   ├── Features/                         # SwiftUI Feature Modules
+│   │   ├── AIIndexing/                   # AI-powered content indexing for semantic search
+│   │   │   ├── Extraction/               # Content extraction from notebooks
+│   │   │   │   ├── ChunkingService.swift      # Splits content into chunks for embedding
+│   │   │   │   ├── ContentExtractor.swift     # Extracts text content from notebooks
+│   │   │   │   └── ExtractionModels.swift     # Data models for extraction
+│   │   │   │
+│   │   │   ├── Indexing/                 # Indexing coordination and queue management
+│   │   │   │   ├── IndexingCoordinator.swift  # Orchestrates the indexing pipeline
+│   │   │   │   ├── IndexingModels.swift       # Data models for indexing
+│   │   │   │   └── IndexingQueue.swift        # Queue for processing indexing jobs
+│   │   │   │
+│   │   │   └── VectorStore/              # Vector storage and embedding services
+│   │   │       ├── EmbeddingService.swift     # Generates embeddings via API
+│   │   │       ├── VectorStoreClient.swift    # Client for vector database operations
+│   │   │       └── VectorStoreModels.swift    # Data models for vector storage
+│   │   │
 │   │   ├── Dashboard/                    # Notebook library and management UI
 │   │   │   ├── DashboardView.swift       # Main dashboard view
 │   │   │   ├── DashboardItem.swift       # Dashboard item model
@@ -35,7 +51,8 @@ InkOS/
 │   │   │   ├── FolderDropDelegate.swift  # Drag-and-drop folder handling
 │   │   │   ├── FolderDraggableCards.swift # Draggable card components for folders
 │   │   │   ├── MoveToFolderSheet.swift   # Move notebook to folder UI
-│   │   │   └── ContextMenuOverlay.swift  # Context menu presentation overlay
+│   │   │   ├── ContextMenuOverlay.swift  # Context menu presentation overlay
+│   │   │   └── UIKitDragWrapper.swift    # UIKit drag-and-drop bridge for SwiftUI
 │   │   │
 │   │   ├── Notebook/                     # Notebook metadata models
 │   │   │   └── NotebookModel.swift
@@ -58,13 +75,9 @@ InkOS/
 │   │   │   │   ├── Contract.swift        # Search index contract/interface
 │   │   │   │   ├── SearchIndex.swift     # Core search index implementation
 │   │   │   │   └── SearchIndexTriggers.swift  # Event triggers for indexing
-│   │   │   ├── Service/                  # Search service layer
-│   │   │   │   ├── SearchService.swift   # Search service implementation
-│   │   │   │   └── SearchServiceContract.swift  # Service contract/interface
-│   │   │   └── UI/                       # Search UI components (placeholder dirs)
-│   │   │       ├── Dashboard/
-│   │   │       ├── Editor/
-│   │   │       └── Folder/
+│   │   │   └── Service/                  # Search service layer
+│   │   │       ├── SearchService.swift   # Search service implementation
+│   │   │       └── SearchServiceContract.swift  # Service contract/interface
 │   │   │
 │   │   └── Shared/                       # Shared UI components & utilities
 │   │       ├── ContextMenuView.swift     # Reusable context menu component
@@ -92,6 +105,7 @@ InkOS/
 │   │   ├── ToolPaletteView.swift         # Floating custom toolbar
 │   │   ├── EditingToolbarView.swift      # Undo/Redo/Clear toolbar
 │   │   ├── ColorThicknessPillView.swift  # Color and thickness selection UI
+│   │   ├── HomeButtonView.swift          # Home navigation button
 │   │   ├── AIButtonView.swift            # AI assistant button component
 │   │   ├── AIOverlayView.swift           # AI assistant overlay interface
 │   │   ├── AIChatInputBar.swift          # AI chat input component
@@ -146,7 +160,16 @@ InkOS/
 │   │
 │   ├── Features/
 │   │   ├── NotebookModelTests.swift
-│   │   ├── PDFImport/
+│   │   ├── AIIndexing/                   # AI indexing tests
+│   │   │   ├── ChunkingServiceTests.swift
+│   │   │   ├── ContentExtractorTests.swift
+│   │   │   ├── EmbeddingServiceTests.swift
+│   │   │   ├── IndexingCoordinatorTests.swift
+│   │   │   ├── IndexingIntegrationTests.swift
+│   │   │   ├── IndexingModelsTests.swift
+│   │   │   ├── IndexingQueueTests.swift
+│   │   │   ├── VectorStoreClientTests.swift
+│   │   │   └── VectorStoreModelsTests.swift
 │   │   └── Search/
 │   │       ├── SearchIndexTests.swift
 │   │       └── SearchServiceTests.swift
@@ -163,6 +186,13 @@ InkOS/
 │
 ├── InkOSUITests/                         # UI test suite
 │   └── InkOSUITests.swift
+│
+├── Firebase/                             # Firebase backend services
+│   ├── firebase.json                     # Firebase configuration
+│   └── functions/                        # Cloud Functions
+│       ├── src/                          # TypeScript source files
+│       ├── package.json                  # Node.js dependencies
+│       └── tsconfig.json                 # TypeScript configuration
 │
 ├── MyScriptCertificate/                  # License Key
 │   ├── MyCertificate.h
@@ -184,6 +214,10 @@ InkOS/
 │       ├── en_US/                        # English language resources
 │       ├── math/                         # Math recognition
 │       └── shape/                        # Shape recognition
+│
+├── Podfile                               # CocoaPods dependency specification
+├── Podfile.lock                          # Locked dependency versions
+├── Pods/                                 # CocoaPods dependencies (generated)
 │
 └── Logs/                                 # Build artifacts & logs
 ```
