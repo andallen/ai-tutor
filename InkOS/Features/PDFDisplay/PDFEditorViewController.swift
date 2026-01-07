@@ -782,13 +782,19 @@ extension PDFEditorViewController: EditorDelegate {
 // MARK: - UIGestureRecognizerDelegate
 
 extension PDFEditorViewController: UIGestureRecognizerDelegate {
-  // Allows the palette dismiss tap gesture to work simultaneously with other gestures.
+  // Allows tap gestures to work simultaneously with other gestures.
   func gestureRecognizer(
     _ gestureRecognizer: UIGestureRecognizer,
     shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
   ) -> Bool {
-    // Allow simultaneous recognition for the palette dismiss tap.
-    return gestureRecognizer == paletteDismissTapRecognizer
+    // Allow simultaneous recognition for palette dismiss and AI overlay dismiss taps.
+    if gestureRecognizer == paletteDismissTapRecognizer {
+      return true
+    }
+    if gestureRecognizer == aiOverlayDismissTapRecognizer {
+      return true
+    }
+    return false
   }
 
   // Prevents the AI overlay dismiss tap from triggering when touch is inside the overlay.

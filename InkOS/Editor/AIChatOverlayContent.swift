@@ -1,3 +1,7 @@
+// swiftlint:disable file_length
+// This file contains the complete AI chat overlay UI including models, helper views, and main content.
+// The file length exceeds 400 lines due to the inherent complexity of the chat interface,
+// but is well-organized with clear MARK sections for maintainability.
 import SwiftUI
 
 // MARK: - Models
@@ -41,6 +45,226 @@ enum AIOverlayLocation {
   case note
 }
 
+// Represents a skill available in the skills box.
+// This is a placeholder model that mirrors SkillMetadata from the skills infrastructure.
+struct SkillItem: Identifiable {
+  let id: String
+  let displayName: String
+  let description: String
+  let iconName: String
+
+  // Placeholder skills list (will be replaced by SkillRegistry.shared.allSkills()).
+  static let availableSkills: [SkillItem] = [
+    SkillItem(
+      id: "graphing-calculator",
+      displayName: "Graphing Calculator",
+      description: "Plot equations and functions",
+      iconName: "function"
+    )
+  ]
+}
+
+// MARK: - Liquid Glass Modifier
+
+// Applies liquid glass effect on iOS 26+, falls back to ultraThinMaterial on earlier versions.
+private struct LiquidGlassModifier: ViewModifier {
+  func body(content: Content) -> some View {
+    if #available(iOS 26.0, *) {
+      content
+        .glassEffect(
+          .regular.interactive(false), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    } else {
+      content
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+  }
+}
+
+// MARK: - Skill Item View
+
+// Displays a single skill row in the skills box.
+private struct SkillItemView: View {
+  let skill: SkillItem
+  let onTap: () -> Void
+
+  var body: some View {
+    Button(action: onTap) {
+      HStack(spacing: 12) {
+        // Skill icon in a circular background.
+        Image(systemName: skill.iconName)
+          .font(.system(size: 16, weight: .medium))
+          .foregroundColor(.black)
+          .frame(width: 32, height: 32)
+          .background(Color.black.opacity(0.08), in: Circle())
+
+        // Skill name and description.
+        VStack(alignment: .leading, spacing: 2) {
+          Text(skill.displayName)
+            .font(.system(size: 15, weight: .medium))
+            .foregroundColor(.black)
+
+          Text(skill.description)
+            .font(.system(size: 12))
+            .foregroundColor(Color(white: 0.5))
+            .lineLimit(1)
+        }
+
+        Spacer()
+      }
+      .padding(.horizontal, 12)
+      .padding(.vertical, 10)
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+  }
+}
+
+// MARK: - Header Components
+
+// Hamburger menu button for opening chat history.
+private struct HamburgerMenuButton: View {
+  let action: () -> Void
+
+  var body: some View {
+    Button(
+      action: action,
+      label: {
+        VStack(alignment: .leading, spacing: 4) {
+          RoundedRectangle(cornerRadius: 1)
+            .fill(Color.black)
+            .frame(width: 18, height: 2)
+          RoundedRectangle(cornerRadius: 1)
+            .fill(Color.black)
+            .frame(width: 12, height: 2)
+        }
+        .frame(width: 44, height: 44)
+      }
+    )
+  }
+}
+
+// Model selection menu.
+private struct ModelMenuView: View {
+  @Binding var selectedModel: AIModel
+
+  var body: some View {
+    Menu(
+      content: {
+        ForEach(AIModel.allCases) { model in
+          Button(
+            action: {
+              selectedModel = model
+            },
+            label: {
+              HStack {
+                Text(model.rawValue)
+                if selectedModel == model {
+                  Image(systemName: "checkmark")
+                }
+              }
+            }
+          )
+        }
+      },
+      label: {
+        HStack(spacing: 4) {
+          Text("Model:")
+            .font(.system(size: 14, weight: .medium))
+            .foregroundColor(.black)
+
+          Text(selectedModel.rawValue)
+            .font(.system(size: 14))
+            .foregroundColor(Color(white: 0.5))
+
+          Image(systemName: "chevron.up.chevron.down")
+            .font(.system(size: 10, weight: .medium))
+            .foregroundColor(Color(white: 0.5))
+        }
+        .fixedSize()
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+      }
+    )
+  }
+}
+
+// Context selection menu with lightbulb fade animation.
+private struct ContextMenuView: View {
+  @Binding var selectedDashboardContext: DashboardContextScope
+  @Binding var selectedNoteContext: NoteContextScope
+  @Binding var isLightbulbVisible: Bool
+  let contextDisplayValue: String
+  let location: AIOverlayLocation
+  let contextMenuOptions: AnyView
+
+  var body: some View {
+    Menu(
+      content: {
+        contextMenuOptions
+      },
+      label: {
+        HStack(spacing: 4) {
+          Text("Context:")
+            .font(.system(size: 14, weight: .medium))
+            .foregroundColor(.black)
+
+          Text(contextDisplayValue)
+            .font(.system(size: 14))
+            .foregroundColor(Color(white: 0.5))
+
+          Image(systemName: "chevron.up.chevron.down")
+            .font(.system(size: 10, weight: .medium))
+            .foregroundColor(Color(white: 0.5))
+        }
+        .fixedSize()
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+      }
+    )
+    .simultaneousGesture(
+      TapGesture()
+        .onEnded { _ in
+          // Fade out the lightbulb button when context menu is tapped.
+          withAnimation(.easeOut(duration: 0.15)) {
+            isLightbulbVisible = false
+          }
+          // Fade back in after a delay.
+          DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            withAnimation(.easeIn(duration: 0.2)) {
+              isLightbulbVisible = true
+            }
+          }
+        }
+    )
+  }
+}
+
+// Lightbulb button for opening skills box.
+private struct LightbulbButton: View {
+  @Binding var isSkillsBoxVisible: Bool
+  @Binding var isLightbulbVisible: Bool
+
+  var body: some View {
+    Button(
+      action: {
+        withAnimation(.easeOut(duration: 0.15)) {
+          isSkillsBoxVisible.toggle()
+        }
+      },
+      label: {
+        Image(systemName: "lightbulb")
+          .font(.system(size: 18, weight: .medium))
+          .foregroundColor(.black)
+          .frame(width: 40, height: 40)
+          .background(.ultraThinMaterial, in: Circle())
+      }
+    )
+    .opacity(isLightbulbVisible ? 1 : 0)
+    .offset(x: isSkillsBoxVisible ? 60 : 0)
+    .animation(.easeOut(duration: 0.15), value: isSkillsBoxVisible)
+  }
+}
+
 // MARK: - Main Content View
 
 // Reusable content view for the AI chat overlay.
@@ -61,6 +285,12 @@ struct AIChatOverlayContent: View {
 
   // Controls visibility of the lightbulb button (fades when context menu tapped).
   @State private var isLightbulbVisible = true
+
+  // Controls visibility of the skills box.
+  @State private var isSkillsBoxVisible = false
+
+  // Internal focus state to detect when input bar gains focus.
+  @FocusState private var internalInputFocused: Bool
 
   // Currently selected AI model.
   @State private var selectedModel: AIModel = .gemini25Flash
@@ -110,7 +340,10 @@ struct AIChatOverlayContent: View {
         // Lightbulb button row aligned to the right.
         HStack {
           Spacer()
-          lightbulbButton
+          LightbulbButton(
+            isSkillsBoxVisible: $isSkillsBoxVisible,
+            isLightbulbVisible: $isLightbulbVisible
+          )
         }
         .padding(.trailing, 16)
         .padding(.top, 4)
@@ -118,12 +351,41 @@ struct AIChatOverlayContent: View {
         Spacer()
 
         // Chat input bar with focus binding for keyboard control.
-        AIChatInputBar(text: $text, isFocused: isFocused) {
+        AIChatInputBar(text: $text, isFocused: $internalInputFocused) {
           onSend()
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 16)
       }
+      .onChange(of: internalInputFocused) { _, focused in
+        // Close skills box when input bar gains focus.
+        if focused && isSkillsBoxVisible {
+          withAnimation(.easeOut(duration: 0.15)) {
+            isSkillsBoxVisible = false
+          }
+        }
+      }
+      // Skills box overlay - positioned relative to the main content, clipped to bounds.
+      .overlay(alignment: .top) {
+        // Invisible tap-catching layer to dismiss skills box when tapping outside it.
+        // Excludes bottom 80pt (chat input bar area) so input bar taps pass through.
+        if isSkillsBoxVisible {
+          GeometryReader { geometry in
+            Color.clear
+              .contentShape(Rectangle())
+              .frame(height: geometry.size.height - 80)
+              .onTapGesture {
+                withAnimation(.easeOut(duration: 0.15)) {
+                  isSkillsBoxVisible = false
+                }
+              }
+          }
+        }
+      }
+      .overlay(alignment: .topTrailing) {
+        skillsBox
+      }
+      .clipped()
 
       // Chat history sidebar (slides in from left).
       AIChatHistorySidebar(
@@ -156,20 +418,10 @@ struct AIChatOverlayContent: View {
   private var headerView: some View {
     HStack(alignment: .center, spacing: 0) {
       // Hamburger menu button (two horizontal lines, top longer than bottom).
-      Button(action: {
+      HamburgerMenuButton {
         withAnimation(.easeOut(duration: 0.15)) {
           isChatHistoryVisible = true
         }
-      }) {
-        VStack(alignment: .leading, spacing: 4) {
-          RoundedRectangle(cornerRadius: 1)
-            .fill(Color.black)
-            .frame(width: 18, height: 2)
-          RoundedRectangle(cornerRadius: 1)
-            .fill(Color.black)
-            .frame(width: 12, height: 2)
-        }
-        .frame(width: 44, height: 44)
       }
 
       Spacer()
@@ -177,10 +429,17 @@ struct AIChatOverlayContent: View {
       // Native Apple Menu dropdowns side by side.
       HStack(spacing: 8) {
         // Model selector menu.
-        modelMenu
+        ModelMenuView(selectedModel: $selectedModel)
 
         // Context selector menu.
-        contextMenu
+        ContextMenuView(
+          selectedDashboardContext: $selectedDashboardContext,
+          selectedNoteContext: $selectedNoteContext,
+          isLightbulbVisible: $isLightbulbVisible,
+          contextDisplayValue: contextDisplayValue,
+          location: location,
+          contextMenuOptions: AnyView(contextMenuOptions)
+        )
       }
     }
     .padding(.leading, 8)
@@ -188,92 +447,57 @@ struct AIChatOverlayContent: View {
     .padding(.top, 8)
   }
 
-  // Native Apple Menu for model selection with liquid glass styling.
-  private var modelMenu: some View {
-    Menu {
-      ForEach(AIModel.allCases) { model in
-        Button(action: {
-          selectedModel = model
-        }) {
-          HStack {
-            Text(model.rawValue)
-            if selectedModel == model {
-              Image(systemName: "checkmark")
-            }
-          }
-        }
-      }
-    } label: {
-      HStack(spacing: 4) {
-        Text("Model:")
-          .font(.system(size: 14, weight: .medium))
-          .foregroundColor(.black)
+  // Skills box that slides in from the right side of the overlay with blurred edge.
+  private var skillsBox: some View {
+    let boxWidth: CGFloat = 260
+    let boxHeight: CGFloat = 240
+    let blurWidth: CGFloat = 20
+    // Offset to fully hide the box off-screen.
+    let hideOffset: CGFloat = boxWidth + 32
 
-        Text(selectedModel.rawValue)
-          .font(.system(size: 14))
-          .foregroundColor(Color(white: 0.5))
-
-        Image(systemName: "chevron.up.chevron.down")
-          .font(.system(size: 10, weight: .medium))
-          .foregroundColor(Color(white: 0.5))
-      }
-      .fixedSize()
-      .padding(.horizontal, 10)
-      .padding(.vertical, 6)
-    }
-  }
-
-  // Native Apple Menu for context selection with liquid glass styling.
-  private var contextMenu: some View {
-    Menu {
-      contextMenuOptions
-    } label: {
-      HStack(spacing: 4) {
-        Text("Context:")
-          .font(.system(size: 14, weight: .medium))
-          .foregroundColor(.black)
-
-        Text(contextDisplayValue)
-          .font(.system(size: 14))
-          .foregroundColor(Color(white: 0.5))
-
-        Image(systemName: "chevron.up.chevron.down")
-          .font(.system(size: 10, weight: .medium))
-          .foregroundColor(Color(white: 0.5))
-      }
-      .fixedSize()
-      .padding(.horizontal, 10)
-      .padding(.vertical, 6)
-    }
-    .simultaneousGesture(
-      TapGesture()
-        .onEnded { _ in
-          // Fade out the lightbulb button when context menu is tapped.
-          withAnimation(.easeOut(duration: 0.15)) {
-            isLightbulbVisible = false
-          }
-          // Fade back in after a delay.
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            withAnimation(.easeIn(duration: 0.2)) {
-              isLightbulbVisible = true
-            }
-          }
-        }
-    )
-  }
-
-  // Circular lightbulb button with glass styling.
-  private var lightbulbButton: some View {
-    Button(action: {
-      // Placeholder action - does nothing for now.
-    }) {
-      Image(systemName: "lightbulb")
-        .font(.system(size: 18, weight: .medium))
+    return VStack(alignment: .leading, spacing: 0) {
+      Text("Skills")
+        .font(.system(size: 17, weight: .semibold))
         .foregroundColor(.black)
-        .frame(width: 40, height: 40)
-        .background(.ultraThinMaterial, in: Circle())
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.leading, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 8)
+
+      // Scrollable list of available skills.
+      ScrollView {
+        VStack(spacing: 0) {
+          ForEach(SkillItem.availableSkills) { skill in
+            SkillItemView(skill: skill) {
+              handleSkillTapped(skill)
+            }
+          }
+        }
+      }
     }
-    .opacity(isLightbulbVisible ? 1 : 0)
+    .frame(width: boxWidth, height: boxHeight)
+    .modifier(LiquidGlassModifier())
+    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    .mask(
+      // Create a gradient mask that fades out the trailing edge.
+      LinearGradient(
+        gradient: Gradient(stops: [
+          .init(color: .clear, location: 0.0),
+          .init(
+            color: .white,
+            location: isSkillsBoxVisible ? 0.0 : (blurWidth / boxWidth)
+          ),
+          .init(color: .white, location: 1.0)
+        ]),
+        startPoint: .trailing,
+        endPoint: .leading
+      )
+    )
+    .padding(.top, 56)
+    .padding(.trailing, 16)
+    .offset(x: isSkillsBoxVisible ? 0 : hideOffset)
+    .animation(.easeOut(duration: 0.15), value: isSkillsBoxVisible)
+    .allowsHitTesting(isSkillsBoxVisible)
   }
 
   // Context menu options based on current location.
@@ -282,36 +506,57 @@ struct AIChatOverlayContent: View {
     switch location {
     case .dashboard, .folder:
       ForEach(DashboardContextScope.allCases) { scope in
-        let displayTitle = (location == .folder && scope == .specificFolder)
+        let displayTitle =
+          (location == .folder && scope == .specificFolder)
           ? "This folder"
           : scope.rawValue
 
-        Button(action: {
-          selectedDashboardContext = scope
-        }) {
-          HStack {
-            Text(displayTitle)
-            if selectedDashboardContext == scope {
-              Image(systemName: "checkmark")
+        Button(
+          action: {
+            selectedDashboardContext = scope
+          },
+          label: {
+            HStack {
+              Text(displayTitle)
+              if selectedDashboardContext == scope {
+                Image(systemName: "checkmark")
+              }
             }
           }
-        }
+        )
       }
 
     case .note:
       ForEach(NoteContextScope.allCases) { scope in
-        Button(action: {
-          selectedNoteContext = scope
-        }) {
-          HStack {
-            Text(scope.rawValue)
-            if selectedNoteContext == scope {
-              Image(systemName: "checkmark")
+        Button(
+          action: {
+            selectedNoteContext = scope
+          },
+          label: {
+            HStack {
+              Text(scope.rawValue)
+              if selectedNoteContext == scope {
+                Image(systemName: "checkmark")
+              }
             }
           }
-        }
+        )
       }
     }
+  }
+
+  // Handle skill tap: insert skill prompt into chat, close skills box, and focus input.
+  private func handleSkillTapped(_ skill: SkillItem) {
+    // Insert skill-specific prompt into chat input.
+    text = "/\(skill.id) "
+
+    // Close the skills box.
+    withAnimation(.easeOut(duration: 0.15)) {
+      isSkillsBoxVisible = false
+    }
+
+    // Focus the input bar so user can continue typing.
+    internalInputFocused = true
   }
 
   // Initializer with optional focus binding and location for context options.
@@ -329,43 +574,11 @@ struct AIChatOverlayContent: View {
 }
 
 #if DEBUG
-struct AIChatOverlayContent_Previews: PreviewProvider {
-  static var previews: some View {
-    VStack(spacing: 20) {
-      // Note context preview.
-      ZStack {
-        Color.gray.opacity(0.3)
-          .ignoresSafeArea()
-
-        AIChatOverlayContent(
-          text: .constant(""),
-          location: .note,
-          onSend: {}
-        )
+  struct AIChatOverlayContent_Previews: PreviewProvider {
+    static var previews: some View {
+      AIChatOverlayContent(text: .constant(""), location: .note, onSend: {})
         .frame(width: 400, height: 560)
-        .background(
-          RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .fill(.ultraThinMaterial)
-        )
-      }
-
-      // Dashboard context preview.
-      ZStack {
-        Color.gray.opacity(0.3)
-          .ignoresSafeArea()
-
-        AIChatOverlayContent(
-          text: .constant(""),
-          location: .dashboard,
-          onSend: {}
-        )
-        .frame(width: 400, height: 560)
-        .background(
-          RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .fill(.ultraThinMaterial)
-        )
-      }
+        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(.ultraThinMaterial))
     }
   }
-}
 #endif
