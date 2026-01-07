@@ -5,7 +5,10 @@
 import {onRequest} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import {z} from "zod";
-import {interpretJIIXForGraph, generateGraphFromPrompt} from "./graphingCalculator";
+import {
+  interpretJIIXForGraph,
+  generateGraphFromPrompt,
+} from "./graphingCalculator";
 
 // Request validation schema.
 const ExecuteSkillSchema = z.object({
@@ -47,12 +50,21 @@ type SkillHandler = (
 // Registry of skill handlers.
 const skillHandlers: Record<string, SkillHandler> = {};
 
-// Registers a skill handler.
+/**
+ * Registers a skill handler.
+ * @param {string} skillID - The skill identifier.
+ * @param {SkillHandler} handler - The handler function.
+ */
 function registerSkillHandler(skillID: string, handler: SkillHandler): void {
   skillHandlers[skillID] = handler;
 }
 
-// Creates a success result.
+/**
+ * Creates a success result.
+ * @param {SkillResultData} data - The result data.
+ * @param {string} message - Optional message.
+ * @return {SkillResult} The success result.
+ */
 function successResult(
   data: SkillResultData,
   message?: string
@@ -65,7 +77,12 @@ function successResult(
   };
 }
 
-// Creates a failure result.
+/**
+ * Creates a failure result.
+ * @param {string} code - The error code.
+ * @param {string} message - The error message.
+ * @return {SkillResult} The failure result.
+ */
 function failureResult(code: string, message: string): SkillResult {
   return {
     success: false,
@@ -75,8 +92,13 @@ function failureResult(code: string, message: string): SkillResult {
   };
 }
 
-// Lesson Generator skill handler.
-// Generates interactive lessons from provided content.
+/**
+ * Lesson Generator skill handler.
+ * Generates interactive lessons from provided content.
+ * @param {Object} parameters - Skill parameters.
+ * @param {Object} context - Execution context.
+ * @return {Promise} The skill result.
+ */
 async function executeLessonGenerator(
   parameters: Record<string, unknown>,
   context?: ExecuteSkillRequest["context"]
@@ -126,11 +148,14 @@ async function executeLessonGenerator(
   );
 }
 
-// Graphing Calculator skill handler.
-// Interprets JIIX content or prompts to generate GraphSpecification.
+/**
+ * Graphing Calculator skill handler.
+ * Interprets JIIX content or prompts to generate GraphSpecification.
+ * @param {Object} parameters - Skill parameters.
+ * @return {Promise} The skill result.
+ */
 async function executeGraphingCalculator(
-  parameters: Record<string, unknown>,
-  context?: ExecuteSkillRequest["context"]
+  parameters: Record<string, unknown>
 ): Promise<SkillResult> {
   const specification = parameters["specification"] as string | undefined;
   const jiixContent = parameters["jiixContent"] as string | undefined;
@@ -157,7 +182,7 @@ async function executeGraphingCalculator(
   // Get API key for Gemini calls.
   const apiKey = process.env.GOOGLE_GENAI_API_KEY;
   if (!apiKey && (jiixContent || prompt)) {
-    logger.error("GOOGLE_GENAI_API_KEY not configured for graph generation");
+    logger.error("GOOGLE_GENAI_API_KEY not configured");
     // Fall back to placeholder if no API key.
     const graphSpec = createPlaceholderGraphSpec(
       prompt || "JIIX interpretation"
@@ -168,14 +193,14 @@ async function executeGraphingCalculator(
     }, "Graph created (placeholder - API key not configured)");
   }
 
-  if (jiixContent) {
+  if (jiixContent && apiKey) {
     // JIIX content - interpret with Gemini AI.
     logger.info("Interpreting JIIX content with Gemini", {
       contentLength: jiixContent.length,
     });
 
     try {
-      const graphSpec = await interpretJIIXForGraph(jiixContent, apiKey!);
+      const graphSpec = await interpretJIIXForGraph(jiixContent, apiKey);
       return successResult({
         type: "graphSpecification",
         ...graphSpec,
@@ -189,12 +214,12 @@ async function executeGraphingCalculator(
     }
   }
 
-  if (prompt) {
+  if (prompt && apiKey) {
     // Natural language prompt - generate with Gemini AI.
     logger.info("Generating graph from prompt with Gemini", {prompt});
 
     try {
-      const graphSpec = await generateGraphFromPrompt(prompt, apiKey!);
+      const graphSpec = await generateGraphFromPrompt(prompt, apiKey);
       return successResult({
         type: "graphSpecification",
         ...graphSpec,
@@ -214,7 +239,11 @@ async function executeGraphingCalculator(
   );
 }
 
-// Creates a placeholder GraphSpecification for testing.
+/**
+ * Creates a placeholder GraphSpecification for testing.
+ * @param {string} title - The graph title.
+ * @return {Record<string, unknown>} The placeholder specification.
+ */
 function createPlaceholderGraphSpec(title: string): Record<string, unknown> {
   return {
     version: "1.0",
@@ -269,8 +298,13 @@ function createPlaceholderGraphSpec(title: string): Record<string, unknown> {
   };
 }
 
-// Audio Transcription skill handler.
-// Transcribes audio to text (hybrid - cloud processing component).
+/**
+ * Audio Transcription skill handler.
+ * Transcribes audio to text (hybrid - cloud processing component).
+ * @param {Object} parameters - Skill parameters.
+ * @param {Object} context - Execution context.
+ * @return {Promise} The skill result.
+ */
 async function executeAudioTranscription(
   parameters: Record<string, unknown>,
   context?: ExecuteSkillRequest["context"]
@@ -297,8 +331,13 @@ async function executeAudioTranscription(
   return successResult(transcription, "Audio transcribed successfully");
 }
 
-// Mistake Watcher skill handler.
-// Detects math errors in JIIX content.
+/**
+ * Mistake Watcher skill handler.
+ * Detects math errors in JIIX content.
+ * @param {Object} parameters - Skill parameters.
+ * @param {Object} context - Execution context.
+ * @return {Promise} The skill result.
+ */
 async function executeMistakeWatcher(
   parameters: Record<string, unknown>,
   context?: ExecuteSkillRequest["context"]
@@ -337,7 +376,9 @@ registerSkillHandler("graphing-calculator", executeGraphingCalculator);
 registerSkillHandler("audio-transcription", executeAudioTranscription);
 registerSkillHandler("mistake-watcher", executeMistakeWatcher);
 
-// Main skill execution endpoint.
+/**
+ * Main skill execution endpoint.
+ */
 export const executeSkill = onRequest({cors: true}, async (req, res) => {
   // Only allow POST requests.
   if (req.method !== "POST") {
@@ -361,7 +402,8 @@ export const executeSkill = onRequest({cors: true}, async (req, res) => {
   }
 
   const {skillID, parameters, context} = parseResult.data;
-  logger.info("Executing skill", {skillID, paramKeys: Object.keys(parameters)});
+  const paramKeys = Object.keys(parameters);
+  logger.info("Executing skill", {skillID, paramKeys});
 
   // Look up skill handler.
   const handler = skillHandlers[skillID];
@@ -396,7 +438,9 @@ export const executeSkill = onRequest({cors: true}, async (req, res) => {
   }
 });
 
-// Streaming skill execution endpoint for skills that produce incremental output.
+/**
+ * Streaming skill execution endpoint for incremental output.
+ */
 export const executeSkillStreaming = onRequest(
   {cors: true},
   async (req, res) => {
@@ -424,11 +468,11 @@ export const executeSkillStreaming = onRequest(
     // Look up skill handler.
     const handler = skillHandlers[skillID];
     if (!handler) {
-      res.write(
-        `data: ${JSON.stringify({
-          error: {code: "skill_not_found", message: `Skill '${skillID}' not found`},
-        })}\n\n`
-      );
+      const errMsg = `Skill '${skillID}' not found`;
+      const errData = JSON.stringify({
+        error: {code: "skill_not_found", message: errMsg},
+      });
+      res.write(`data: ${errData}\n\n`);
       res.end();
       return;
     }
@@ -442,23 +486,22 @@ export const executeSkillStreaming = onRequest(
       if (result.success && result.message) {
         const words = result.message.split(" ");
         for (const word of words) {
-          res.write(`data: ${JSON.stringify({text: word + " ", isComplete: false})}\n\n`);
+          const chunk = JSON.stringify({text: word + " ", isComplete: false});
+          res.write(`data: ${chunk}\n\n`);
         }
       }
 
       // Send final result.
-      res.write(`data: ${JSON.stringify({result, isComplete: true})}\n\n`);
+      const finalData = JSON.stringify({result, isComplete: true});
+      res.write(`data: ${finalData}\n\n`);
       res.end();
     } catch (error) {
       logger.error("Streaming skill error", {skillID, error});
-      res.write(
-        `data: ${JSON.stringify({
-          error: {
-            code: "execution_failed",
-            message: error instanceof Error ? error.message : String(error),
-          },
-        })}\n\n`
-      );
+      const errMsg = error instanceof Error ? error.message : String(error);
+      const errData = JSON.stringify({
+        error: {code: "execution_failed", message: errMsg},
+      });
+      res.write(`data: ${errData}\n\n`);
       res.end();
     }
   }

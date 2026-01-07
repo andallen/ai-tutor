@@ -94,7 +94,9 @@ interface GraphInteractivity {
   snapToGrid: boolean;
 }
 
-// Full GraphSpecification structure.
+/**
+ * Full GraphSpecification structure matching Swift implementation.
+ */
 export interface GraphSpecification {
   version: string;
   title?: string;
@@ -131,24 +133,27 @@ const EQUATION_COLORS = [
 ];
 
 // System prompt for Gemini to interpret mathematical content.
-const GRAPH_INTERPRETATION_PROMPT = `You are a mathematical graph specification generator. Your task is to analyze mathematical content (either JIIX handwriting data or natural language descriptions) and generate a GraphSpecification JSON object.
+const GRAPH_INTERPRETATION_PROMPT = `You are a mathematical graph \
+specification generator. Your task is to analyze mathematical content \
+(either JIIX handwriting data or natural language descriptions) and \
+generate a GraphSpecification JSON object.
 
 OUTPUT FORMAT:
-You must respond with ONLY valid JSON matching this schema (no markdown, no explanation):
+You must respond with ONLY valid JSON matching this schema:
 
 {
   "version": "1.0",
   "title": "optional title",
   "viewport": {
-    "xMin": number,
-    "xMax": number,
-    "yMin": number,
-    "yMax": number,
+    "xMin": number, "xMax": number,
+    "yMin": number, "yMax": number,
     "aspectRatio": "auto" | "equal" | "free"
   },
   "axes": {
-    "x": { "label": "x", "gridSpacing": 1, "showGrid": true, "showAxis": true, "tickLabels": true },
-    "y": { "label": "y", "gridSpacing": 1, "showGrid": true, "showAxis": true, "tickLabels": true }
+    "x": { "label": "x", "gridSpacing": 1, "showGrid": true,
+           "showAxis": true, "tickLabels": true },
+    "y": { "label": "y", "gridSpacing": 1, "showGrid": true,
+           "showAxis": true, "tickLabels": true }
   },
   "equations": [
     {
@@ -164,13 +169,10 @@ You must respond with ONLY valid JSON matching this schema (no markdown, no expl
       "parameterRange": { "min": number, "max": number },
       "thetaRange": { "min": number, "max": number },
       "style": {
-        "color": "#hex",
-        "lineWidth": 2,
+        "color": "#hex", "lineWidth": 2,
         "lineStyle": "solid" | "dashed" | "dotted",
-        "fillBelow": boolean,
-        "fillAbove": boolean,
-        "fillColor": "#hex",
-        "fillOpacity": 0-1
+        "fillBelow": boolean, "fillAbove": boolean,
+        "fillColor": "#hex", "fillOpacity": 0-1
       },
       "label": "display label",
       "visible": true,
@@ -180,43 +182,34 @@ You must respond with ONLY valid JSON matching this schema (no markdown, no expl
   ],
   "points": [
     {
-      "id": "pt-1",
-      "x": number,
-      "y": number,
-      "label": "optional",
-      "style": { "color": "#hex", "size": 8, "shape": "circle", "filled": true },
-      "draggable": false,
-      "visible": true
+      "id": "pt-1", "x": number, "y": number, "label": "optional",
+      "style": { "color": "#hex", "size": 8, "shape": "circle",
+                 "filled": true },
+      "draggable": false, "visible": true
     }
   ],
   "annotations": [],
   "interactivity": {
-    "allowPan": true,
-    "allowZoom": true,
-    "allowTrace": true,
-    "showCoordinates": true,
-    "snapToGrid": false
+    "allowPan": true, "allowZoom": true, "allowTrace": true,
+    "showCoordinates": true, "snapToGrid": false
   }
 }
 
 EQUATION TYPE RULES:
-- explicit: y = f(x). Use "expression" and "variable": "x". Example: expression: "x^2 + 2*x - 3"
-- parametric: x(t), y(t). Use "xExpression", "yExpression", "parameter": "t", "parameterRange"
-- polar: r = f(θ). Use "rExpression", "variable": "theta", "thetaRange"
-- implicit: F(x,y) = 0. Use "expression" with x and y. Example: "x^2 + y^2 - 25" for circle
-- inequality: y < f(x) or similar. Use "expression", set "fillRegion": true, "boundaryStyle"
+- explicit: y = f(x). Use "expression" and "variable": "x".
+- parametric: x(t), y(t). Use "xExpression", "yExpression", "parameter": "t".
+- polar: r = f(theta). Use "rExpression", "variable": "theta", "thetaRange".
+- implicit: F(x,y) = 0. Use "expression" with x and y.
+- inequality: y < f(x). Use "expression", set "fillRegion": true.
 
 EXPRESSION SYNTAX:
-- Use standard math notation: x^2 (power), sqrt(x), sin(x), cos(x), tan(x), log(x), ln(x), exp(x), abs(x)
+- Use standard math: x^2 (power), sqrt(x), sin(x), cos(x), tan(x), etc.
 - Multiplication must be explicit: "2*x" not "2x"
 - Pi is "pi" or "PI", e is "e" or "E"
-- For parametric, use "t" as parameter
-- For polar, use "theta" as variable
 
 VIEWPORT GUIDELINES:
 - For polynomials: typically -10 to 10
 - For trig functions: consider period (e.g., -2*pi to 2*pi)
-- For bounded functions: fit to interesting region
 - Use "equal" aspectRatio for circles/geometric shapes
 
 COLOR ASSIGNMENT:
@@ -227,7 +220,12 @@ COLOR ASSIGNMENT:
 
 RESPOND WITH ONLY THE JSON OBJECT.`;
 
-// Interprets JIIX handwriting data and generates a GraphSpecification.
+/**
+ * Interprets JIIX handwriting data and generates a GraphSpecification.
+ * @param {string} jiixContent - The JIIX JSON content to interpret.
+ * @param {string} apiKey - The Gemini API key.
+ * @return {Promise<GraphSpecification>} The generated graph specification.
+ */
 export async function interpretJIIXForGraph(
   jiixContent: string,
   apiKey: string
@@ -253,7 +251,8 @@ export async function interpretJIIXForGraph(
   }
 
   // Call Gemini to interpret the math content.
-  const userPrompt = `Analyze this handwritten mathematical content and generate a GraphSpecification:
+  const userPrompt = `Analyze this handwritten mathematical content \
+and generate a GraphSpecification:
 
 ${mathContent}
 
@@ -262,7 +261,12 @@ Generate appropriate equations, viewport, and styling based on what you see.`;
   return await callGeminiForGraph(userPrompt, apiKey);
 }
 
-// Generates a GraphSpecification from a natural language prompt.
+/**
+ * Generates a GraphSpecification from a natural language prompt.
+ * @param {string} prompt - The natural language description.
+ * @param {string} apiKey - The Gemini API key.
+ * @return {Promise<GraphSpecification>} The generated graph specification.
+ */
 export async function generateGraphFromPrompt(
   prompt: string,
   apiKey: string
@@ -278,11 +282,18 @@ Include all necessary equations, points, and appropriate viewport settings.`;
   return await callGeminiForGraph(userPrompt, apiKey);
 }
 
-// Extracts mathematical expressions from JIIX data structure.
+/**
+ * Extracts mathematical expressions from JIIX data structure.
+ * @param {Record<string, unknown>} jiix - The parsed JIIX object.
+ * @return {string} Extracted mathematical expressions.
+ */
 function extractMathFromJIIX(jiix: Record<string, unknown>): string {
   const expressions: string[] = [];
 
-  // Helper to recursively find math content.
+  /**
+   * Helper to recursively find math content.
+   * @param {unknown} obj - Object to search.
+   */
   function findMath(obj: unknown): void {
     if (!obj || typeof obj !== "object") return;
 
@@ -338,34 +349,39 @@ function extractMathFromJIIX(jiix: Record<string, unknown>): string {
   return expressions.join("\n");
 }
 
-// Calls Gemini API to generate a GraphSpecification.
+/**
+ * Calls Gemini API to generate a GraphSpecification.
+ * @param {string} userPrompt - The prompt to send to Gemini.
+ * @param {string} apiKey - The Gemini API key.
+ * @return {Promise<GraphSpecification>} The generated graph specification.
+ */
 async function callGeminiForGraph(
   userPrompt: string,
   apiKey: string
 ): Promise<GraphSpecification> {
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{text: GRAPH_INTERPRETATION_PROMPT}],
+    const apiUrl = "https://generativelanguage.googleapis.com/v1beta" +
+      `/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`;
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{text: GRAPH_INTERPRETATION_PROMPT}],
+        },
+        contents: [
+          {
+            role: "user",
+            parts: [{text: userPrompt}],
           },
-          contents: [
-            {
-              role: "user",
-              parts: [{text: userPrompt}],
-            },
-          ],
-          generationConfig: {
-            responseMimeType: "application/json",
-            temperature: 0.2,
-          },
-        }),
-      }
-    );
+        ],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.2,
+        },
+      }),
+    });
 
     const data = await response.json();
 
@@ -393,8 +409,14 @@ async function callGeminiForGraph(
   }
 }
 
-// Validates and normalizes a GraphSpecification, filling in defaults.
-function validateAndNormalizeSpec(spec: GraphSpecification): GraphSpecification {
+/**
+ * Validates and normalizes a GraphSpecification, filling in defaults.
+ * @param {GraphSpecification} spec - The specification to validate.
+ * @return {GraphSpecification} The normalized specification.
+ */
+function validateAndNormalizeSpec(
+  spec: GraphSpecification
+): GraphSpecification {
   // Ensure version.
   spec.version = spec.version || DEFAULTS.version;
 
@@ -450,7 +472,12 @@ function validateAndNormalizeSpec(spec: GraphSpecification): GraphSpecification 
   return spec;
 }
 
-// Normalizes axis configuration with defaults.
+/**
+ * Normalizes axis configuration with defaults.
+ * @param {AxisConfiguration | undefined} config - The axis config.
+ * @param {string} label - The default label.
+ * @return {AxisConfiguration} The normalized axis configuration.
+ */
 function normalizeAxisConfig(
   config: AxisConfiguration | undefined,
   label: string
@@ -473,7 +500,12 @@ function normalizeAxisConfig(
   };
 }
 
-// Normalizes equation with defaults and assigned color.
+/**
+ * Normalizes equation with defaults and assigned color.
+ * @param {GraphEquation} eq - The equation to normalize.
+ * @param {number} index - The equation index for color assignment.
+ * @return {GraphEquation} The normalized equation.
+ */
 function normalizeEquation(
   eq: GraphEquation,
   index: number
@@ -508,7 +540,10 @@ function normalizeEquation(
   };
 }
 
-// Creates default axes configuration.
+/**
+ * Creates default axes configuration.
+ * @return {GraphAxes} The default axes.
+ */
 function createDefaultAxes(): GraphAxes {
   return {
     x: {
@@ -528,7 +563,10 @@ function createDefaultAxes(): GraphAxes {
   };
 }
 
-// Creates a default empty GraphSpecification.
+/**
+ * Creates a default empty GraphSpecification.
+ * @return {GraphSpecification} The default specification.
+ */
 function createDefaultGraphSpec(): GraphSpecification {
   return {
     version: DEFAULTS.version,
