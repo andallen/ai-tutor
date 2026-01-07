@@ -287,6 +287,8 @@ struct DashboardView: View {
       .toolbar {
         toolbarContent
       }
+      .toolbarBackground(.hidden, for: .navigationBar)
+      .navigationBarTitleDisplayMode(.inline)
   }
 
   // MARK: - Main Content
@@ -309,6 +311,7 @@ struct DashboardView: View {
           }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.top, 24)
 
         // Shows the title as a separate overlay above the transparent navigation bar.
         Text("Notes")
@@ -491,6 +494,61 @@ struct DashboardView: View {
         } label: {
           Image(systemName: "plus")
         }
+      }
+    }
+  }
+
+  // MARK: - Plus Menu Button
+
+  // Plus menu button for the header. Shows different options based on context.
+  @ViewBuilder
+  private var plusMenuButton: some View {
+    if let folder = expandedFolder {
+      // Menu with notebook and PDF import options when folder is open.
+      Menu {
+        Button {
+          createNotebookInExpandedFolder(folder)
+        } label: {
+          Label("New Note", systemImage: "doc.badge.plus")
+        }
+
+        Button {
+          showPDFPicker = true
+        } label: {
+          Label("Import PDF", systemImage: "doc.richtext")
+        }
+      } label: {
+        Image(systemName: "plus")
+          .font(.system(size: 22, weight: .medium))
+          .foregroundStyle(Color.offBlack)
+      }
+    } else {
+      // Menu with all options when no folder is open.
+      Menu {
+        Button {
+          Task {
+            await library.createNotebook()
+          }
+        } label: {
+          Label("New Note", systemImage: "doc.badge.plus")
+        }
+
+        Button {
+          newFolderName = ""
+          showCreateFolderAlert = true
+        } label: {
+          Label("New Folder", systemImage: "folder.badge.plus")
+        }
+
+        Button {
+          showPDFPicker = true
+        } label: {
+          Label("Import PDF", systemImage: "doc.richtext")
+        }
+      } label: {
+        Image(systemName: "plus")
+          .font(.system(size: 22, weight: .medium))
+          .foregroundStyle(Color.offBlack)
       }
     }
   }
@@ -699,7 +757,10 @@ struct DashboardView: View {
         }
       }
     }
-    .padding(.top, 24)
+    .safeAreaInset(edge: .top, spacing: 0) {
+      // Creates a fixed top inset that scroll content cannot enter.
+      Color.clear.frame(height: 24)
+    }
   }
 
   // MARK: - Notebook Card View
@@ -1474,16 +1535,22 @@ struct DashboardView: View {
     }
     previewHosting.view.removeFromSuperview()
 
-    // Shadow container - provides shadow without clipping.
-    // Uses shadowPath for efficient rendering without needing masksToBounds = false.
+    // Shadow container - provides shadow matching the original SwiftUI card.
+    // Uses shadowPath for efficient rendering. The shadow is on a separate view
+    // so the content view can use masksToBounds for rounded corners.
+    // Note: UIKit shadowRadius renders more diffusely than SwiftUI's radius,
+    // so we use a smaller value (3.5) to match SwiftUI's shadow(radius: 7).
+    // Shadow starts at opacity 0 and fades in during drag lift animation.
+    // This masks the visual difference between SwiftUI and UIKit shadow rendering.
     let shadowView = UIView(frame: CGRect(x: 0, y: 0, width: totalWidth, height: previewHeight))
     shadowView.backgroundColor = .clear
+    shadowView.tag = 999  // Tag for finding shadow view during animation.
     shadowView.layer.shadowColor = UIColor.black.cgColor
-    shadowView.layer.shadowOpacity = 0.14
-    shadowView.layer.shadowRadius = 7
-    shadowView.layer.shadowOffset = CGSize(width: 0, height: 4)
+    shadowView.layer.shadowOpacity = 0  // Starts invisible, animated in during lift.
+    shadowView.layer.shadowRadius = 3.5
+    shadowView.layer.shadowOffset = CGSize(width: 0, height: 8)
     shadowView.layer.shadowPath = UIBezierPath(
-      roundedRect: CGRect(x: 0, y: 0, width: totalWidth, height: previewHeight),
+      roundedRect: CGRect(x: 0, y: 6, width: totalWidth, height: previewHeight - 12),
       cornerRadius: cornerRadius
     ).cgPath
 
@@ -1568,16 +1635,22 @@ struct DashboardView: View {
     }
     previewHosting.view.removeFromSuperview()
 
-    // Shadow container - provides shadow without clipping.
-    // Uses shadowPath for efficient rendering without needing masksToBounds = false.
+    // Shadow container - provides shadow matching the original SwiftUI card.
+    // Uses shadowPath for efficient rendering. The shadow is on a separate view
+    // so the content view can use masksToBounds for rounded corners.
+    // Note: UIKit shadowRadius renders more diffusely than SwiftUI's radius,
+    // so we use a smaller value (3.5) to match SwiftUI's shadow(radius: 7).
+    // Shadow starts at opacity 0 and fades in during drag lift animation.
+    // This masks the visual difference between SwiftUI and UIKit shadow rendering.
     let shadowView = UIView(frame: CGRect(x: 0, y: 0, width: totalWidth, height: previewHeight))
     shadowView.backgroundColor = .clear
+    shadowView.tag = 999  // Tag for finding shadow view during animation.
     shadowView.layer.shadowColor = UIColor.black.cgColor
-    shadowView.layer.shadowOpacity = 0.14
-    shadowView.layer.shadowRadius = 7
-    shadowView.layer.shadowOffset = CGSize(width: 0, height: 4)
+    shadowView.layer.shadowOpacity = 0  // Starts invisible, animated in during lift.
+    shadowView.layer.shadowRadius = 3.5
+    shadowView.layer.shadowOffset = CGSize(width: 0, height: 8)
     shadowView.layer.shadowPath = UIBezierPath(
-      roundedRect: CGRect(x: 0, y: 0, width: totalWidth, height: previewHeight),
+      roundedRect: CGRect(x: 0, y: 6, width: totalWidth, height: previewHeight - 12),
       cornerRadius: cornerRadius
     ).cgPath
 
@@ -1640,16 +1713,28 @@ struct DashboardView: View {
     window.addSubview(snapshot)
     notebookDragSnapshot = snapshot
 
-    // Animate the lift: move to finger-centered position, scale up slightly.
-    // The card lifts toward the finger with a subtle scale increase.
+    // Animate the lift: move to finger-centered position.
     // Card is centered on the finger for natural drag feel (matches iOS behavior).
+    // No scale transform to keep shadow consistent with the original card.
     UIView.animate(
       withDuration: 0.2,
       delay: 0,
       options: .curveEaseOut
     ) {
       snapshot.center = position
-      snapshot.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
+    }
+
+    // Fade in the shadow separately to mask the UIKit/SwiftUI shadow rendering difference.
+    // The original SwiftUI card fades out while this shadow fades in, creating smooth transition.
+    if let shadowView = snapshot.viewWithTag(999) {
+      let shadowAnimation = CABasicAnimation(keyPath: "shadowOpacity")
+      shadowAnimation.fromValue = 0
+      shadowAnimation.toValue = 0.08
+      shadowAnimation.duration = 0.5
+      shadowAnimation.fillMode = .forwards
+      shadowAnimation.isRemovedOnCompletion = false
+      shadowView.layer.add(shadowAnimation, forKey: "shadowFadeIn")
+      shadowView.layer.shadowOpacity = 0.08
     }
   }
 
@@ -1791,13 +1876,10 @@ struct DashboardView: View {
     let currentFrame = cardFrameStore.frames[notebook.id] ?? dragSourceFrame
     let targetCenter = CGPoint(x: currentFrame.midX, y: currentFrame.midY)
 
-    // Ensure snapshot is at lifted scale before return animation.
-    // This cancels any in-progress lift animation and guarantees consistent shrink effect.
+    // Cancel any in-progress animations before starting return animation.
     snapshot.layer.removeAllAnimations()
-    snapshot.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
 
-    // Combined animation: position and scale animate simultaneously for one fluid motion.
-    // Use UIView.animate to match the lift animation style.
+    // Animate return to original position. No scale change needed.
     UIView.animate(
       withDuration: 0.4,
       delay: 0,
@@ -1806,10 +1888,9 @@ struct DashboardView: View {
       options: []
     ) {
       snapshot.center = targetCenter
-      snapshot.transform = .identity
     } completion: { _ in
       // Remove snapshot and reveal SwiftUI card.
-      // Card is now at exact position and scale, so swap is invisible.
+      // Card is now at exact position, so swap is invisible.
       snapshot.removeFromSuperview()
       // Disable animations during state reset to prevent grid from animating the card.
       var transaction = Transaction()
@@ -1873,15 +1954,28 @@ struct DashboardView: View {
     window.addSubview(snapshot)
     notebookDragSnapshot = snapshot
 
-    // Animate the lift: move to finger-centered position, scale up slightly.
+    // Animate the lift: move to finger-centered position.
     // Card is centered on the finger for natural drag feel (matches iOS behavior).
+    // No scale transform to keep shadow consistent with the original card.
     UIView.animate(
       withDuration: 0.2,
       delay: 0,
       options: .curveEaseOut
     ) {
       snapshot.center = position
-      snapshot.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
+    }
+
+    // Fade in the shadow separately to mask the UIKit/SwiftUI shadow rendering difference.
+    // The original SwiftUI card fades out while this shadow fades in, creating smooth transition.
+    if let shadowView = snapshot.viewWithTag(999) {
+      let shadowAnimation = CABasicAnimation(keyPath: "shadowOpacity")
+      shadowAnimation.fromValue = 0
+      shadowAnimation.toValue = 0.08
+      shadowAnimation.duration = 0.5
+      shadowAnimation.fillMode = .forwards
+      shadowAnimation.isRemovedOnCompletion = false
+      shadowView.layer.add(shadowAnimation, forKey: "shadowFadeIn")
+      shadowView.layer.shadowOpacity = 0.08
     }
   }
 
@@ -1908,13 +2002,10 @@ struct DashboardView: View {
       // Target position: center of the original card frame.
       let targetCenter = CGPoint(x: dragSourceFrame.midX, y: dragSourceFrame.midY)
 
-      // Ensure snapshot is at lifted scale before return animation.
-      // This cancels any in-progress lift animation and guarantees consistent shrink effect.
+      // Cancel any in-progress animations before starting return animation.
       snapshot.layer.removeAllAnimations()
-      snapshot.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
 
-      // Combined animation: position and scale animate simultaneously for one fluid motion.
-      // Use UIView.animate to match the lift animation style.
+      // Animate return to original position. No scale change needed.
       UIView.animate(
         withDuration: 0.4,
         delay: 0,
@@ -1923,7 +2014,6 @@ struct DashboardView: View {
         options: []
       ) {
         snapshot.center = targetCenter
-        snapshot.transform = .identity
       } completion: { _ in
         // Remove snapshot and reveal SwiftUI card.
         snapshot.removeFromSuperview()
@@ -2002,15 +2092,28 @@ struct DashboardView: View {
     window.addSubview(snapshot)
     pdfDragSnapshot = snapshot
 
-    // Animate the lift: move to finger-centered position, scale up slightly.
+    // Animate the lift: move to finger-centered position.
     // Card is centered on the finger for natural drag feel (matches iOS behavior).
+    // No scale transform to keep shadow consistent with the original card.
     UIView.animate(
       withDuration: 0.2,
       delay: 0,
       options: .curveEaseOut
     ) {
       snapshot.center = position
-      snapshot.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
+    }
+
+    // Fade in the shadow separately to mask the UIKit/SwiftUI shadow rendering difference.
+    // The original SwiftUI card fades out while this shadow fades in, creating smooth transition.
+    if let shadowView = snapshot.viewWithTag(999) {
+      let shadowAnimation = CABasicAnimation(keyPath: "shadowOpacity")
+      shadowAnimation.fromValue = 0
+      shadowAnimation.toValue = 0.08
+      shadowAnimation.duration = 0.5
+      shadowAnimation.fillMode = .forwards
+      shadowAnimation.isRemovedOnCompletion = false
+      shadowView.layer.add(shadowAnimation, forKey: "shadowFadeIn")
+      shadowView.layer.shadowOpacity = 0.08
     }
   }
 
@@ -2037,13 +2140,10 @@ struct DashboardView: View {
       // Target position: center of the original card frame.
       let targetCenter = CGPoint(x: pdfDragSourceFrame.midX, y: pdfDragSourceFrame.midY)
 
-      // Ensure snapshot is at lifted scale before return animation.
-      // This cancels any in-progress lift animation and guarantees consistent shrink effect.
+      // Cancel any in-progress animations before starting return animation.
       snapshot.layer.removeAllAnimations()
-      snapshot.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
 
-      // Combined animation: position and scale animate simultaneously for one fluid motion.
-      // Use UIView.animate to match the lift animation style.
+      // Animate return to original position. No scale change needed.
       UIView.animate(
         withDuration: 0.4,
         delay: 0,
@@ -2052,7 +2152,6 @@ struct DashboardView: View {
         options: []
       ) {
         snapshot.center = targetCenter
-        snapshot.transform = .identity
       } completion: { _ in
         // Remove snapshot and reveal SwiftUI card.
         snapshot.removeFromSuperview()
@@ -2248,15 +2347,28 @@ struct DashboardView: View {
     window.addSubview(snapshot)
     pdfDragSnapshot = snapshot
 
-    // Animate the lift: move to finger-centered position, scale up slightly.
+    // Animate the lift: move to finger-centered position.
     // Card is centered on the finger for natural drag feel (matches iOS behavior).
+    // No scale transform to keep shadow consistent with the original card.
     UIView.animate(
       withDuration: 0.2,
       delay: 0,
       options: .curveEaseOut
     ) {
       snapshot.center = position
-      snapshot.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
+    }
+
+    // Fade in the shadow separately to mask the UIKit/SwiftUI shadow rendering difference.
+    // The original SwiftUI card fades out while this shadow fades in, creating smooth transition.
+    if let shadowView = snapshot.viewWithTag(999) {
+      let shadowAnimation = CABasicAnimation(keyPath: "shadowOpacity")
+      shadowAnimation.fromValue = 0
+      shadowAnimation.toValue = 0.08
+      shadowAnimation.duration = 0.5
+      shadowAnimation.fillMode = .forwards
+      shadowAnimation.isRemovedOnCompletion = false
+      shadowView.layer.add(shadowAnimation, forKey: "shadowFadeIn")
+      shadowView.layer.shadowOpacity = 0.08
     }
   }
 
@@ -2396,13 +2508,10 @@ struct DashboardView: View {
     let currentFrame = pdfCardFrames[pdf.id] ?? pdfDragSourceFrame
     let targetCenter = CGPoint(x: currentFrame.midX, y: currentFrame.midY)
 
-    // Ensure snapshot is at lifted scale before return animation.
-    // This cancels any in-progress lift animation and guarantees consistent shrink effect.
+    // Cancel any in-progress animations before starting return animation.
     snapshot.layer.removeAllAnimations()
-    snapshot.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
 
-    // Combined animation: position and scale animate simultaneously for one fluid motion.
-    // Use UIView.animate to match the lift animation style.
+    // Animate return to original position. No scale change needed.
     UIView.animate(
       withDuration: 0.4,
       delay: 0,
@@ -2411,10 +2520,9 @@ struct DashboardView: View {
       options: []
     ) {
       snapshot.center = targetCenter
-      snapshot.transform = .identity
     } completion: { _ in
       // Remove snapshot and reveal SwiftUI card.
-      // Card is now at exact position and scale, so swap is invisible.
+      // Card is now at exact position, so swap is invisible.
       snapshot.removeFromSuperview()
       // Disable animations during state reset to prevent grid from animating the card.
       var transaction = Transaction()
