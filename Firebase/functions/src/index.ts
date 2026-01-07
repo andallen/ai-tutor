@@ -248,42 +248,44 @@ const SendMessageWithToolsSchema = z.object({
 
 // AI chat endpoint with function/tool calling support.
 // Enables Gemini to invoke skills via function declarations.
-export const sendMessageWithTools = onRequest({cors: true}, async (req, res) => {
+export const sendMessageWithTools = onRequest(
+  {cors: true},
+  async (req, res) => {
   // Only allow POST requests.
-  if (req.method !== "POST") {
-    res.status(405).send({error: "Method not allowed. Use POST."});
-    return;
-  }
+    if (req.method !== "POST") {
+      res.status(405).send({error: "Method not allowed. Use POST."});
+      return;
+    }
 
-  // Validate request body.
-  const parseResult = SendMessageWithToolsSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    res.status(400).send({
-      error: "Invalid request body",
-      details: parseResult.error.issues,
+    // Validate request body.
+    const parseResult = SendMessageWithToolsSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      res.status(400).send({
+        error: "Invalid request body",
+        details: parseResult.error.issues,
+      });
+      return;
+    }
+
+    const {messages, tools, toolConfig} = parseResult.data;
+    logger.info("Received chat with tools request", {
+      messageCount: messages.length,
+      toolCount: tools?.length ?? 0,
     });
-    return;
-  }
 
-  const {messages, tools, toolConfig} = parseResult.data;
-  logger.info("Received chat with tools request", {
-    messageCount: messages.length,
-    toolCount: tools?.length ?? 0,
-  });
+    // Get API key from environment.
+    const apiKey = process.env.GOOGLE_GENAI_API_KEY;
+    if (!apiKey) {
+      logger.error("GOOGLE_GENAI_API_KEY not configured");
+      res.status(500).send({error: "API key not configured"});
+      return;
+    }
 
-  // Get API key from environment.
-  const apiKey = process.env.GOOGLE_GENAI_API_KEY;
-  if (!apiKey) {
-    logger.error("GOOGLE_GENAI_API_KEY not configured");
-    res.status(500).send({error: "API key not configured"});
-    return;
-  }
-
-  // Transform messages to Gemini format.
-  const contents = messages.map((msg) => ({
-    role: msg.role === "assistant" ? "model" : "user",
-    parts: [{text: msg.content}],
-  }));
+    // Transform messages to Gemini format.
+    const contents = messages.map((msg) => ({
+      role: msg.role === "assistant" ? "model" : "user",
+      parts: [{text: msg.content}],
+    }));
 
   // Build request body with optional tools.
   interface GeminiRequest {
@@ -315,7 +317,8 @@ export const sendMessageWithTools = onRequest({cors: true}, async (req, res) => 
         functionCallingConfig: {
           mode: toolConfig.functionCallingConfig.mode ?? "AUTO",
           ...(toolConfig.functionCallingConfig.allowedFunctionNames && {
-            allowedFunctionNames: toolConfig.functionCallingConfig.allowedFunctionNames,
+            allowedFunctionNames:
+              toolConfig.functionCallingConfig.allowedFunctionNames,
           }),
         },
       };
@@ -403,45 +406,47 @@ export const sendMessageWithTools = onRequest({cors: true}, async (req, res) => 
       details: error instanceof Error ? error.message : String(error),
     });
   }
-});
-
-// Streaming AI chat with tools - returns SSE with function call or text chunks.
-export const streamMessageWithTools = onRequest({cors: true}, async (req, res) => {
-  // Only allow POST requests.
-  if (req.method !== "POST") {
-    res.status(405).send({error: "Method not allowed. Use POST."});
-    return;
-  }
-
-  // Validate request body.
-  const parseResult = SendMessageWithToolsSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    res.status(400).send({
-      error: "Invalid request body",
-      details: parseResult.error.issues,
-    });
-    return;
-  }
-
-  const {messages, tools, toolConfig} = parseResult.data;
-  logger.info("Received streaming chat with tools", {
-    messageCount: messages.length,
-    toolCount: tools?.length ?? 0,
   });
 
-  // Get API key from environment.
-  const apiKey = process.env.GOOGLE_GENAI_API_KEY;
-  if (!apiKey) {
-    logger.error("GOOGLE_GENAI_API_KEY not configured");
-    res.status(500).send({error: "API key not configured"});
-    return;
-  }
+// Streaming AI chat with tools - SSE with function call or text chunks.
+export const streamMessageWithTools = onRequest(
+  {cors: true},
+  async (req, res) => {
+  // Only allow POST requests.
+    if (req.method !== "POST") {
+      res.status(405).send({error: "Method not allowed. Use POST."});
+      return;
+    }
 
-  // Transform messages to Gemini format.
-  const contents = messages.map((msg) => ({
-    role: msg.role === "assistant" ? "model" : "user",
-    parts: [{text: msg.content}],
-  }));
+    // Validate request body.
+    const parseResult = SendMessageWithToolsSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      res.status(400).send({
+        error: "Invalid request body",
+        details: parseResult.error.issues,
+      });
+      return;
+    }
+
+    const {messages, tools, toolConfig} = parseResult.data;
+    logger.info("Received streaming chat with tools", {
+      messageCount: messages.length,
+      toolCount: tools?.length ?? 0,
+    });
+
+    // Get API key from environment.
+    const apiKey = process.env.GOOGLE_GENAI_API_KEY;
+    if (!apiKey) {
+      logger.error("GOOGLE_GENAI_API_KEY not configured");
+      res.status(500).send({error: "API key not configured"});
+      return;
+    }
+
+    // Transform messages to Gemini format.
+    const contents = messages.map((msg) => ({
+      role: msg.role === "assistant" ? "model" : "user",
+      parts: [{text: msg.content}],
+    }));
 
   // Build request body with optional tools.
   interface GeminiRequest {
@@ -471,7 +476,8 @@ export const streamMessageWithTools = onRequest({cors: true}, async (req, res) =
         functionCallingConfig: {
           mode: toolConfig.functionCallingConfig.mode ?? "AUTO",
           ...(toolConfig.functionCallingConfig.allowedFunctionNames && {
-            allowedFunctionNames: toolConfig.functionCallingConfig.allowedFunctionNames,
+            allowedFunctionNames:
+              toolConfig.functionCallingConfig.allowedFunctionNames,
           }),
         },
       };
@@ -512,7 +518,8 @@ export const streamMessageWithTools = onRequest({cors: true}, async (req, res) =
     let buffer = "";
     let streamDone = false;
     let functionCallDetected = false;
-    let accumulatedFunctionCall: {name: string; args: Record<string, unknown>} | null = null;
+    type FunctionCall = {name: string; args: Record<string, unknown>};
+    let accumulatedFunctionCall: FunctionCall | null = null;
 
     while (!streamDone) {
       const {done, value} = await reader.read();
@@ -579,4 +586,4 @@ export const streamMessageWithTools = onRequest({cors: true}, async (req, res) =
     })}\n\n`);
     res.end();
   }
-});
+  });
