@@ -4,6 +4,25 @@ set -uo pipefail
 # Navigate to the project root
 cd "$(dirname "$0")/.."
 
+# === LOCK FILE: Serialize test runs across all InkOS worktrees ===
+# This prevents multiple simulators from running simultaneously
+LOCKFILE="/tmp/inkos-test.lock"
+exec 200>"$LOCKFILE"
+
+echo "⏳ Waiting for test lock (another test may be running)..."
+flock -x 200
+echo "🔓 Lock acquired, starting tests..."
+
+# Cleanup function: shutdown simulators when done
+cleanup() {
+  echo "🧹 Cleaning up simulators..."
+  xcrun simctl shutdown all 2>/dev/null || true
+}
+
+# Ensure cleanup runs on exit (success, failure, or interrupt)
+trap cleanup EXIT
+# === END LOCK FILE SETUP ===
+
 mkdir -p ./Logs
 rm -f ./Logs/build_logs.txt
 rm -f ./Logs/test_logs_raw.txt
