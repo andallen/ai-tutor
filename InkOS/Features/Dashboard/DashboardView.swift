@@ -511,7 +511,7 @@ struct DashboardView: View {
       let buttonBottomRightY = buttonY + buttonRadius
 
       ZStack {
-        // Tap catcher to dismiss overlay (no visible dimming).
+        // Tap catcher to dismiss overlay.
         // Transitions state backward: expandedCentered → expandedAnchored → collapsed
         // Uses a drag gesture with minimal movement check to ensure scrolls ending
         // outside the overlay don't trigger dismissal.
@@ -520,18 +520,18 @@ struct DashboardView: View {
             .contentShape(Rectangle())
             .ignoresSafeArea()
             .gesture(
-              DragGesture(minimumDistance: 0)
-                .onEnded { value in
-                  // Only trigger dismiss if it was a tap (minimal movement).
-                  let dragDistance = sqrt(
-                    pow(value.translation.width, 2) + pow(value.translation.height, 2)
-                  )
-                  if dragDistance < 10 {
-                    handleDismissTap()
-                  }
+            DragGesture(minimumDistance: 0)
+              .onEnded { value in
+                // Only trigger dismiss if it was a tap (minimal movement).
+                let dragDistance = sqrt(
+                  pow(value.translation.width, 2) + pow(value.translation.height, 2)
+                )
+                if dragDistance < 10 {
+                  handleDismissTap()
                 }
-            )
-            .zIndex(0)
+              }
+          )
+          .zIndex(0)
         }
 
         // Liquid glass overlay anchored to button's bottom-right corner.
@@ -685,7 +685,13 @@ struct DashboardView: View {
       isAIChatFocused = false
       aiOverlayState = .collapsed
     case .expandedCentered:
-      // Dismiss keyboard first (will transition to expandedAnchored via keyboard hide handler).
+      // Dismiss keyboard directly via UIKit (SwiftUI focus binding chain doesn't reach TextEditor).
+      UIApplication.shared.sendAction(
+        #selector(UIResponder.resignFirstResponder),
+        to: nil,
+        from: nil,
+        for: nil
+      )
       isAIChatFocused = false
     }
   }
