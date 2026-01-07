@@ -17,11 +17,6 @@ const GenerateEmbeddingsSchema = z.object({
   ]).optional().default("RETRIEVAL_DOCUMENT"),
 });
 
-// Initialize Google Auth for getting access tokens
-const auth = new GoogleAuth({
-  scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-});
-
 /**
  * Cloud Function to generate embeddings for text using Vertex AI REST API.
  *
@@ -75,6 +70,11 @@ export const generateEmbeddings = onCall(
     const model = "text-embedding-005";
 
     try {
+      // Initialize Google Auth for getting access tokens
+      const auth = new GoogleAuth({
+        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+      });
+
       // Get access token for authentication
       const client = await auth.getClient();
       const accessToken = await client.getAccessToken();

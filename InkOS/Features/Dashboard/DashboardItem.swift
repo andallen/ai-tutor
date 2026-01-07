@@ -8,15 +8,16 @@
 
 import Foundation
 
-// Represents a notebook, folder, or PDF document for display in the Dashboard grid.
+// Represents a notebook, folder, PDF document, or lesson for display in the Dashboard grid.
 // The Dashboard grid uses this type to render a mixed list of items.
 enum DashboardItem: Identifiable {
   case notebook(NotebookMetadata)
   case folder(FolderMetadata)
   case pdfDocument(PDFDocumentMetadata)
+  case lesson(LessonMetadata)
 
   // Unique identifier combining type prefix with item ID.
-  // Ensures no collision between notebook, folder, and PDF document with same UUID.
+  // Ensures no collision between notebook, folder, PDF document, and lesson with same UUID.
   var id: String {
     switch self {
     case .notebook(let metadata):
@@ -25,6 +26,8 @@ enum DashboardItem: Identifiable {
       return "folder-\(metadata.id)"
     case .pdfDocument(let metadata):
       return "pdf-\(metadata.id)"
+    case .lesson(let metadata):
+      return "lesson-\(metadata.id)"
     }
   }
 
@@ -37,11 +40,13 @@ enum DashboardItem: Identifiable {
       return metadata.displayName
     case .pdfDocument(let metadata):
       return metadata.displayName
+    case .lesson(let metadata):
+      return metadata.displayName
     }
   }
 
   // Date used for sorting items.
-  // Returns lastAccessedAt for notebooks and modifiedAt for folders and PDF documents.
+  // Returns lastAccessedAt for notebooks and lessons, modifiedAt for folders and PDF documents.
   var sortDate: Date? {
     switch self {
     case .notebook(let metadata):
@@ -50,6 +55,8 @@ enum DashboardItem: Identifiable {
       return metadata.modifiedAt
     case .pdfDocument(let metadata):
       return metadata.modifiedAt
+    case .lesson(let metadata):
+      return metadata.lastAccessedAt
     }
   }
 
@@ -96,6 +103,22 @@ enum DashboardItem: Identifiable {
   // Returns the PDF document metadata if this is a PDF document, nil otherwise.
   var pdfDocumentMetadata: PDFDocumentMetadata? {
     if case .pdfDocument(let metadata) = self {
+      return metadata
+    }
+    return nil
+  }
+
+  // Returns true if this item is a lesson.
+  var isLesson: Bool {
+    if case .lesson = self {
+      return true
+    }
+    return false
+  }
+
+  // Returns the lesson metadata if this is a lesson, nil otherwise.
+  var lessonMetadata: LessonMetadata? {
+    if case .lesson(let metadata) = self {
       return metadata
     }
     return nil

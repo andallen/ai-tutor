@@ -98,6 +98,17 @@ struct DashboardView: View {
   // Tracks which PDF document is being moved to a folder.
   @State private var movingPDF: PDFDocumentMetadata?
 
+  // MARK: - Lesson State
+
+  // Tracks which lesson is being renamed.
+  @State private var renamingLesson: LessonMetadata?
+
+  // Tracks which lesson is being confirmed for deletion.
+  @State private var deletingLesson: LessonMetadata?
+
+  // The active lesson ID to view in fullscreen.
+  @State private var activeLessonID: String?
+
   // MARK: - Folder State
 
   // Tracks which folder is being renamed.
@@ -202,6 +213,11 @@ struct DashboardView: View {
   // Indicates whether a PDF import is in progress.
   @State private var isImportingPDF = false
 
+  // MARK: - Lesson Generation State
+
+  // Controls whether the lesson generation sheet is shown.
+  @State private var showLessonGenerationSheet = false
+
   // MARK: - Notebook Hero Transition State
 
   // Holds the transition coordinator for the currently open notebook.
@@ -249,6 +265,9 @@ struct DashboardView: View {
           movingPDF: $movingPDF,
           renamingFolder: $renamingFolder,
           deletingFolder: $deletingFolder,
+          renamingLesson: $renamingLesson,
+          deletingLesson: $deletingLesson,
+          activeLessonID: $activeLessonID,
           showCreateFolderAlert: $showCreateFolderAlert,
           newFolderName: $newFolderName,
           openErrorMessage: $openErrorMessage,
@@ -260,6 +279,7 @@ struct DashboardView: View {
           expandedFolderNotebooks: $expandedFolderNotebooks,
           showPDFPicker: $showPDFPicker,
           isImportingPDF: $isImportingPDF,
+          showLessonGenerationSheet: $showLessonGenerationSheet,
           loadFolderThumbnails: loadFolderThumbnails
         )
       )
@@ -441,6 +461,12 @@ struct DashboardView: View {
           }
 
           Button {
+            showLessonGenerationSheet = true
+          } label: {
+            Label("New Lesson", systemImage: "doc.text")
+          }
+
+          Button {
             showPDFPicker = true
           } label: {
             Label("Import PDF", systemImage: "doc.richtext")
@@ -464,6 +490,12 @@ struct DashboardView: View {
             showCreateFolderAlert = true
           } label: {
             Label("New Folder", systemImage: "folder.badge.plus")
+          }
+
+          Button {
+            showLessonGenerationSheet = true
+          } label: {
+            Label("New Lesson", systemImage: "doc.text")
           }
 
           Button {
@@ -669,6 +701,8 @@ struct DashboardView: View {
             folderCardView(folder: folder)
           case .pdfDocument(let pdfDocument):
             pdfDocumentCardView(pdfDocument: pdfDocument)
+          case .lesson(let lesson):
+            lessonCardView(lesson: lesson)
           }
         }
       }
@@ -1017,6 +1051,44 @@ struct DashboardView: View {
           value: [pdfDocument.id: geometry.frame(in: .global)]
         )
     }
+  }
+
+  // MARK: - Lesson Card View
+
+  // Renders an interactive lesson card with context menu support.
+  @ViewBuilder
+  private func lessonCardView(lesson: LessonMetadata) -> some View {
+    // Check if this lesson's context menu is currently shown.
+    let isContextMenuActive = contextMenuState?.matchesLesson(lesson) == true
+
+    LessonCardButton(
+      lesson: lesson,
+      action: {
+        openLesson(lesson)
+      },
+      onRename: {
+        renameText = lesson.displayName
+        renamingLesson = lesson
+      },
+      onDelete: {
+        deletingLesson = lesson
+      },
+      onLongPress: { frame, cardHeight in
+        contextMenuState = ContextMenuState(
+          item: .lesson(lesson),
+          sourceFrame: frame,
+          cardHeight: cardHeight
+        )
+      }
+    )
+    .scaleEffect(isContextMenuActive ? 1.08 : 1.0, anchor: .center)
+    .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isContextMenuActive)
+    .zIndex(isContextMenuActive ? 300 : 0)
+  }
+
+  // Opens a lesson in fullscreen view.
+  private func openLesson(_ lesson: LessonMetadata) {
+    activeLessonID = lesson.id
   }
 
   // Creates a drop delegate for folder drag-and-drop operations.
@@ -2213,6 +2285,8 @@ struct DashboardView: View {
       return buildFolderContextMenuActions(for: folder)
     case .pdfDocument(let pdfDocument):
       return buildPDFContextMenuActions(for: pdfDocument)
+    case .lesson(let lesson):
+      return buildLessonContextMenuActions(for: lesson)
     }
   }
 
@@ -2294,6 +2368,23 @@ struct DashboardView: View {
 
     return actions
   }
+
+  // Builds context menu actions for a lesson.
+  private func buildLessonContextMenuActions(for lesson: LessonMetadata) -> [ContextMenuAction] {
+    [
+      ContextMenuAction(title: "Rename", systemImage: "pencil") {
+        renameText = lesson.displayName
+        renamingLesson = lesson
+      },
+      ContextMenuAction(
+        title: "Delete",
+        systemImage: "trash",
+        isDestructive: true
+      ) {
+        deletingLesson = lesson
+      },
+    ]
+  }
 }
 // swiftlint:enable type_body_length
 
@@ -2309,6 +2400,9 @@ struct DashboardViewModifiers: ViewModifier {
   @Binding var movingPDF: PDFDocumentMetadata?
   @Binding var renamingFolder: FolderMetadata?
   @Binding var deletingFolder: FolderMetadata?
+  @Binding var renamingLesson: LessonMetadata?
+  @Binding var deletingLesson: LessonMetadata?
+  @Binding var activeLessonID: String?
   @Binding var showCreateFolderAlert: Bool
   @Binding var newFolderName: String
   @Binding var openErrorMessage: String?
@@ -2320,6 +2414,7 @@ struct DashboardViewModifiers: ViewModifier {
   @Binding var expandedFolderNotebooks: [NotebookMetadata]
   @Binding var showPDFPicker: Bool
   @Binding var isImportingPDF: Bool
+  @Binding var showLessonGenerationSheet: Bool
   let loadFolderThumbnails: () async -> Void
 
   func body(content: Content) -> some View {
@@ -2334,6 +2429,20 @@ struct DashboardViewModifiers: ViewModifier {
       .modifier(alertModifiers)
       .modifier(sheetModifiers)
       .modifier(pdfImportModifier)
+      .modifier(lessonSheetModifier)
+      .overlay {
+        if showLessonGenerationSheet {
+          LessonGenerationOverlay(
+            onGenerate: { topic, fileURL in
+              try await handleLessonGeneration(topic: topic, fileURL: fileURL)
+            },
+            onDismiss: {
+              showLessonGenerationSheet = false
+            }
+          )
+          .transition(.identity)
+        }
+      }
   }
 
   // Loads initial dashboard data on appearance.
@@ -2354,6 +2463,8 @@ struct DashboardViewModifiers: ViewModifier {
       deletingPDF: $deletingPDF,
       renamingFolder: $renamingFolder,
       deletingFolder: $deletingFolder,
+      renamingLesson: $renamingLesson,
+      deletingLesson: $deletingLesson,
       showCreateFolderAlert: $showCreateFolderAlert,
       newFolderName: $newFolderName,
       openErrorMessage: $openErrorMessage,
@@ -2392,7 +2503,76 @@ struct DashboardViewModifiers: ViewModifier {
       library: library
     )
   }
+
+  // Lesson sheet modifier for fullscreen lesson view.
+  private var lessonSheetModifier: LessonSheetModifier {
+    LessonSheetModifier(activeLessonID: $activeLessonID)
+  }
+
+  // Handles the lesson generation process.
+  private func handleLessonGeneration(topic: String, fileURL: URL?) async throws {
+    print("🔵 Starting lesson generation for: \(topic)")
+    if let fileURL = fileURL {
+      print("   📎 With file: \(fileURL.lastPathComponent)")
+    }
+
+    // Create the generation service with the Firebase project configuration.
+    let generationService = LessonGenerationService(projectID: "inkos-f58f1")
+
+    // Create the generator with the service and default dependencies.
+    let generator = LessonGenerator(generationService: generationService)
+
+    // Generate the lesson with the provided parameters.
+    // TODO: Add file upload support to LessonGenerationRequest
+    let request = LessonGenerationRequest(
+      prompt: "Create a lesson about \(topic)",
+      displayName: topic,
+      estimatedMinutes: 15
+    )
+
+    print("🔵 Calling generator.generate()...")
+    let lessonMetadata = try await generator.generate(request: request)
+    print("✅ Generated lesson successfully: \(lessonMetadata.id)")
+    print("   Display name: \(lessonMetadata.displayName)")
+    print("   Subject: \(lessonMetadata.subject ?? "unknown")")
+
+    // Reload bundles to show the new lesson.
+    print("🔵 Reloading library bundles...")
+    await library.loadBundles()
+    print("✅ Library reloaded, total items: \(library.items.count), lessons: \(library.lessons.count)")
+  }
 }
+
+// MARK: - Lesson Sheet Modifier
+
+// Encapsulates the fullscreen cover for lesson viewing.
+struct LessonSheetModifier: ViewModifier {
+  @Binding var activeLessonID: String?
+
+  func body(content: Content) -> some View {
+    content
+      .fullScreenCover(
+        item: Binding(
+          get: { activeLessonID.map { LessonSession(id: $0) } },
+          set: { activeLessonID = $0?.id }
+        ),
+        onDismiss: { activeLessonID = nil }
+      ) { session in
+        LessonView(
+          lessonID: session.id,
+          onDismiss: { activeLessonID = nil }
+        )
+        .ignoresSafeArea()
+      }
+  }
+}
+
+// Session model for lesson navigation.
+struct LessonSession: Identifiable {
+  let id: String
+}
+
+// MARK: - Lesson Generation (removed - now inline in DashboardView)
 
 // Encapsulates sheet and fullScreenCover modifiers for the dashboard.
 struct DashboardSheetModifiers: ViewModifier {

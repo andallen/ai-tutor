@@ -28,6 +28,10 @@ class NotebookLibrary: ObservableObject {
   // Updated when loadPDFDocuments is called.
   @Published var pdfDocuments: [PDFDocumentMetadata] = []
 
+  // The list of lessons currently available.
+  // Updated when loadBundles is called.
+  @Published var lessons: [LessonMetadata] = []
+
   // The Bundle Manager instance used to perform operations on Bundles.
   private let bundleManager: BundleManager
 
@@ -65,6 +69,13 @@ class NotebookLibrary: ObservableObject {
 
     // Enhance folder metadata with PDF counts and previews.
     folders = enhanceFoldersWithPDFInfo(folders: folderList, allPDFs: allPDFs)
+
+    // Load lessons.
+    do {
+      lessons = try await bundleManager.listLessons()
+    } catch {
+      // Silently ignore errors to keep the app usable.
+    }
 
     combineItems()
   }
@@ -202,6 +213,7 @@ class NotebookLibrary: ObservableObject {
     combined.append(contentsOf: notebooks.map { DashboardItem.notebook($0) })
     combined.append(contentsOf: folders.map { DashboardItem.folder($0) })
     combined.append(contentsOf: pdfDocuments.map { DashboardItem.pdfDocument($0) })
+    combined.append(contentsOf: lessons.map { DashboardItem.lesson($0) })
 
     // Sort by date, most recent first. Folders come before other types with same date.
     combined.sort { lhs, rhs in
@@ -804,6 +816,36 @@ class NotebookLibrary: ObservableObject {
     } catch {
       // Return empty array on error to keep the app usable.
       return []
+    }
+  }
+
+  // MARK: - Lesson Operations
+
+  // Renames a Lesson by asking the Bundle Manager to update the display name.
+  // After renaming, refreshes the list of items to show the updated name.
+  // Errors are silently ignored to keep the app usable.
+  func renameLesson(lessonID: String, newDisplayName: String) async {
+    do {
+      try await bundleManager.renameLesson(lessonID: lessonID, newDisplayName: newDisplayName)
+      // Refresh the list to show the updated name.
+      await loadBundles()
+    } catch {
+      // Silently ignore errors to keep the app usable.
+      // Later on, should show error message to the user.
+    }
+  }
+
+  // Deletes a Lesson by asking the Bundle Manager to remove the lesson bundle.
+  // After deletion, refreshes the list of items to remove the deleted one.
+  // Errors are silently ignored to keep the app usable.
+  func deleteLesson(lessonID: String) async {
+    do {
+      try await bundleManager.deleteLesson(lessonID: lessonID)
+      // Refresh the list to remove the deleted Lesson.
+      await loadBundles()
+    } catch {
+      // Silently ignore errors to keep the app usable.
+      // Later on, should show error message to the user.
     }
   }
 }

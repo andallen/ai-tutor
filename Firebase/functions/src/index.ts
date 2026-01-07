@@ -6,6 +6,12 @@ import {z} from "zod";
 // Export embeddings function for RAG indexing
 export {generateEmbeddings} from "./embeddings";
 
+// Export lesson generation functions
+export {generateLesson, generateLessonSync} from "./lessonGeneration";
+
+// Export answer comparison function
+export {compareAnswer} from "./answerComparison";
+
 // Set maximum instances for cost control
 setGlobalOptions({maxInstances: 10});
 
@@ -66,7 +72,7 @@ export const sendMessage = onRequest({cors: true}, async (req, res) => {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -137,7 +143,7 @@ export const streamMessage = onRequest({cors: true}, async (req, res) => {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:streamGenerateContent?alt=sse&key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
       {
         method: "POST",
         headers: {"Content-Type": "application/json"},

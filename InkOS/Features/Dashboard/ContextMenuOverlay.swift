@@ -11,6 +11,7 @@ struct ContextMenuState {
     case notebook(NotebookMetadata)
     case folder(FolderMetadata, thumbnails: [UIImage])
     case pdfDocument(PDFDocumentMetadata)
+    case lesson(LessonMetadata)
   }
 
   let item: ItemType
@@ -39,6 +40,14 @@ struct ContextMenuState {
   func matchesPDFDocument(_ pdfDocument: PDFDocumentMetadata) -> Bool {
     if case .pdfDocument(let pdfItem) = item {
       return pdfItem.id == pdfDocument.id
+    }
+    return false
+  }
+
+  // Checks if this state matches a specific lesson.
+  func matchesLesson(_ lesson: LessonMetadata) -> Bool {
+    if case .lesson(let lessonItem) = item {
+      return lessonItem.id == lesson.id
     }
     return false
   }

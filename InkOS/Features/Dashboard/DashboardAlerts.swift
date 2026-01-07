@@ -11,6 +11,8 @@ struct AlertModifiers: ViewModifier {
   @Binding var deletingPDF: PDFDocumentMetadata?
   @Binding var renamingFolder: FolderMetadata?
   @Binding var deletingFolder: FolderMetadata?
+  @Binding var renamingLesson: LessonMetadata?
+  @Binding var deletingLesson: LessonMetadata?
   @Binding var showCreateFolderAlert: Bool
   @Binding var newFolderName: String
   @Binding var openErrorMessage: String?
@@ -55,6 +57,19 @@ struct AlertModifiers: ViewModifier {
       .modifier(
         DeleteFolderAlert(
           deletingFolder: $deletingFolder,
+          library: library
+        )
+      )
+      .modifier(
+        RenameLessonAlert(
+          renamingLesson: $renamingLesson,
+          renameText: $renameText,
+          library: library
+        )
+      )
+      .modifier(
+        DeleteLessonAlert(
+          deletingLesson: $deletingLesson,
           library: library
         )
       )
@@ -338,6 +353,77 @@ struct DeletePDFAlert: ViewModifier {
       } message: {
         if let pdf = deletingPDF {
           Text("\"\(pdf.displayName)\" will be permanently deleted. This cannot be undone.")
+        }
+      }
+  }
+}
+
+// MARK: - Rename Lesson Alert
+
+// Alert dialog for renaming a lesson.
+struct RenameLessonAlert: ViewModifier {
+  @Binding var renamingLesson: LessonMetadata?
+  @Binding var renameText: String
+  @ObservedObject var library: NotebookLibrary
+
+  func body(content: Content) -> some View {
+    content
+      .alert(
+        "Rename Lesson",
+        isPresented: .init(
+          get: { renamingLesson != nil },
+          set: { if !$0 { renamingLesson = nil } }
+        )
+      ) {
+        TextField("Lesson name", text: $renameText)
+        Button("Cancel", role: .cancel) {
+          renamingLesson = nil
+        }
+        Button("Rename") {
+          let trimmedName = renameText.trimmingCharacters(in: .whitespaces)
+          if let lesson = renamingLesson, !trimmedName.isEmpty {
+            Task {
+              await library.renameLesson(lessonID: lesson.id, newDisplayName: trimmedName)
+            }
+          }
+          renamingLesson = nil
+        }
+      } message: {
+        Text("Enter a new name for this lesson.")
+      }
+  }
+}
+
+// MARK: - Delete Lesson Alert
+
+// Confirmation alert for deleting a lesson.
+struct DeleteLessonAlert: ViewModifier {
+  @Binding var deletingLesson: LessonMetadata?
+  @ObservedObject var library: NotebookLibrary
+
+  func body(content: Content) -> some View {
+    content
+      .alert(
+        "Delete Lesson?",
+        isPresented: .init(
+          get: { deletingLesson != nil },
+          set: { if !$0 { deletingLesson = nil } }
+        )
+      ) {
+        Button("Cancel", role: .cancel) {
+          deletingLesson = nil
+        }
+        Button("Delete", role: .destructive) {
+          if let lesson = deletingLesson {
+            Task {
+              await library.deleteLesson(lessonID: lesson.id)
+            }
+          }
+          deletingLesson = nil
+        }
+      } message: {
+        if let lesson = deletingLesson {
+          Text("\"\(lesson.displayName)\" will be permanently deleted. This cannot be undone.")
         }
       }
   }
