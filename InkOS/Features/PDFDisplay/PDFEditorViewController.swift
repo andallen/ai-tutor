@@ -39,21 +39,43 @@ final class PDFEditorViewController: UIViewController {
   private var editingToolbarView: EditingToolbarView?
   // Tap gesture recognizer to dismiss the tool palette when tapping outside with a finger.
   private var paletteDismissTapRecognizer: UITapGestureRecognizer?
+  // Tap gesture recognizer for dismissing the AI overlay.
+  private var aiOverlayDismissTapRecognizer: UITapGestureRecognizer?
   // Stores the home button at top left.
   private var homeButtonView: HomeButtonView?
+
+  // Three-state overlay model: collapsed → expandedAnchored → expandedCentered
+  private enum AIOverlayState {
+    case collapsed             // Overlay hidden, button visible
+    case expandedAnchored      // Overlay visible at bottom-right, no keyboard
+    case expandedCentered      // Overlay centered with keyboard visible
+  }
 
   // Stores the AI button at bottom right.
   private var aiButtonView: AIButtonView?
   // Stores the AI glass overlay panel.
   private var aiOverlayView: UIVisualEffectView?
-  // Stores the chat input hosting controller embedded in the overlay.
-  private var aiChatHostingController: UIHostingController<AIChatInputBar>?
-  // Tracks whether the AI overlay is currently expanded.
-  private var isAIOverlayExpanded = false
+  // Stores the overlay content hosting controller embedded in the overlay.
+  private var aiChatHostingController: UIHostingController<AIChatOverlayContent>?
+  // Tracks the current state of the AI overlay.
+  private var aiOverlayState: AIOverlayState = .collapsed
   // Text entered in the AI chat input bar.
   private var aiChatText: String = ""
   // Tap catcher view for dismissing the overlay.
   private var aiOverlayTapCatcher: UIView?
+  // Tracks the current keyboard height for overlay positioning.
+  private var keyboardHeight: CGFloat = 0
+  // Constraint for overlay's trailing anchor (updated when keyboard is visible).
+  private var aiOverlayTrailingConstraint: NSLayoutConstraint?
+  // Constraint for overlay's centerX anchor (used when keyboard is visible).
+  private var aiOverlayCenterXConstraint: NSLayoutConstraint?
+  // Constraint for overlay's bottom anchor (updated when keyboard is visible).
+  private var aiOverlayBottomConstraint: NSLayoutConstraint?
+  // Fixed dimensions for the AI overlay.
+  private let aiOverlayWidth: CGFloat = 400
+  private let aiOverlayHeight: CGFloat = 560
+  // Padding between overlay bottom and keyboard top.
+  private let aiOverlayKeyboardPadding: CGFloat = 12
 
   // Handler called when the editor requests dismissal.
   var dismissHandler: (() -> Void)?
@@ -93,7 +115,28 @@ final class PDFEditorViewController: UIViewController {
     configureEditingToolbar()
     configureAIButton()
     configureAIOverlay()
+    configureKeyboardObservers()
     loadDocument()
+  }
+
+  deinit {
+    NotificationCenter.default.removeObserver(self)
+  }
+
+  // Registers for keyboard show/hide notifications.
+  private func configureKeyboardObservers() {
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(handleKeyboardWillShow(_:)),
+      name: UIResponder.keyboardWillShowNotification,
+      object: nil
+    )
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(handleKeyboardWillHide(_:)),
+      name: UIResponder.keyboardWillHideNotification,
+      object: nil
+    )
   }
 
   override func viewDidLayoutSubviews() {
@@ -256,7 +299,7 @@ final class PDFEditorViewController: UIViewController {
   }
 
   // Adds the AI button as a floating circular glass button at bottom right.
-  // Position matches the normal note view: 24pt from right edge, 24pt from bottom.
+  // Vertically aligned with the tool palette (pencil button).
   private func configureAIButton() {
     let buttonView = AIButtonView()
     buttonView.translatesAutoresizingMaskIntoConstraints = false
@@ -266,31 +309,34 @@ final class PDFEditorViewController: UIViewController {
     view.addSubview(buttonView)
 
     // Position at bottom right, aligned with safe area.
+    // Vertically aligned with tool palette (constant: 0 matches palette positioning).
     buttonView.trailingAnchor.constraint(
       equalTo: view.safeAreaLayoutGuide.trailingAnchor,
       constant: -24
     ).isActive = true
     buttonView.bottomAnchor.constraint(
       equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-      constant: -24
+      constant: 0
     ).isActive = true
     aiButtonView = buttonView
   }
 
   // Configures the AI overlay panel that slides up from the bottom.
   // The overlay is a glass panel with a chat input bar at the bottom.
+  // When the keyboard is visible, the overlay centers horizontally above the keyboard.
   private func configureAIOverlay() {
-    let overlayWidth: CGFloat = 400
-    let overlayHeight: CGFloat = 560
     let cornerRadius: CGFloat = 24
 
     // Create tap catcher to dismiss overlay when tapping outside.
+    // Uses gesture delegate to ensure scrolls ending outside don't trigger dismissal.
     let tapCatcher = UIView()
     tapCatcher.backgroundColor = .clear
     tapCatcher.isHidden = true
     tapCatcher.translatesAutoresizingMaskIntoConstraints = false
     let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleAIOverlayDismissTap))
+    tapGesture.delegate = self
     tapCatcher.addGestureRecognizer(tapGesture)
+    aiOverlayDismissTapRecognizer = tapGesture
     view.addSubview(tapCatcher)
     NSLayoutConstraint.activate([
       tapCatcher.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -318,22 +364,36 @@ final class PDFEditorViewController: UIViewController {
 
     view.addSubview(overlayView)
 
-    // Position overlay at bottom-right, trailing and bottom edges aligned with button edges.
+    // Create position constraints that can be toggled based on keyboard state.
+    // Trailing constraint: used when keyboard is hidden (anchored to bottom-right).
+    let trailingConstraint = overlayView.trailingAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.trailingAnchor,
+      constant: -24
+    )
+    // CenterX constraint: used when keyboard is visible (centered horizontally).
+    let centerXConstraint = overlayView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+    // Bottom constraint: adjusted based on keyboard height.
+    // Default position (constant: 0) aligns with tool palette and AI button.
+    let bottomConstraint = overlayView.bottomAnchor.constraint(
+      equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+      constant: 0
+    )
+
+    // Store constraint references for keyboard handling.
+    aiOverlayTrailingConstraint = trailingConstraint
+    aiOverlayCenterXConstraint = centerXConstraint
+    aiOverlayBottomConstraint = bottomConstraint
+
+    // Initially use trailing constraint (keyboard hidden state).
     NSLayoutConstraint.activate([
-      overlayView.widthAnchor.constraint(equalToConstant: overlayWidth),
-      overlayView.heightAnchor.constraint(equalToConstant: overlayHeight),
-      overlayView.trailingAnchor.constraint(
-        equalTo: view.safeAreaLayoutGuide.trailingAnchor,
-        constant: -24
-      ),
-      overlayView.bottomAnchor.constraint(
-        equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-        constant: -24
-      )
+      overlayView.widthAnchor.constraint(equalToConstant: aiOverlayWidth),
+      overlayView.heightAnchor.constraint(equalToConstant: aiOverlayHeight),
+      trailingConstraint,
+      bottomConstraint
     ])
 
-    // Start hidden below screen.
-    overlayView.transform = CGAffineTransform(translationX: 0, y: overlayHeight + 100)
+    // Start hidden off-screen to the right.
+    overlayView.transform = CGAffineTransform(translationX: view.bounds.width, y: 0)
     overlayView.isHidden = true
     aiOverlayView = overlayView
 
@@ -346,75 +406,90 @@ final class PDFEditorViewController: UIViewController {
     }
   }
 
-  // Embeds the SwiftUI chat input bar at the bottom of the overlay.
+  // Embeds the SwiftUI overlay content (hamburger menu, chat history, chat input bar).
   private func configureChatInputBar(in overlayView: UIVisualEffectView) {
-    let chatBar = AIChatInputBar(
+    let overlayContent = AIChatOverlayContent(
       text: Binding(
         get: { [weak self] in self?.aiChatText ?? "" },
         set: { [weak self] in self?.aiChatText = $0 }
       ),
+      location: .note,
       onSend: { [weak self] in
         self?.handleAIChatSend()
       }
     )
 
-    let hostingController = UIHostingController(rootView: chatBar)
+    let hostingController = UIHostingController(rootView: overlayContent)
     hostingController.view.backgroundColor = .clear
     hostingController.view.translatesAutoresizingMaskIntoConstraints = false
     overlayView.contentView.addSubview(hostingController.view)
 
-    // Pin chat bar to bottom with horizontal padding.
+    // Pin content to fill the entire overlay.
     NSLayoutConstraint.activate([
       hostingController.view.leadingAnchor.constraint(
-        equalTo: overlayView.contentView.leadingAnchor,
-        constant: 16
+        equalTo: overlayView.contentView.leadingAnchor
       ),
       hostingController.view.trailingAnchor.constraint(
-        equalTo: overlayView.contentView.trailingAnchor,
-        constant: -16
+        equalTo: overlayView.contentView.trailingAnchor
+      ),
+      hostingController.view.topAnchor.constraint(
+        equalTo: overlayView.contentView.topAnchor
       ),
       hostingController.view.bottomAnchor.constraint(
-        equalTo: overlayView.contentView.bottomAnchor,
-        constant: -16
-      ),
-      hostingController.view.heightAnchor.constraint(equalToConstant: 52)
+        equalTo: overlayView.contentView.bottomAnchor
+      )
     ])
 
     aiChatHostingController = hostingController
   }
 
   // Toggles the AI overlay visibility with slide animation.
+  // Transitions from collapsed to expandedAnchored.
   private func toggleAIOverlay() {
-    isAIOverlayExpanded.toggle()
-    updateAIOverlayVisibility(animated: true)
+    if aiOverlayState == .collapsed {
+      aiOverlayState = .expandedAnchored
+      updateAIOverlayVisibility(animated: true)
+    }
   }
 
-  // Updates the overlay and button state based on isAIOverlayExpanded.
+  // Updates the overlay and button state based on aiOverlayState.
   private func updateAIOverlayVisibility(animated: Bool) {
     guard let overlayView = aiOverlayView,
           let buttonView = aiButtonView,
           let tapCatcher = aiOverlayTapCatcher else { return }
 
-    let overlayHeight: CGFloat = 560
-    let slideDistance: CGFloat = overlayHeight + 100
+    // Slide distance is screen width (slides off to the right).
+    let slideDistance: CGFloat = view.bounds.width
+    let isExpanded = aiOverlayState != .collapsed
 
-    if isAIOverlayExpanded {
+    if isExpanded {
       overlayView.isHidden = false
       tapCatcher.isHidden = false
+    } else {
+      // Reset to default position when collapsing.
+      keyboardHeight = 0
+      aiOverlayCenterXConstraint?.isActive = false
+      aiOverlayTrailingConstraint?.isActive = true
+      aiOverlayBottomConstraint?.constant = 0
     }
 
     let animations = {
-      // Slide overlay up/down.
-      overlayView.transform = self.isAIOverlayExpanded
+      // Slide overlay left/right (from right side of screen).
+      overlayView.transform = isExpanded
         ? .identity
-        : CGAffineTransform(translationX: 0, y: slideDistance)
+        : CGAffineTransform(translationX: slideDistance, y: 0)
 
-      // Yield the button (slides down when overlay is open).
-      buttonView.isYielded = self.isAIOverlayExpanded
+      // Animate button yield/return together with overlay to prevent visual glitches.
+      buttonView.setYielded(isExpanded, animated: true)
+
+      // Apply constraint changes.
+      if !isExpanded {
+        self.view.layoutIfNeeded()
+      }
     }
 
     let completion: (Bool) -> Void = { _ in
-      if !self.isAIOverlayExpanded {
+      if !isExpanded {
         overlayView.isHidden = true
         tapCatcher.isHidden = true
       }
@@ -436,11 +511,22 @@ final class PDFEditorViewController: UIViewController {
     }
   }
 
-  // Handles tap outside the overlay to dismiss it.
+  // Handles tap outside the overlay to transition state backward.
+  // expandedCentered → expandedAnchored (dismiss keyboard, keep overlay)
+  // expandedAnchored → collapsed (fully collapse overlay)
   @objc private func handleAIOverlayDismissTap() {
-    if isAIOverlayExpanded {
-      isAIOverlayExpanded = false
+    switch aiOverlayState {
+    case .collapsed:
+      // Already collapsed, no action needed.
+      break
+    case .expandedAnchored:
+      // Transition to collapsed.
+      aiOverlayView?.endEditing(true)
+      aiOverlayState = .collapsed
       updateAIOverlayVisibility(animated: true)
+    case .expandedCentered:
+      // Dismiss keyboard first (will transition to expandedAnchored via keyboard hide handler).
+      aiOverlayView?.endEditing(true)
     }
   }
 
@@ -450,6 +536,65 @@ final class PDFEditorViewController: UIViewController {
     guard !message.isEmpty else { return }
     // Clear the text field after sending.
     aiChatText = ""
+  }
+
+  // Handles keyboard appearance by centering overlay horizontally above keyboard.
+  @objc private func handleKeyboardWillShow(_ notification: Notification) {
+    guard aiOverlayState != .collapsed else { return }
+    guard let userInfo = notification.userInfo,
+          let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+          let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval,
+          let curveValue = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt
+    else { return }
+
+    keyboardHeight = keyboardFrame.height
+
+    // Transition to centered state when keyboard appears and overlay is expanded.
+    if aiOverlayState == .expandedAnchored {
+      aiOverlayState = .expandedCentered
+    }
+
+    // Switch from trailing to centerX constraint for horizontal centering.
+    aiOverlayTrailingConstraint?.isActive = false
+    aiOverlayCenterXConstraint?.isActive = true
+
+    // Update bottom constraint to position overlay above keyboard.
+    // The overlay bottom should be keyboardHeight + padding from the view bottom.
+    let safeAreaBottom = view.safeAreaInsets.bottom
+    aiOverlayBottomConstraint?.constant = -(keyboardHeight - safeAreaBottom + aiOverlayKeyboardPadding)
+
+    let animationOptions = UIView.AnimationOptions(rawValue: curveValue << 16)
+    UIView.animate(withDuration: duration, delay: 0, options: animationOptions) {
+      self.view.layoutIfNeeded()
+    }
+  }
+
+  // Handles keyboard dismissal by returning overlay to bottom-right position.
+  @objc private func handleKeyboardWillHide(_ notification: Notification) {
+    guard aiOverlayState != .collapsed else { return }
+    guard let userInfo = notification.userInfo,
+          let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval,
+          let curveValue = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt
+    else { return }
+
+    keyboardHeight = 0
+
+    // Transition back to anchored state when keyboard hides (but keep overlay expanded).
+    if aiOverlayState == .expandedCentered {
+      aiOverlayState = .expandedAnchored
+    }
+
+    // Switch from centerX back to trailing constraint.
+    aiOverlayCenterXConstraint?.isActive = false
+    aiOverlayTrailingConstraint?.isActive = true
+
+    // Reset bottom constraint to original position (aligned with tool palette).
+    aiOverlayBottomConstraint?.constant = 0
+
+    let animationOptions = UIView.AnimationOptions(rawValue: curveValue << 16)
+    UIView.animate(withDuration: duration, delay: 0, options: animationOptions) {
+      self.view.layoutIfNeeded()
+    }
   }
 
   private func loadDocument() {
@@ -644,5 +789,33 @@ extension PDFEditorViewController: UIGestureRecognizerDelegate {
   ) -> Bool {
     // Allow simultaneous recognition for the palette dismiss tap.
     return gestureRecognizer == paletteDismissTapRecognizer
+  }
+
+  // Prevents the AI overlay dismiss tap from triggering when touch is inside the overlay.
+  // This ensures that scrolling in the chat bar doesn't accidentally dismiss the overlay
+  // when the scroll gesture ends outside the overlay bounds.
+  func gestureRecognizer(
+    _ gestureRecognizer: UIGestureRecognizer,
+    shouldReceive touch: UITouch
+  ) -> Bool {
+    // Only apply special handling to the AI overlay dismiss tap.
+    guard gestureRecognizer == aiOverlayDismissTapRecognizer else {
+      return true
+    }
+
+    // If the touch is inside the overlay, don't recognize the tap.
+    guard let overlayView = aiOverlayView else {
+      return true
+    }
+
+    let touchLocation = touch.location(in: view)
+    let overlayFrame = overlayView.frame
+
+    // Don't recognize if touch is inside the overlay.
+    if overlayFrame.contains(touchLocation) {
+      return false
+    }
+
+    return true
   }
 }

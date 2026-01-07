@@ -45,15 +45,17 @@ struct AIButtonRepresentable: UIViewRepresentable {
   func makeUIView(context: Context) -> AIButtonView {
     let button = AIButtonView()
     button.tapped = tapped
-    button.isYielded = isYielded
     button.returnAnimationDuration = returnAnimationDuration
+    // Set initial state without animation.
+    button.setYielded(isYielded, animated: false)
     return button
   }
 
   func updateUIView(_ uiView: AIButtonView, context: Context) {
     uiView.tapped = tapped
     uiView.returnAnimationDuration = returnAnimationDuration
-    uiView.isYielded = isYielded
+    // Animate state changes when SwiftUI updates the value.
+    uiView.setYielded(isYielded, animated: true)
   }
 }
 
@@ -219,12 +221,23 @@ struct DashboardView: View {
 
   // MARK: - AI Button State
 
+  // Three-state overlay model: collapsed → expandedAnchored → expandedCentered
+  enum AIOverlayState {
+    case collapsed             // Overlay hidden, button visible
+    case expandedAnchored      // Overlay visible at bottom-right, no keyboard
+    case expandedCentered      // Overlay centered with keyboard visible
+  }
+
   // Controls visibility of the AI button. Fades out during notebook transitions.
   @State private var isAIButtonVisible = true
-  // Tracks whether the AI overlay is expanded (slides up when true).
-  @State private var isAIOverlayExpanded = false
+  // Tracks the current state of the AI overlay.
+  @State private var aiOverlayState: AIOverlayState = .collapsed
   // Text entered in the AI chat input bar.
   @State private var aiChatText: String = ""
+  // Controls focus state for the AI chat input field.
+  @FocusState private var isAIChatFocused: Bool
+  // Tracks the current keyboard height for overlay positioning.
+  @State private var keyboardHeight: CGFloat = 0
 
   // Screen bounds for layout calculations.
   // Updated from GeometryReader to avoid deprecated UIScreen.main usage.
@@ -482,6 +495,7 @@ struct DashboardView: View {
 
   // Combines the AI button and liquid glass overlay.
   // The overlay expands from the button's bottom-right corner, always covering the button.
+  // When the chat input is focused, the overlay centers horizontally above the keyboard.
   // The AI circle button and overlay section.
   private var aiOverlaySection: some View {
     GeometryReader { geometry in
@@ -490,7 +504,7 @@ struct DashboardView: View {
 
       // Button center position - bottom right, horizontally aligned with plus button column.
       let buttonX = geometry.size.width - geometry.safeAreaInsets.trailing - 24 - buttonRadius
-      let buttonY = geometry.size.height - geometry.safeAreaInsets.bottom - buttonRadius - 24
+      let buttonY = geometry.size.height - geometry.safeAreaInsets.bottom - 24 - buttonRadius
 
       // Button's bottom-right corner (anchor point for overlay animation).
       let buttonBottomRightX = buttonX + buttonRadius
@@ -498,13 +512,25 @@ struct DashboardView: View {
 
       ZStack {
         // Tap catcher to dismiss overlay (no visible dimming).
-        if isAIOverlayExpanded {
+        // Transitions state backward: expandedCentered → expandedAnchored → collapsed
+        // Uses a drag gesture with minimal movement check to ensure scrolls ending
+        // outside the overlay don't trigger dismissal.
+        if aiOverlayState != .collapsed {
           Color.clear
             .contentShape(Rectangle())
             .ignoresSafeArea()
-            .onTapGesture {
-              isAIOverlayExpanded = false
-            }
+            .gesture(
+              DragGesture(minimumDistance: 0)
+                .onEnded { value in
+                  // Only trigger dismiss if it was a tap (minimal movement).
+                  let dragDistance = sqrt(
+                    pow(value.translation.width, 2) + pow(value.translation.height, 2)
+                  )
+                  if dragDistance < 10 {
+                    handleDismissTap()
+                  }
+                }
+            )
             .zIndex(0)
         }
 
@@ -512,19 +538,30 @@ struct DashboardView: View {
         // Always in hierarchy so animation is smooth (no transition).
         aiOverlayGlass(
           buttonBottomRightX: buttonBottomRightX,
-          buttonBottomRightY: buttonBottomRightY
+          buttonBottomRightY: buttonBottomRightY,
+          screenWidth: geometry.size.width,
+          screenHeight: geometry.size.height
         )
         .zIndex(1)
 
         // AI button triggers overlay slide.
+        // Transitions from collapsed to expandedAnchored.
+        // Slides right off-screen when overlay is visible.
         AIButtonRepresentable(
           tapped: {
-            isAIOverlayExpanded.toggle()
+            if aiOverlayState == .collapsed {
+              aiOverlayState = .expandedAnchored
+            }
           },
-          isYielded: isAIOverlayExpanded
+          isYielded: aiOverlayState != .collapsed
         )
         .frame(width: buttonSize, height: buttonSize)
         .position(x: buttonX, y: buttonY)
+        .offset(x: aiOverlayState != .collapsed ? geometry.size.width : 0)
+        .animation(
+          .spring(response: 0.35, dampingFraction: 0.85, blendDuration: 0),
+          value: aiOverlayState
+        )
         .zIndex(2)
       }
     }
@@ -535,30 +572,70 @@ struct DashboardView: View {
     .allowsHitTesting(isAIButtonVisible)
     .onChange(of: isAIButtonVisible) { _, visible in
       // Collapse overlay when AI button is hidden (during notebook transitions).
-      if visible == false && isAIOverlayExpanded {
-        isAIOverlayExpanded = false
+      if visible == false && aiOverlayState != .collapsed {
+        isAIChatFocused = false
+        aiOverlayState = .collapsed
+      }
+    }
+    .onReceive(
+      NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
+    ) { notification in
+      guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey]
+        as? CGRect
+      else { return }
+      withAnimation(.easeOut(duration: 0.25)) {
+        keyboardHeight = keyboardFrame.height
+        // Transition to centered state when keyboard appears and overlay is expanded.
+        if aiOverlayState == .expandedAnchored {
+          aiOverlayState = .expandedCentered
+        }
+      }
+    }
+    .onReceive(
+      NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
+    ) { _ in
+      withAnimation(.easeOut(duration: 0.25)) {
+        keyboardHeight = 0
+        // Transition back to anchored state when keyboard hides (but keep overlay expanded).
+        if aiOverlayState == .expandedCentered {
+          aiOverlayState = .expandedAnchored
+        }
       }
     }
   }
 
   // The liquid glass overlay panel that expands from the button's bottom-right corner.
-  // Scales from bottom-trailing so the corner stays fixed during animation.
+  // When keyboard is visible, the overlay centers horizontally above the keyboard.
   // Contains the chat input bar at the bottom.
   @ViewBuilder
   private func aiOverlayGlass(
     buttonBottomRightX: CGFloat,
-    buttonBottomRightY: CGFloat
+    buttonBottomRightY: CGFloat,
+    screenWidth: CGFloat,
+    screenHeight: CGFloat
   ) -> some View {
     let overlayWidth: CGFloat = 400
     let overlayHeight: CGFloat = 560
     let cornerRadius: CGFloat = 24
+    let keyboardPadding: CGFloat = 12
 
-    // Position overlay so its bottom-right corner aligns with button's bottom-right corner.
-    let overlayCenterX = buttonBottomRightX - overlayWidth / 2
-    let overlayCenterY = buttonBottomRightY - overlayHeight / 2
+    // Position depends on overlay state.
+    // expandedCentered: center horizontally and position above keyboard
+    // expandedAnchored: position so bottom-right corner aligns with button's bottom-right corner
+    // collapsed: slide off screen
 
-    // Slide distance (off screen when collapsed).
-    let slideDistance: CGFloat = overlayHeight + 100
+    // Target X position: centered when in expandedCentered state, otherwise anchored to button.
+    let targetCenterX: CGFloat = aiOverlayState == .expandedCentered
+      ? screenWidth / 2
+      : buttonBottomRightX - overlayWidth / 2
+
+    // Target Y position: above keyboard when in expandedCentered state, otherwise anchored to button.
+    let targetCenterY: CGFloat = aiOverlayState == .expandedCentered
+      ? screenHeight - keyboardHeight - keyboardPadding - overlayHeight / 2
+      : buttonBottomRightY - overlayHeight / 2
+
+    // Slide distance (off screen to the right when collapsed).
+    let slideDistance: CGFloat = screenWidth
 
     ZStack {
       // Glass background.
@@ -573,24 +650,44 @@ struct DashboardView: View {
         }
       }
 
-      // Overlay content with chat bar at bottom.
-      VStack {
-        Spacer()
-
-        // Chat input bar.
-        AIChatInputBar(text: $aiChatText) {
-          // Handle send action.
+      // Overlay content using reusable component.
+      // Pass location based on whether a folder is currently expanded.
+      AIChatOverlayContent(
+        text: $aiChatText,
+        isFocused: $isAIChatFocused,
+        location: expandedFolder != nil ? .folder : .dashboard,
+        onSend: {
           handleAIChatSend()
         }
-        .padding(.horizontal, 16)
-        .padding(.bottom, 16)
-      }
+      )
     }
     .frame(width: overlayWidth, height: overlayHeight)
-    .position(x: overlayCenterX, y: overlayCenterY)
-    .offset(y: isAIOverlayExpanded ? 0 : slideDistance)
-    .animation(.spring(response: 0.35, dampingFraction: 0.85, blendDuration: 0), value: isAIOverlayExpanded)
-    .allowsHitTesting(isAIOverlayExpanded)
+    .position(x: targetCenterX, y: targetCenterY)
+    .offset(x: aiOverlayState == .collapsed ? slideDistance : 0)
+    .animation(
+      .spring(response: 0.35, dampingFraction: 0.85, blendDuration: 0),
+      value: aiOverlayState
+    )
+    .animation(.easeOut(duration: 0.25), value: keyboardHeight)
+    .allowsHitTesting(aiOverlayState != .collapsed)
+  }
+
+  // Handles tap outside the overlay to transition state backward.
+  // expandedCentered → expandedAnchored (dismiss keyboard, keep overlay)
+  // expandedAnchored → collapsed (fully collapse overlay)
+  private func handleDismissTap() {
+    switch aiOverlayState {
+    case .collapsed:
+      // Already collapsed, no action needed.
+      break
+    case .expandedAnchored:
+      // Transition to collapsed.
+      isAIChatFocused = false
+      aiOverlayState = .collapsed
+    case .expandedCentered:
+      // Dismiss keyboard first (will transition to expandedAnchored via keyboard hide handler).
+      isAIChatFocused = false
+    }
   }
 
   // Handles the send action from the AI chat input bar.
