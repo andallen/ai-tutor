@@ -226,6 +226,21 @@ struct DashboardView: View {
   // Text entered in the AI chat input bar.
   @State private var aiChatText: String = ""
 
+  // MARK: - Search State
+
+  // Controls whether the search overlay is expanded.
+  @State private var isSearchOverlayExpanded = false
+  // Text entered in the search bar.
+  @State private var searchText: String = ""
+  // Search results from SearchService.
+  @State private var searchResults: [SearchResult] = []
+  // Whether a search is currently in progress.
+  @State private var isSearching = false
+  // Task for debounced search.
+  @State private var searchDebounceTask: Task<Void, Never>?
+  // Focus state for the search text field.
+  @State private var isSearchFieldFocused: Bool = false
+
   // Screen bounds for layout calculations.
   // Updated from GeometryReader to avoid deprecated UIScreen.main usage.
   @State private var screenBounds: CGRect = .zero
@@ -403,6 +418,10 @@ struct DashboardView: View {
         // The overlay expands from the button with liquid glass animation.
         // Tapping outside or tapping the button again dismisses the overlay.
         aiOverlaySection
+
+        // Search overlay with blur background and glass panel.
+        // Slides down from top when search icon is tapped.
+        searchOverlaySection
       }
       // Collect card frame preferences for hero transitions.
       // Updates the reference-type store so UIKit can query current frames at dismiss time.
@@ -428,51 +447,63 @@ struct DashboardView: View {
 
   @ToolbarContentBuilder
   private var toolbarContent: some ToolbarContent {
-    // Shows menu with create options. When folder is open: New Note, Import PDF.
-    // When no folder is open: New Note, New Folder, Import PDF.
+    // Search button and create menu in toolbar.
     ToolbarItem(placement: .navigationBarTrailing) {
-      if let folder = expandedFolder {
-        // Menu with notebook and PDF import options when folder is open.
-        Menu {
-          Button {
-            createNotebookInExpandedFolder(folder)
-          } label: {
-            Label("New Note", systemImage: "doc.badge.plus")
-          }
-
-          Button {
-            showPDFPicker = true
-          } label: {
-            Label("Import PDF", systemImage: "doc.richtext")
-          }
+      HStack(spacing: 16) {
+        // Search button opens search overlay.
+        Button {
+          isSearchOverlayExpanded = true
+          // Set focus immediately - SearchTextField handles delayed focus if view isn't ready.
+          isSearchFieldFocused = true
         } label: {
-          Image(systemName: "plus")
+          Image(systemName: "magnifyingglass")
         }
-      } else {
-        // Menu with all options when no folder is open.
-        Menu {
-          Button {
-            Task {
-              await library.createNotebook()
+        .tint(Color.offBlack)
+
+        // Create menu with options based on folder state.
+        if let folder = expandedFolder {
+          // Menu with notebook and PDF import options when folder is open.
+          Menu {
+            Button {
+              createNotebookInExpandedFolder(folder)
+            } label: {
+              Label("New Note", systemImage: "doc.badge.plus")
+            }
+
+            Button {
+              showPDFPicker = true
+            } label: {
+              Label("Import PDF", systemImage: "doc.richtext")
             }
           } label: {
-            Label("New Note", systemImage: "doc.badge.plus")
+            Image(systemName: "plus")
           }
+        } else {
+          // Menu with all options when no folder is open.
+          Menu {
+            Button {
+              Task {
+                await library.createNotebook()
+              }
+            } label: {
+              Label("New Note", systemImage: "doc.badge.plus")
+            }
 
-          Button {
-            newFolderName = ""
-            showCreateFolderAlert = true
-          } label: {
-            Label("New Folder", systemImage: "folder.badge.plus")
-          }
+            Button {
+              newFolderName = ""
+              showCreateFolderAlert = true
+            } label: {
+              Label("New Folder", systemImage: "folder.badge.plus")
+            }
 
-          Button {
-            showPDFPicker = true
+            Button {
+              showPDFPicker = true
+            } label: {
+              Label("Import PDF", systemImage: "doc.richtext")
+            }
           } label: {
-            Label("Import PDF", systemImage: "doc.richtext")
+            Image(systemName: "plus")
           }
-        } label: {
-          Image(systemName: "plus")
         }
       }
     }
@@ -602,6 +633,157 @@ struct DashboardView: View {
 
     // Clear the text field after sending.
     aiChatText = ""
+  }
+
+  // MARK: - Search Overlay Section
+
+  // The search overlay with blur background and glass panel.
+  // Slides down from top when expanded.
+  @ViewBuilder
+  private var searchOverlaySection: some View {
+    GeometryReader { geometry in
+      let safeAreaTop = geometry.safeAreaInsets.top
+      let screenWidth = geometry.size.width
+      let screenHeight = geometry.size.height
+
+      // Overlay dimensions (clamped to non-negative to avoid invalid frame warnings).
+      let overlayWidth = max(0, min(screenWidth - 48, 500))
+      let overlayHeight = max(0, min(screenHeight * 0.6, 480))
+      let cornerRadius: CGFloat = 24
+      let slideDistance = overlayHeight + safeAreaTop + 50
+
+      ZStack {
+        // Blur background (tap to dismiss).
+        // Always present so it can smoothly fade in/out.
+        AnimatedBlurView(
+          blurFraction: isSearchOverlayExpanded ? 1 : 0,
+          animationDuration: isSearchOverlayExpanded ? 0.35 : 0.2
+        )
+        .ignoresSafeArea()
+        .onTapGesture {
+          print("[DashboardView] Blur background tapped - dismissing search")
+          dismissSearch()
+        }
+        .allowsHitTesting(isSearchOverlayExpanded)
+
+        // Glass panel with search bar and results.
+        VStack(spacing: 0) {
+          // Search bar at top.
+          DashboardSearchBar(
+            text: $searchText,
+            isFocused: $isSearchFieldFocused
+          )
+          .padding(.horizontal, 16)
+          .padding(.top, 16)
+          .padding(.bottom, 12)
+
+          // Results list.
+          DashboardSearchResults(
+            results: searchResults,
+            query: searchText,
+            isLoading: isSearching,
+            onResultTapped: { result in
+              handleSearchResultTapped(result)
+            }
+          )
+          .padding(.bottom, 16)
+        }
+        .frame(width: overlayWidth, height: overlayHeight)
+        .background(
+          Group {
+            if #available(iOS 26.0, *) {
+              RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(Color.clear)
+                .glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
+            } else {
+              RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(.ultraThinMaterial)
+            }
+          }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .position(x: screenWidth / 2, y: safeAreaTop + 16 + overlayHeight / 2)
+        .offset(y: isSearchOverlayExpanded ? 0 : -slideDistance)
+        .animation(
+          .spring(response: 0.35, dampingFraction: 0.85, blendDuration: 0),
+          value: isSearchOverlayExpanded
+        )
+        .allowsHitTesting(isSearchOverlayExpanded)
+      }
+    }
+    .ignoresSafeArea()
+    .zIndex(160)
+    .allowsHitTesting(isSearchOverlayExpanded)
+    .onChange(of: searchText) { _, newValue in
+      print("[DashboardView] searchText changed to: '\(newValue)'")
+      handleSearchTextChanged(newValue)
+    }
+  }
+
+  // Dismisses the search overlay and resets state.
+  private func dismissSearch() {
+    isSearchFieldFocused = false
+    isSearchOverlayExpanded = false
+    // Clear search after animation completes.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+      if !isSearchOverlayExpanded {
+        searchText = ""
+        searchResults = []
+        isSearching = false
+      }
+    }
+  }
+
+  // Handles search text changes with debouncing.
+  private func handleSearchTextChanged(_ newValue: String) {
+    searchDebounceTask?.cancel()
+    let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+    if trimmed.isEmpty {
+      searchResults = []
+      isSearching = false
+      return
+    }
+
+    isSearching = true
+    searchDebounceTask = Task {
+      try? await Task.sleep(nanoseconds: 250_000_000)
+      guard !Task.isCancelled else { return }
+      await performSearch(query: trimmed)
+    }
+  }
+
+  // Performs the actual search using SearchService.
+  private func performSearch(query: String) async {
+    // Search service integration will be added here.
+    // For now, return empty results to test the UI.
+    await MainActor.run {
+      isSearching = false
+      // Results will be populated when SearchService is integrated.
+    }
+  }
+
+  // Handles tapping on a search result.
+  private func handleSearchResultTapped(_ result: SearchResult) {
+    // Dismiss the search overlay first.
+    dismissSearch()
+
+    // Navigate to the document after a brief delay for animation.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+      switch result.documentType {
+      case .notebook:
+        // Find the notebook metadata and open it.
+        if let notebook = library.notebooks.first(where: { $0.id == result.documentID }) {
+          openNotebook(notebook)
+        }
+      case .pdf:
+        // Find the PDF metadata and open it.
+        if let pdf = library.pdfDocuments.first(where: { $0.id == result.documentID }),
+           let uuid = UUID(uuidString: pdf.id) {
+          openPDFDocument(documentID: uuid)
+        }
+      }
+    }
   }
 
   // MARK: - Loading State

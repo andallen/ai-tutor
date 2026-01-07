@@ -60,6 +60,117 @@ extension Color {
   static let inkFaint = Color.black.opacity(0.40)
 }
 
+// MARK: - Animated Blur View
+
+// UIViewRepresentable that wraps a UIVisualEffectView for smooth blur animation.
+// Uses UIViewPropertyAnimator with CADisplayLink for smooth interpolation.
+// Animates smoothly between clear (0) and fully blurred (1).
+struct AnimatedBlurView: UIViewRepresentable {
+  // Target blur intensity from 0 (clear) to 1 (full blur).
+  let blurFraction: CGFloat
+  // Duration for blur animation.
+  let animationDuration: TimeInterval
+  // Style of blur effect to use.
+  let style: UIBlurEffect.Style
+
+  init(
+    blurFraction: CGFloat,
+    animationDuration: TimeInterval = 0.35,
+    style: UIBlurEffect.Style = .regular
+  ) {
+    self.blurFraction = blurFraction
+    self.animationDuration = animationDuration
+    self.style = style
+  }
+
+  func makeUIView(context: Context) -> UIVisualEffectView {
+    let blurView = UIVisualEffectView(effect: nil)
+    // Create an animator that applies blur when its fractionComplete increases.
+    let animator = UIViewPropertyAnimator(duration: 1, curve: .linear) {
+      blurView.effect = UIBlurEffect(style: self.style)
+    }
+    animator.pausesOnCompletion = true
+    animator.fractionComplete = 0
+    context.coordinator.animator = animator
+    context.coordinator.currentFraction = 0
+    // Start animation to target if not zero.
+    if blurFraction > 0 {
+      context.coordinator.animateTo(blurFraction, duration: animationDuration)
+    }
+    return blurView
+  }
+
+  func updateUIView(_ uiView: UIVisualEffectView, context: Context) {
+    // Animate to new target fraction if different from current target.
+    let target = blurFraction
+    if abs(context.coordinator.targetFraction - target) > 0.001 {
+      context.coordinator.animateTo(target, duration: animationDuration)
+    }
+  }
+
+  func makeCoordinator() -> Coordinator {
+    Coordinator()
+  }
+
+  class Coordinator {
+    var animator: UIViewPropertyAnimator?
+    var displayLink: CADisplayLink?
+    var currentFraction: CGFloat = 0
+    var targetFraction: CGFloat = 0
+    var animationStartTime: CFTimeInterval = 0
+    var animationStartFraction: CGFloat = 0
+    var animationDuration: TimeInterval = 0.35
+
+    // Starts a smooth animation from current fraction to target.
+    func animateTo(_ target: CGFloat, duration: TimeInterval) {
+      targetFraction = target
+      animationStartFraction = currentFraction
+      animationDuration = duration
+      animationStartTime = CACurrentMediaTime()
+
+      // Cancel existing display link.
+      displayLink?.invalidate()
+
+      // Create new display link for animation.
+      let link = CADisplayLink(target: self, selector: #selector(updateAnimation))
+      link.add(to: .main, forMode: .common)
+      displayLink = link
+    }
+
+    @objc func updateAnimation() {
+      let elapsed = CACurrentMediaTime() - animationStartTime
+      var progress = min(1.0, elapsed / animationDuration)
+
+      // Apply ease-out cubic for smooth deceleration.
+      progress = easeOutCubic(progress)
+
+      // Interpolate between start and target.
+      let newFraction = animationStartFraction + (targetFraction - animationStartFraction) * progress
+      currentFraction = newFraction
+      animator?.fractionComplete = newFraction
+
+      // Stop animation when complete.
+      if progress >= 1.0 {
+        displayLink?.invalidate()
+        displayLink = nil
+      }
+    }
+
+    // Ease out cubic for a smooth deceleration.
+    private func easeOutCubic(_ t: CGFloat) -> CGFloat {
+      let adjusted = t - 1
+      return adjusted * adjusted * adjusted + 1
+    }
+
+    deinit {
+      displayLink?.invalidate()
+      animator?.stopAnimation(true)
+    }
+  }
+}
+
+// MARK: - Rounded Corner Shape
+
 // Rounded rectangle with individually rounded corners.
 struct RoundedCornerShape: Shape {
   struct Corner: OptionSet {
