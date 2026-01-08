@@ -45,7 +45,7 @@ struct AIButtonRepresentable: UIViewRepresentable {
   func makeUIView(context: Context) -> AIButtonView {
     let button = AIButtonView()
     button.tapped = tapped
-    button.isYielded = isYielded
+    button.setYielded(isYielded, animated: false)
     button.returnAnimationDuration = returnAnimationDuration
     return button
   }
@@ -53,7 +53,7 @@ struct AIButtonRepresentable: UIViewRepresentable {
   func updateUIView(_ uiView: AIButtonView, context: Context) {
     uiView.tapped = tapped
     uiView.returnAnimationDuration = returnAnimationDuration
-    uiView.isYielded = isYielded
+    uiView.setYielded(isYielded, animated: true)
   }
 }
 
@@ -97,6 +97,17 @@ struct DashboardView: View {
 
   // Tracks which PDF document is being moved to a folder.
   @State private var movingPDF: PDFDocumentMetadata?
+
+  // MARK: - Lesson State
+
+  // Tracks which lesson is being renamed.
+  @State private var renamingLesson: LessonMetadata?
+
+  // Tracks which lesson is being confirmed for deletion.
+  @State private var deletingLesson: LessonMetadata?
+
+  // Opens a lesson view when a lesson is tapped.
+  @State private var activeLessonID: String?
 
   // MARK: - Folder State
 
@@ -171,6 +182,16 @@ struct DashboardView: View {
   // Used to trigger overlay dismiss animation only when drag crosses the boundary.
   @State private var hasDragExitedOverlayBounds: Bool = false
 
+  // MARK: - Drag Return Animation State
+
+  // Tracks which notebook is returning from drag and should start at lifted scale.
+  // When set, the SwiftUI card appears at scale 1.1, then animates to 1.0.
+  // This creates a smooth scale-down animation matching the context menu dismiss feel.
+  @State private var returningFromDragNotebookID: String?
+
+  // Same pattern for PDFs returning from drag.
+  @State private var returningFromDragPDFID: String?
+
   // MARK: - Folder Expansion State
 
   // Tracks which folder is currently expanded (nil when no folder is open).
@@ -236,6 +257,8 @@ struct DashboardView: View {
   @State private var searchOverlayWindow: UIWindow?
   // Hosting controller for the overlay window content.
   @State private var searchOverlayHostingController: UIHostingController<SearchOverlayRootView>?
+  // Reference to the UIWindow for search overlay presentation.
+  @State private var windowRef: UIWindow?
 
   // Screen bounds for layout calculations.
   // Updated from GeometryReader to avoid deprecated UIScreen.main usage.
@@ -243,9 +266,6 @@ struct DashboardView: View {
 
   // Namespace for matched geometry effects when cards move between dashboard and folder overlay.
   @Namespace private var cardNamespace
-
-  // Reference to the UIWindow for adding animated snapshots during drop.
-  @State private var windowRef: UIWindow?
 
   var body: some View {
     mainContent
@@ -258,6 +278,9 @@ struct DashboardView: View {
           renamingPDF: $renamingPDF,
           deletingPDF: $deletingPDF,
           movingPDF: $movingPDF,
+          renamingLesson: $renamingLesson,
+          deletingLesson: $deletingLesson,
+          activeLessonID: $activeLessonID,
           renamingFolder: $renamingFolder,
           deletingFolder: $deletingFolder,
           showCreateFolderAlert: $showCreateFolderAlert,
@@ -305,8 +328,12 @@ struct DashboardView: View {
         }
       }
       #endif
+      .toolbarBackground(.hidden, for: .navigationBar)
+      .navigationBarTitleDisplayMode(.inline)
+      .background(WindowReader { window in
+        windowRef = window
+      })
       .onChange(of: searchOverlayState.searchText) { _, newValue in
-        print("[DashboardView] searchText changed to: '\(newValue)'")
         handleSearchTextChanged(newValue)
       }
   }
@@ -331,6 +358,7 @@ struct DashboardView: View {
           }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.top, 24)
 
         // Shows the title as a separate overlay above the transparent navigation bar.
         Text("Notes")
@@ -385,8 +413,8 @@ struct DashboardView: View {
             onNotebookDragMove: { position in
               handleDragMove(position: position)
             },
-            onNotebookDragEnd: { position in
-              handleFolderNotebookDragEnd(position: position)
+            onNotebookDragEnd: { position, completion in
+              handleFolderNotebookDragEnd(position: position, completion: completion)
             },
             // PDF drag callbacks for dragging out of folder.
             onPDFDragStart: { pdf, frame, position in
@@ -395,8 +423,8 @@ struct DashboardView: View {
             onPDFDragMove: { position in
               handlePDFDragMove(position: position)
             },
-            onPDFDragEnd: { position in
-              handleFolderPDFDragEnd(position: position)
+            onPDFDragEnd: { position, completion in
+              handleFolderPDFDragEnd(position: position, completion: completion)
             },
             // Called when drag crosses overlay bounds.
             onDragExitedBounds: {
@@ -412,6 +440,9 @@ struct DashboardView: View {
             // Used to hide the original cards while dragging (so they appear to move, not duplicate).
             draggedNotebookID: dragSourceFolderID != nil ? draggedNotebook?.id : nil,
             draggedPDFID: pdfDragSourceFolderID != nil ? draggedPDF?.id : nil,
+            // IDs of items returning from drag that need scale-down animation.
+            returningFromDragNotebookID: returningFromDragNotebookID,
+            returningFromDragPDFID: returningFromDragPDFID,
             // Namespace for matched geometry effects when cards move between dashboard and folder.
             cardNamespace: cardNamespace
           )
@@ -430,17 +461,10 @@ struct DashboardView: View {
           .zIndex(200)
         }
 
-        // Drag overlay showing the notebook card following the finger.
-        if let notebook = draggedNotebook {
-          dragOverlay(for: notebook)
-            .zIndex(400)
-        }
-
-        // Drag overlay showing the PDF card following the finger.
-        if let pdf = draggedPDF {
-          pdfDragOverlay(for: pdf)
-            .zIndex(400)
-        }
+        // NOTE: Both notebook and PDF drags now use single UIKit snapshots
+        // (notebookDragSnapshot / pdfDragSnapshot) created at drag start and used
+        // throughout the entire operation. No SwiftUI drag overlays needed -
+        // this eliminates visual switching/snapping and matches Apple's native behavior.
 
         // AI overlay, dim background, and button at bottom-right corner.
         // The overlay expands from the button with liquid glass animation.
@@ -463,10 +487,6 @@ struct DashboardView: View {
       .onPreferenceChange(PDFCardFramePreferenceKey.self) { frames in
         pdfCardFrames.merge(frames) { _, new in new }
       }
-      // Capture window reference for adding animated snapshots during drop.
-      .background(WindowReader { window in
-        windowRef = window
-      })
     }
   }
 
@@ -876,6 +896,8 @@ struct DashboardView: View {
             folderCardView(folder: folder)
           case .pdfDocument(let pdfDocument):
             pdfDocumentCardView(pdfDocument: pdfDocument)
+          case .lesson(let lesson):
+            lessonCardView(lesson: lesson)
           }
         }
       }
@@ -889,7 +911,10 @@ struct DashboardView: View {
         }
       }
     }
-    .padding(.top, 24)
+    .safeAreaInset(edge: .top, spacing: 0) {
+      // Creates a fixed top inset that scroll content cannot enter.
+      Color.clear.frame(height: 24)
+    }
   }
 
   // MARK: - Notebook Card View
@@ -911,6 +936,9 @@ struct DashboardView: View {
       // Grey underlay that stays at full size when the card contracts.
       dropTargetUnderlay(isActive: isDragTarget)
 
+      // Check if this notebook is returning from drag and should animate scale-down.
+      let isReturningFromDrag = returningFromDragNotebookID == notebook.id
+
       // The notebook card that scales down when targeted.
       notebookCardButton(for: notebook, isDragTarget: isDragTarget)
         // Always act as geometry source. The drag overlay doesn't use matchedGeometryEffect,
@@ -921,40 +949,32 @@ struct DashboardView: View {
           in: cardNamespace,
           isSource: true
         )
-        .transition(.scale.combined(with: .opacity))
+        // Transition removed - was causing snap when LazyVGrid reloads cards after drag.
         .scaleEffect(
-          isContextMenuActive ? 1.08 : (isDragTarget ? 0.82 : 1.0),
+          isReturningFromDrag ? 1.1 : (isContextMenuActive ? 1.08 : (isDragTarget ? 0.82 : 1.0)),
           anchor: .center
         )
+        // Animate scale-down when returning from drag (matches context menu feel).
+        .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isReturningFromDrag)
         .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isContextMenuActive)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isDragTarget)
     }
     .background(notebookCardFrameCapture(for: notebook))
+    // Hide the card while being dragged. With the "Relay Handoff" pattern,
+    // the snapshot lands exactly on the slot before being removed, so the
+    // instant swap from opacity 0 to 1 is invisible to the user.
     .opacity(isBeingDragged ? 0 : 1)
-    // Prevent animation on visibility change to avoid ghost card effect.
-    .animation(nil, value: isBeingDragged)
     .zIndex(isContextMenuActive ? 300 : 0)
   }
 
   // Builds the notebook card button with all its handlers.
+  // Uses UIKit-based NotebookCardRepresentable for unified drag visual.
   @ViewBuilder
   private func notebookCardButton(for notebook: NotebookMetadata, isDragTarget: Bool) -> some View {
-    NotebookCardButton(
+    NotebookCardRepresentable(
       notebook: notebook,
-      action: {
+      onTap: {
         openNotebook(notebook)
-      },
-      onRename: {
-        renameText = notebook.displayName
-        renamingNotebook = notebook
-      },
-      onMoveToFolder: library.folders.isEmpty
-        ? nil
-        : {
-          movingNotebook = notebook
-        },
-      onDelete: {
-        deletingNotebook = notebook
       },
       onLongPress: { frame, cardHeight in
         contextMenuState = ContextMenuState(
@@ -969,11 +989,12 @@ struct DashboardView: View {
       onDragMove: { position in
         handleDragMove(position: position)
       },
-      onDragEnd: { position in
-        handleDragEnd(position: position)
+      onDragEnd: { position, completion in
+        handleDragEnd(position: position, completion: completion)
       },
       titleOpacity: isDragTarget ? 0 : 1
     )
+    .aspectRatio(0.72, contentMode: .fit)
   }
 
   // Captures the card's frame for hero animation and drag hit testing.
@@ -1148,6 +1169,9 @@ struct DashboardView: View {
       // Grey underlay that stays at full size when the card contracts.
       dropTargetUnderlay(isActive: isDragTarget)
 
+      // Check if this PDF is returning from drag and should animate scale-down.
+      let isReturningFromDrag = returningFromDragPDFID == pdfDocument.id
+
       // The PDF card that scales down when targeted.
       pdfCardButton(for: pdfDocument, isDragTarget: isDragTarget)
         // Always act as geometry source. The drag overlay doesn't use matchedGeometryEffect,
@@ -1158,41 +1182,32 @@ struct DashboardView: View {
           in: cardNamespace,
           isSource: true
         )
-        .transition(.scale.combined(with: .opacity))
+        // Transition removed - was causing snap when LazyVGrid reloads cards after drag.
         .scaleEffect(
-          isContextMenuActive ? 1.08 : (isDragTarget ? 0.82 : 1.0),
+          isReturningFromDrag ? 1.1 : (isContextMenuActive ? 1.08 : (isDragTarget ? 0.82 : 1.0)),
           anchor: .center
         )
+        // Animate scale-down when returning from drag (matches context menu feel).
+        .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isReturningFromDrag)
         .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isContextMenuActive)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isDragTarget)
     }
     .background(pdfCardFrameCapture(for: pdfDocument))
+    // Hide the card while being dragged. With the "Relay Handoff" pattern,
+    // the snapshot lands exactly on the slot before being removed, so the
+    // instant swap from opacity 0 to 1 is invisible to the user.
     .opacity(isBeingDragged ? 0 : 1)
-    // Prevent animation on visibility change to avoid ghost card effect.
-    .animation(nil, value: isBeingDragged)
     .zIndex(isContextMenuActive ? 300 : 0)
   }
 
   // Builds the PDF card button with all its handlers.
   @ViewBuilder
   private func pdfCardButton(for pdfDocument: PDFDocumentMetadata, isDragTarget: Bool) -> some View {
-    PDFDocumentCardButton(
-      metadata: pdfDocument,
-      action: {
+    PDFCardRepresentable(
+      pdfDocument: pdfDocument,
+      onTap: {
         guard let uuid = UUID(uuidString: pdfDocument.id) else { return }
         openPDFDocument(documentID: uuid)
-      },
-      onRename: {
-        renameText = pdfDocument.displayName
-        renamingPDF = pdfDocument
-      },
-      onMoveToFolder: library.folders.isEmpty
-        ? nil
-        : {
-          movingPDF = pdfDocument
-        },
-      onDelete: {
-        deletingPDF = pdfDocument
       },
       onLongPress: { frame, cardHeight in
         contextMenuState = ContextMenuState(
@@ -1207,11 +1222,12 @@ struct DashboardView: View {
       onDragMove: { position in
         handlePDFDragMove(position: position)
       },
-      onDragEnd: { position in
-        handlePDFDragEnd(position: position)
+      onDragEnd: { position, completion in
+        handlePDFDragEnd(position: position, completion: completion)
       },
       titleOpacity: isDragTarget ? 0 : 1
     )
+    .aspectRatio(0.72, contentMode: .fit)
   }
 
   // Captures the PDF card's frame for drag hit testing.
@@ -1224,6 +1240,38 @@ struct DashboardView: View {
           value: [pdfDocument.id: geometry.frame(in: .global)]
         )
     }
+  }
+
+  // MARK: - Lesson Card View
+
+  // Builds a lesson card for display in the item grid.
+  @ViewBuilder
+  private func lessonCardView(lesson: LessonMetadata) -> some View {
+    let isContextMenuActive = contextMenuState?.matchesLesson(lesson) == true
+    LessonCardButton(
+      lesson: lesson,
+      action: { openLesson(lesson) },
+      onRename: {
+        renameText = lesson.displayName
+        renamingLesson = lesson
+      },
+      onDelete: { deletingLesson = lesson },
+      onLongPress: { frame, cardHeight in
+        contextMenuState = ContextMenuState(
+          item: .lesson(lesson),
+          sourceFrame: frame,
+          cardHeight: cardHeight
+        )
+      }
+    )
+    .scaleEffect(isContextMenuActive ? 1.08 : 1.0, anchor: .center)
+    .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isContextMenuActive)
+    .zIndex(isContextMenuActive ? 300 : 0)
+  }
+
+  // Opens a lesson for viewing and interaction.
+  private func openLesson(_ lesson: LessonMetadata) {
+    activeLessonID = lesson.id
   }
 
   // Creates a drop delegate for folder drag-and-drop operations.
@@ -1607,162 +1655,25 @@ struct DashboardView: View {
     }
   }
 
-  // MARK: - Drag Overlay
-
-  // Builds the floating card overlay that follows the finger during drag.
-  @ViewBuilder
-  private func dragOverlay(for notebook: NotebookMetadata) -> some View {
-    let cardWidth = dragSourceFrame.width
-    let cardHeight = dragSourceFrame.height - 36  // Subtract title area height.
-
-    NotebookCardPreview(notebook: notebook, dimOpacity: 0)
-      .frame(width: cardWidth, height: cardHeight)
-      .background(Color.white)
-      .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-      .shadow(color: Color.black.opacity(0.25), radius: 12, x: 0, y: 8)
-      .scaleEffect(1.05)
-      // Position the card centered under the finger.
-      // Note: Do NOT use matchedGeometryEffect here. The .position() modifier places the view
-      // at an absolute position, but matchedGeometryEffect tracks geometry BEFORE position
-      // adjustment. This mismatch corrupts the namespace and causes all cards to become jittery.
-      .position(x: dragPosition.x, y: dragPosition.y - cardHeight / 2 - 20)
-      .allowsHitTesting(false)
-  }
-
-  // MARK: - Drop Animation Snapshots
-
-  // Creates a UIView snapshot of the notebook card for drop animation.
-  // Uses UIHostingController to render the SwiftUI preview content.
-  private func createNotebookDragSnapshot(for notebook: NotebookMetadata) -> UIView {
-    let cardWidth = dragSourceFrame.width
-    let cardHeight = dragSourceFrame.height - 36
-
-    // Create SwiftUI preview matching the drag overlay appearance.
-    let preview = NotebookCardPreview(notebook: notebook, dimOpacity: 0)
-      .frame(width: cardWidth, height: cardHeight)
-      .background(Color.white)
-      .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-    // Host the SwiftUI view in a UIView.
-    let hostingController = UIHostingController(rootView: preview)
-    hostingController.view.frame = CGRect(x: 0, y: 0, width: cardWidth, height: cardHeight)
-    hostingController.view.backgroundColor = .clear
-
-    // Add shadow matching the drag overlay.
-    hostingController.view.layer.shadowColor = UIColor.black.cgColor
-    hostingController.view.layer.shadowOpacity = 0.25
-    hostingController.view.layer.shadowRadius = 12
-    hostingController.view.layer.shadowOffset = CGSize(width: 0, height: 8)
-
-    return hostingController.view
-  }
-
-  // Creates a UIView snapshot of the PDF card for drop animation.
-  private func createPDFDragSnapshot(for pdf: PDFDocumentMetadata) -> UIView {
-    let cardWidth = pdfDragSourceFrame.width
-    let cardHeight = pdfDragSourceFrame.height - 36
-
-    // Create SwiftUI preview matching the drag overlay appearance.
-    let preview = PDFDocumentCardPreview(metadata: pdf, dimOpacity: 0)
-      .frame(width: cardWidth, height: cardHeight)
-      .background(Color(.systemGray5))
-      .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-    // Host the SwiftUI view in a UIView.
-    let hostingController = UIHostingController(rootView: preview)
-    hostingController.view.frame = CGRect(x: 0, y: 0, width: cardWidth, height: cardHeight)
-    hostingController.view.backgroundColor = .clear
-
-    // Add shadow matching the drag overlay.
-    hostingController.view.layer.shadowColor = UIColor.black.cgColor
-    hostingController.view.layer.shadowOpacity = 0.25
-    hostingController.view.layer.shadowRadius = 12
-    hostingController.view.layer.shadowOffset = CGSize(width: 0, height: 8)
-
-    return hostingController.view
-  }
-
-  // Animates a notebook card snapshot from the drag position to a destination frame.
-  // Uses spring animation for natural movement with slight overshoot.
-  private func animateNotebookDropToDestination(
-    notebook: NotebookMetadata,
-    fromPosition: CGPoint,
-    toFrame: CGRect,
-    in window: UIWindow,
-    completion: (() -> Void)? = nil
-  ) {
-    let cardHeight = dragSourceFrame.height - 36
-
-    // Create snapshot at current drag position.
-    let snapshot = createNotebookDragSnapshot(for: notebook)
-    snapshot.center = CGPoint(x: fromPosition.x, y: fromPosition.y - cardHeight / 2 - 20)
-    snapshot.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
-    window.addSubview(snapshot)
-
-    // Animate to destination with spring physics.
-    UIView.animate(
-      withDuration: 0.4,
-      delay: 0,
-      usingSpringWithDamping: 0.75,
-      initialSpringVelocity: 0,
-      options: []
-    ) {
-      snapshot.center = CGPoint(x: toFrame.midX, y: toFrame.midY)
-      snapshot.transform = .identity
-    } completion: { _ in
-      snapshot.removeFromSuperview()
-      completion?()
-    }
-  }
-
-  // Animates a PDF card snapshot from the drag position to a destination frame.
-  private func animatePDFDropToDestination(
-    pdf: PDFDocumentMetadata,
-    fromPosition: CGPoint,
-    toFrame: CGRect,
-    in window: UIWindow,
-    completion: (() -> Void)? = nil
-  ) {
-    let cardHeight = pdfDragSourceFrame.height - 36
-
-    // Create snapshot at current drag position.
-    let snapshot = createPDFDragSnapshot(for: pdf)
-    snapshot.center = CGPoint(x: fromPosition.x, y: fromPosition.y - cardHeight / 2 - 20)
-    snapshot.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
-    window.addSubview(snapshot)
-
-    // Animate to destination with spring physics.
-    UIView.animate(
-      withDuration: 0.4,
-      delay: 0,
-      usingSpringWithDamping: 0.75,
-      initialSpringVelocity: 0,
-      options: []
-    ) {
-      snapshot.center = CGPoint(x: toFrame.midX, y: toFrame.midY)
-      snapshot.transform = .identity
-    } completion: { _ in
-      snapshot.removeFromSuperview()
-      completion?()
-    }
-  }
-
   // MARK: - Drag Handlers
 
   // Called when a drag starts after long press on a notebook card.
+  // With UIKit cards, the card view reparents itself to the window via its coordinator.
+  // This handler just tracks state for target detection.
   private func handleDragStart(notebook: NotebookMetadata, frame: CGRect, position: CGPoint) {
     // Dismiss context menu when drag starts.
     withAnimation(.easeOut(duration: 0.15)) {
       contextMenuState = nil
     }
 
-    // Set up drag state.
+    // Set up drag state. The card's coordinator handles the visual movement.
     draggedNotebook = notebook
     dragSourceFrame = frame
     dragPosition = position
   }
 
   // Called during drag as the finger moves.
+  // The card's coordinator handles visual movement. This just tracks targets.
   private func handleDragMove(position: CGPoint) {
     dragPosition = position
 
@@ -1826,15 +1737,19 @@ struct DashboardView: View {
   }
 
   // Called when drag ends (finger released).
-  private func handleDragEnd(position: CGPoint) {
+  // Completion callback: true = animate return, false = remove immediately (dropped on target).
+  private func handleDragEnd(position: CGPoint, completion: @escaping (Bool) -> Void) {
     guard let notebook = draggedNotebook else {
       resetDragState()
+      completion(true)
       return
     }
 
     // Check if we're over a folder.
     if let targetFolderID = dragTargetFolderID {
-      // No animation when merging into folder - the card just disappears into it.
+      // Tell coordinator to remove card immediately (dropped on target).
+      completion(false)
+
       // Move notebook to the existing folder.
       // Reset drag state only after library reloads to avoid ghost card appearing.
       Task {
@@ -1850,7 +1765,9 @@ struct DashboardView: View {
     if let targetNotebookID = dragTargetNotebookID,
       let targetNotebook = library.notebooks.first(where: { $0.id == targetNotebookID })
     {
-      // No animation when merging with another card - the cards just combine into a folder.
+      // Tell coordinator to remove card immediately (dropped on target).
+      completion(false)
+
       // Create folder from the two notebooks.
       createFolderFromNotebooks(
         draggedNotebook: notebook,
@@ -1861,8 +1778,11 @@ struct DashboardView: View {
 
     // Check if we're over a PDF to create a folder.
     if let targetPDFID = dragTargetPDFID,
-      let targetPDF = library.pdfDocuments.first(where: { $0.id == targetPDFID }) {
-      // No animation when merging with a PDF - they just combine into a folder.
+      let targetPDF = library.pdfDocuments.first(where: { $0.id == targetPDFID })
+    {
+      // Tell coordinator to remove card immediately (dropped on target).
+      completion(false)
+
       // Create folder from the notebook and PDF.
       createFolderFromNotebookAndPDF(
         draggedNotebook: notebook,
@@ -1872,31 +1792,24 @@ struct DashboardView: View {
     }
 
     // No valid target - released over empty space.
-    // Animate card back to its original position, then reset state after animation completes.
-    if let window = windowRef {
-      // Hide drag overlay immediately so only the snapshot is visible during animation.
-      draggedNotebook = nil
+    // Tell coordinator to animate return to original position.
+    completion(true)
 
-      animateNotebookDropToDestination(
-        notebook: notebook,
-        fromPosition: position,
-        toFrame: dragSourceFrame,
-        in: window
-      ) {
-        // Reset remaining drag state after animation completes.
+    // Reset drag state after coordinator animation completes.
+    // Disable animations during state reset to prevent grid from animating the card.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+      var transaction = Transaction()
+      transaction.disablesAnimations = true
+      withTransaction(transaction) {
         self.resetDragState()
       }
-    } else {
-      // No window available, just reset immediately.
-      resetDragState()
     }
   }
 
   // Resets all drag-related state.
   private func resetDragState() {
-    // Clear dragged item WITHOUT animation to avoid matchedGeometryEffect confusion.
-    // Animating this causes isSource to transition with animation, and SwiftUI
-    // interpolates from an undefined position, creating a "jump up then slide down" ghost.
+    // Clear drag state.
+    // The UIKit card is returned to its container by the Coordinator.
     draggedNotebook = nil
 
     // Animate target state for smooth scale-back on target cards.
@@ -1914,6 +1827,7 @@ struct DashboardView: View {
   // MARK: - Folder Drag Handlers
 
   // Called when a notebook drag starts from within the folder overlay.
+  // The actual UIKit card is reparented to the window by the Coordinator.
   private func handleFolderNotebookDragStart(
     notebook: NotebookMetadata, frame: CGRect, position: CGPoint
   ) {
@@ -1923,6 +1837,7 @@ struct DashboardView: View {
     }
 
     // Set up drag state, including the source folder ID.
+    // The Coordinator handles reparenting the actual UIKit card to the window.
     draggedNotebook = notebook
     dragSourceFrame = frame
     dragPosition = position
@@ -1930,26 +1845,36 @@ struct DashboardView: View {
   }
 
   // Called when a notebook drag from a folder ends.
-  private func handleFolderNotebookDragEnd(position: CGPoint) {
+  // Completion callback: true = animate return, false = remove immediately.
+  private func handleFolderNotebookDragEnd(position: CGPoint, completion: @escaping (Bool) -> Void) {
     guard let notebook = draggedNotebook,
       let sourceFolderID = dragSourceFolderID
     else {
       resetDragState()
       cleanupFolderOverlay()
+      completion(true)
       return
     }
 
-    // If drag never exited overlay bounds, just reset state (card snaps back).
+    // If drag never exited overlay bounds, animate card back to original position.
     // The folder overlay is still open, so no move happens.
     guard hasDragExitedOverlayBounds else {
-      resetDragState()
+      // Tell coordinator to animate return.
+      completion(true)
+
+      // Reset drag state after coordinator animation completes.
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+          self.resetDragState()
+        }
+      }
       return
     }
 
-    // No animations for merge operations (folder, notebook, PDF).
-    // For empty space drops that move to root, the destination grid position
-    // depends on sort order and is unknown until loadBundles() completes.
-    // Skip animation for this case - the card just disappears from folder.
+    // Drag exited bounds - tell coordinator to remove card immediately.
+    completion(false)
 
     Task { @MainActor in
       if let targetFolderID = dragTargetFolderID {
@@ -1957,13 +1882,15 @@ struct DashboardView: View {
         await library.moveNotebookToRoot(notebookID: notebook.id, fromFolderID: sourceFolderID)
         await library.moveNotebookToFolder(notebookID: notebook.id, folderID: targetFolderID)
       } else if let targetNotebookID = dragTargetNotebookID,
-        let targetNotebook = library.notebooks.first(where: { $0.id == targetNotebookID }) {
+        let targetNotebook = library.notebooks.first(where: { $0.id == targetNotebookID })
+      {
         // Move to root, then create folder with target notebook.
         await library.moveNotebookToRoot(notebookID: notebook.id, fromFolderID: sourceFolderID)
         await createFolderFromNotebooksAsync(
           draggedNotebook: notebook, targetNotebook: targetNotebook)
       } else if let targetPDFID = dragTargetPDFID,
-        let targetPDF = library.pdfDocuments.first(where: { $0.id == targetPDFID }) {
+        let targetPDF = library.pdfDocuments.first(where: { $0.id == targetPDFID })
+      {
         // Move to root, then create folder with target PDF.
         await library.moveNotebookToRoot(notebookID: notebook.id, fromFolderID: sourceFolderID)
         await createFolderFromNotebookAndPDFAsync(notebook: notebook, pdf: targetPDF)
@@ -1980,6 +1907,7 @@ struct DashboardView: View {
   }
 
   // Called when a PDF drag starts from within the folder overlay.
+  // The actual UIKit card is reparented to the window by the Coordinator.
   private func handleFolderPDFDragStart(pdf: PDFDocumentMetadata, frame: CGRect, position: CGPoint) {
     // Dismiss context menu when drag starts.
     withAnimation(.easeOut(duration: 0.15)) {
@@ -1987,6 +1915,7 @@ struct DashboardView: View {
     }
 
     // Set up drag state, including the source folder ID.
+    // The Coordinator handles reparenting the actual UIKit card to the window.
     draggedPDF = pdf
     pdfDragSourceFrame = frame
     pdfDragPosition = position
@@ -1994,26 +1923,36 @@ struct DashboardView: View {
   }
 
   // Called when a PDF drag from a folder ends.
-  private func handleFolderPDFDragEnd(position: CGPoint) {
+  // Completion callback: true = animate return, false = remove immediately.
+  private func handleFolderPDFDragEnd(position: CGPoint, completion: @escaping (Bool) -> Void) {
     guard let pdf = draggedPDF,
       pdfDragSourceFolderID != nil
     else {
       resetPDFDragState()
       cleanupFolderOverlay()
+      completion(true)
       return
     }
 
-    // If drag never exited overlay bounds, just reset state (card snaps back).
+    // If drag never exited overlay bounds, animate card back to original position.
     // The folder overlay is still open, so no move happens.
     guard hasDragExitedOverlayBounds else {
-      resetPDFDragState()
+      // Tell coordinator to animate return.
+      completion(true)
+
+      // Reset drag state after coordinator animation completes.
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+          self.resetPDFDragState()
+        }
+      }
       return
     }
 
-    // No animations for merge operations (folder, notebook, PDF).
-    // For empty space drops that move to root, the destination grid position
-    // depends on sort order and is unknown until loadBundles() completes.
-    // Skip animation for this case - the card just disappears from folder.
+    // Drag exited bounds - tell coordinator to remove card immediately.
+    completion(false)
 
     Task { @MainActor in
       if let targetFolderID = dragTargetFolderID {
@@ -2021,12 +1960,14 @@ struct DashboardView: View {
         await library.movePDFDocumentToRoot(documentID: pdf.id)
         await library.movePDFDocumentToFolder(documentID: pdf.id, folderID: targetFolderID)
       } else if let targetNotebookID = dragTargetNotebookID,
-        let targetNotebook = library.notebooks.first(where: { $0.id == targetNotebookID }) {
+        let targetNotebook = library.notebooks.first(where: { $0.id == targetNotebookID })
+      {
         // Move to root, then create folder with target notebook.
         await library.movePDFDocumentToRoot(documentID: pdf.id)
         await createFolderFromPDFAndNotebookAsync(pdf: pdf, notebook: targetNotebook)
       } else if let targetPDFID = dragTargetPDFID,
-        let targetPDF = library.pdfDocuments.first(where: { $0.id == targetPDFID }) {
+        let targetPDF = library.pdfDocuments.first(where: { $0.id == targetPDFID })
+      {
         // Move to root, then create folder with target PDF.
         await library.movePDFDocumentToRoot(documentID: pdf.id)
         await createFolderFromTwoPDFsAsync(draggedPDF: pdf, targetPDF: targetPDF)
@@ -2158,31 +2099,10 @@ struct DashboardView: View {
     }
   }
 
-  // MARK: - PDF Drag Overlay
-
-  // Builds the floating PDF card overlay that follows the finger during drag.
-  @ViewBuilder
-  private func pdfDragOverlay(for pdf: PDFDocumentMetadata) -> some View {
-    let cardWidth = pdfDragSourceFrame.width
-    let cardHeight = pdfDragSourceFrame.height - 36  // Subtract title area height.
-
-    PDFDocumentCardPreview(metadata: pdf, dimOpacity: 0)
-      .frame(width: cardWidth, height: cardHeight)
-      .background(Color(.systemGray5))
-      .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-      .shadow(color: Color.black.opacity(0.25), radius: 12, x: 0, y: 8)
-      .scaleEffect(1.05)
-      // Position the card centered under the finger.
-      // Note: Do NOT use matchedGeometryEffect here. The .position() modifier places the view
-      // at an absolute position, but matchedGeometryEffect tracks geometry BEFORE position
-      // adjustment. This mismatch corrupts the namespace and causes all cards to become jittery.
-      .position(x: pdfDragPosition.x, y: pdfDragPosition.y - cardHeight / 2 - 20)
-      .allowsHitTesting(false)
-  }
-
   // MARK: - PDF Drag Handlers
 
-  // Called when a drag starts after long press on a PDF card.
+  // Called when a PDF drag starts after long press on a PDF card.
+  // The actual UIKit card is reparented to the window by the Coordinator.
   private func handlePDFDragStart(pdf: PDFDocumentMetadata, frame: CGRect, position: CGPoint) {
     // Dismiss context menu when drag starts.
     withAnimation(.easeOut(duration: 0.15)) {
@@ -2190,12 +2110,14 @@ struct DashboardView: View {
     }
 
     // Set up drag state.
+    // The Coordinator handles reparenting the actual UIKit card to the window.
     draggedPDF = pdf
     pdfDragSourceFrame = frame
     pdfDragPosition = position
   }
 
   // Called during PDF drag as the finger moves.
+  // The Coordinator moves the actual UIKit card - we just track targets.
   private func handlePDFDragMove(position: CGPoint) {
     pdfDragPosition = position
 
@@ -2257,15 +2179,19 @@ struct DashboardView: View {
   }
 
   // Called when PDF drag ends (finger released).
-  private func handlePDFDragEnd(position: CGPoint) {
+  // Completion callback: true = animate return, false = remove immediately (dropped on target).
+  private func handlePDFDragEnd(position: CGPoint, completion: @escaping (Bool) -> Void) {
     guard let pdf = draggedPDF else {
       resetPDFDragState()
+      completion(true)
       return
     }
 
     // Check if we're over a folder.
     if let targetFolderID = dragTargetFolderID {
-      // No animation when merging into folder - the card just disappears into it.
+      // Tell coordinator to remove card immediately (dropped on target).
+      completion(false)
+
       // Move PDF to the existing folder.
       // Reset drag state only after library reloads to avoid ghost card appearing.
       Task {
@@ -2279,8 +2205,11 @@ struct DashboardView: View {
 
     // Check if we're over a notebook to create a folder.
     if let targetNotebookID = dragTargetNotebookID,
-      let targetNotebook = library.notebooks.first(where: { $0.id == targetNotebookID }) {
-      // No animation when merging with a notebook - they just combine into a folder.
+      let targetNotebook = library.notebooks.first(where: { $0.id == targetNotebookID })
+    {
+      // Tell coordinator to remove card immediately (dropped on target).
+      completion(false)
+
       // Create folder from the PDF and notebook.
       createFolderFromPDFAndNotebook(
         draggedPDF: pdf,
@@ -2291,8 +2220,11 @@ struct DashboardView: View {
 
     // Check if we're over another PDF to create a folder.
     if let targetPDFID = dragTargetPDFID,
-      let targetPDF = library.pdfDocuments.first(where: { $0.id == targetPDFID }) {
-      // No animation when merging with another PDF - they just combine into a folder.
+      let targetPDF = library.pdfDocuments.first(where: { $0.id == targetPDFID })
+    {
+      // Tell coordinator to remove card immediately (dropped on target).
+      completion(false)
+
       // Create folder from the two PDFs.
       createFolderFromTwoPDFs(
         draggedPDF: pdf,
@@ -2302,31 +2234,24 @@ struct DashboardView: View {
     }
 
     // No valid target - released over empty space.
-    // Animate card back to its original position, then reset state after animation completes.
-    if let window = windowRef {
-      // Hide drag overlay immediately so only the snapshot is visible during animation.
-      draggedPDF = nil
+    // Tell coordinator to animate return to original position.
+    completion(true)
 
-      animatePDFDropToDestination(
-        pdf: pdf,
-        fromPosition: position,
-        toFrame: pdfDragSourceFrame,
-        in: window
-      ) {
-        // Reset remaining drag state after animation completes.
+    // Reset drag state after coordinator animation completes.
+    // Disable animations during state reset to prevent grid from animating the card.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+      var transaction = Transaction()
+      transaction.disablesAnimations = true
+      withTransaction(transaction) {
         self.resetPDFDragState()
       }
-    } else {
-      // No window available, just reset immediately.
-      resetPDFDragState()
     }
   }
 
   // Resets all PDF drag-related state.
   private func resetPDFDragState() {
-    // Clear dragged item WITHOUT animation to avoid matchedGeometryEffect confusion.
-    // Animating this causes isSource to transition with animation, and SwiftUI
-    // interpolates from an undefined position, creating a "jump up then slide down" ghost.
+    // Clear drag state.
+    // The UIKit card is returned to its container by the Coordinator.
     draggedPDF = nil
 
     // Animate target state for smooth scale-back on target cards.
@@ -2420,6 +2345,8 @@ struct DashboardView: View {
       return buildFolderContextMenuActions(for: folder)
     case .pdfDocument(let pdfDocument):
       return buildPDFContextMenuActions(for: pdfDocument)
+    case .lesson(let lesson):
+      return buildLessonContextMenuActions(for: lesson)
     }
   }
 
@@ -2501,6 +2428,172 @@ struct DashboardView: View {
 
     return actions
   }
+
+  // Builds context menu actions for a lesson.
+  private func buildLessonContextMenuActions(for lesson: LessonMetadata) -> [ContextMenuAction] {
+    [
+      ContextMenuAction(title: "Rename", systemImage: "pencil") {
+        renameText = lesson.displayName
+        renamingLesson = lesson
+      },
+      ContextMenuAction(
+        title: "Delete",
+        systemImage: "trash",
+        isDestructive: true
+      ) {
+        deletingLesson = lesson
+      },
+    ]
+  }
+
+  // MARK: - Search Overlay
+
+  // Presents the search overlay above the navigation bar in its own window.
+  private func presentSearchOverlay() {
+    if searchOverlayWindow == nil {
+      createSearchOverlayWindow()
+    }
+
+    DispatchQueue.main.async {
+      self.searchOverlayState.isExpanded = true
+      self.searchOverlayState.isSearchFieldFocused = true
+    }
+  }
+
+  // Creates the search overlay window if a scene is available.
+  private func createSearchOverlayWindow() {
+    guard let windowScene = resolveSearchOverlayScene() else {
+      print("[DashboardView] Search overlay window scene unavailable")
+      return
+    }
+
+    let rootView = makeSearchOverlayRootView()
+    let hostingController = UIHostingController(rootView: rootView)
+    hostingController.view.backgroundColor = .clear
+
+    let overlayWindow = UIWindow(windowScene: windowScene)
+    overlayWindow.rootViewController = hostingController
+    overlayWindow.windowLevel = .alert + 1
+    overlayWindow.isHidden = false
+    overlayWindow.makeKeyAndVisible()
+
+    searchOverlayHostingController = hostingController
+    searchOverlayWindow = overlayWindow
+  }
+
+  // Releases the overlay window and restores focus to the main window.
+  private func removeSearchOverlayWindow() {
+    searchOverlayWindow?.isHidden = true
+    searchOverlayWindow?.rootViewController = nil
+    searchOverlayWindow = nil
+    searchOverlayHostingController = nil
+    windowRef?.makeKeyAndVisible()
+  }
+
+  // Builds the root view used by the overlay window.
+  private func makeSearchOverlayRootView() -> SearchOverlayRootView {
+    SearchOverlayRootView(
+      state: searchOverlayState,
+      onDismiss: {
+        dismissSearch()
+      },
+      onClear: {
+        clearSearchText()
+      },
+      onResultTapped: { result in
+        handleSearchResultTapped(result)
+      }
+    )
+  }
+
+  // Chooses the active scene for presenting the overlay window.
+  private func resolveSearchOverlayScene() -> UIWindowScene? {
+    if let windowScene = windowRef?.windowScene {
+      return windowScene
+    }
+
+    return UIApplication.shared.connectedScenes
+      .compactMap { $0 as? UIWindowScene }
+      .first(where: { $0.activationState == .foregroundActive })
+  }
+
+  // Dismisses the search overlay and resets state.
+  private func dismissSearch() {
+    searchOverlayState.isSearchFieldFocused = false
+    searchOverlayState.isExpanded = false
+    // Clear search after animation completes.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+      if !searchOverlayState.isExpanded {
+        searchOverlayState.searchText = ""
+        searchOverlayState.searchResults = []
+        searchOverlayState.isSearching = false
+        removeSearchOverlayWindow()
+      }
+    }
+  }
+
+  // Clears the search text without closing the overlay.
+  private func clearSearchText() {
+    // Clear the bound search text.
+    searchOverlayState.searchText = ""
+    // Reset results for the empty query state.
+    searchOverlayState.searchResults = []
+    // Stop the loading state.
+    searchOverlayState.isSearching = false
+    // Maintain focus in the search field.
+    searchOverlayState.isSearchFieldFocused = true
+  }
+
+  // Handles search text changes with debouncing.
+  private func handleSearchTextChanged(_ newValue: String) {
+    searchDebounceTask?.cancel()
+    let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+    if trimmed.isEmpty {
+      searchOverlayState.searchResults = []
+      searchOverlayState.isSearching = false
+      return
+    }
+
+    searchOverlayState.isSearching = true
+    searchDebounceTask = Task {
+      try? await Task.sleep(nanoseconds: 250_000_000)
+      guard !Task.isCancelled else { return }
+      await performSearch(query: trimmed)
+    }
+  }
+
+  // Performs the actual search using SearchService.
+  private func performSearch(query: String) async {
+    // Search service integration will be added here.
+    // For now, return empty results to test the UI.
+    await MainActor.run {
+      searchOverlayState.isSearching = false
+      // Results will be populated when SearchService is integrated.
+    }
+  }
+
+  // Handles tapping on a search result.
+  private func handleSearchResultTapped(_ result: SearchResult) {
+    // Dismiss the search overlay first.
+    dismissSearch()
+
+    // Navigate to the document after a brief delay for animation.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+      switch result.documentType {
+      case .notebook:
+        // Find the notebook and open it.
+        if let notebook = library.notebooks.first(where: { $0.id == result.documentID }) {
+          openNotebook(notebook)
+        }
+      case .pdf:
+        // Open the PDF document by ID.
+        if let uuid = UUID(uuidString: result.documentID) {
+          openPDFDocument(documentID: uuid)
+        }
+      }
+    }
+  }
 }
 // swiftlint:enable type_body_length
 
@@ -2514,6 +2607,9 @@ struct DashboardViewModifiers: ViewModifier {
   @Binding var renamingPDF: PDFDocumentMetadata?
   @Binding var deletingPDF: PDFDocumentMetadata?
   @Binding var movingPDF: PDFDocumentMetadata?
+  @Binding var renamingLesson: LessonMetadata?
+  @Binding var deletingLesson: LessonMetadata?
+  @Binding var activeLessonID: String?
   @Binding var renamingFolder: FolderMetadata?
   @Binding var deletingFolder: FolderMetadata?
   @Binding var showCreateFolderAlert: Bool
@@ -2559,6 +2655,8 @@ struct DashboardViewModifiers: ViewModifier {
       deletingNotebook: $deletingNotebook,
       renamingPDF: $renamingPDF,
       deletingPDF: $deletingPDF,
+      renamingLesson: $renamingLesson,
+      deletingLesson: $deletingLesson,
       renamingFolder: $renamingFolder,
       deletingFolder: $deletingFolder,
       showCreateFolderAlert: $showCreateFolderAlert,
@@ -2576,6 +2674,7 @@ struct DashboardViewModifiers: ViewModifier {
     DashboardSheetModifiers(
       activeSession: $activeSession,
       activePDFSession: $activePDFSession,
+      activeLessonID: $activeLessonID,
       movingNotebook: $movingNotebook,
       movingPDF: $movingPDF,
       expandedFolder: $expandedFolder,
@@ -2605,6 +2704,7 @@ struct DashboardViewModifiers: ViewModifier {
 struct DashboardSheetModifiers: ViewModifier {
   @Binding var activeSession: NotebookSession?
   @Binding var activePDFSession: PDFDocumentSession?
+  @Binding var activeLessonID: String?
   @Binding var movingNotebook: NotebookMetadata?
   @Binding var movingPDF: PDFDocumentMetadata?
   @Binding var expandedFolder: FolderMetadata?
@@ -2633,6 +2733,19 @@ struct DashboardSheetModifiers: ViewModifier {
         content: { session in
           PDFEditorHostView(session: session)
             .ignoresSafeArea()
+        }
+      )
+      .fullScreenCover(
+        item: Binding(
+          get: { activeLessonID.map { LessonSession(id: $0) } },
+          set: { activeLessonID = $0?.id }
+        ),
+        onDismiss: { activeLessonID = nil },
+        content: { session in
+          LessonView(
+            lessonID: session.id,
+            onDismiss: { activeLessonID = nil }
+          )
         }
       )
       .sheet(item: $movingNotebook) { notebook in
@@ -2847,6 +2960,13 @@ struct PDFCardFramePreferenceKey: PreferenceKey {
   static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
     value.merge(nextValue()) { _, new in new }
   }
+}
+
+// MARK: - Lesson Session
+
+// Session model for lesson navigation.
+struct LessonSession: Identifiable {
+  let id: String
 }
 
 #if DEBUG

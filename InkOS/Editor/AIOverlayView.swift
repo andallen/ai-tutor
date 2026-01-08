@@ -94,9 +94,12 @@ final class AIOverlayView: UIView {
     let hostingController = UIHostingController(rootView: chatBar)
     hostingController.view.backgroundColor = .clear
     hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+    // Allow the hosting controller to size based on SwiftUI content.
+    hostingController.sizingOptions = .intrinsicContentSize
     glassView.contentView.addSubview(hostingController.view)
 
     // Pin chat bar to bottom with horizontal padding.
+    // No height constraint - the SwiftUI view determines its own height.
     NSLayoutConstraint.activate([
       hostingController.view.leadingAnchor.constraint(
         equalTo: glassView.contentView.leadingAnchor,
@@ -109,8 +112,7 @@ final class AIOverlayView: UIView {
       hostingController.view.bottomAnchor.constraint(
         equalTo: glassView.contentView.bottomAnchor,
         constant: -12
-      ),
-      hostingController.view.heightAnchor.constraint(equalToConstant: 52)
+      )
     ])
 
     chatInputHostingController = hostingController

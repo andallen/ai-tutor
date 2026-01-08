@@ -40,6 +40,17 @@ InkOS/
 │   │   │       ├── VectorStoreClient.swift    # Client for vector database operations
 │   │   │       └── VectorStoreModels.swift    # Data models for vector storage
 │   │   │
+│   │   ├── AIChat/                       # AI chat and messaging feature
+│   │   │   ├── Models/                   # Chat data models
+│   │   │   │   ├── AttachmentContract.swift     # Attachment handling contract
+│   │   │   │   ├── ChatContract.swift           # Chat message contracts
+│   │   │   │   └── MultimodalMessageContract.swift  # Multimodal message support
+│   │   │   └── Services/                 # Chat services and clients
+│   │   │       ├── ChatService.swift            # Core chat service
+│   │   │       ├── ChatStorage.swift            # Chat persistence
+│   │   │       ├── ContextGatherer.swift        # Context extraction for AI
+│   │   │       └── FirebaseChatClient.swift     # Firebase integration
+│   │   │
 │   │   ├── Dashboard/                    # Notebook library and management UI
 │   │   │   ├── DashboardView.swift       # Main dashboard view
 │   │   │   ├── DashboardItem.swift       # Dashboard item model
@@ -52,7 +63,41 @@ InkOS/
 │   │   │   ├── FolderDraggableCards.swift # Draggable card components for folders
 │   │   │   ├── MoveToFolderSheet.swift   # Move notebook to folder UI
 │   │   │   ├── ContextMenuOverlay.swift  # Context menu presentation overlay
-│   │   │   └── UIKitDragWrapper.swift    # UIKit drag-and-drop bridge for SwiftUI
+│   │   │   ├── UIKitDragWrapper.swift    # UIKit drag-and-drop bridge for SwiftUI
+│   │   │   └── UIKit/                    # UIKit dashboard implementation
+│   │   │       ├── DashboardHostView.swift      # SwiftUI bridge
+│   │   │       ├── DashboardViewController.swift # Main UIKit controller
+│   │   │       └── Cells/                       # Collection view cells
+│   │   │           └── LessonCell.swift         # Lesson card cell
+│   │   │
+│   │   ├── Lesson/                       # Lesson generation and display
+│   │   │   ├── Components/               # Lesson UI components
+│   │   │   │   └── LessonCardView.swift         # Lesson card for dashboard
+│   │   │   ├── Generation/               # Lesson content generation
+│   │   │   │   ├── AnswerComparisonService.swift  # Answer evaluation
+│   │   │   │   ├── LessonGenerationService.swift  # Lesson generation API
+│   │   │   │   ├── LessonGenerator.swift          # Core lesson generator
+│   │   │   │   └── LessonPreviewGenerator.swift   # Preview generation
+│   │   │   ├── Models/                   # Lesson data models
+│   │   │   │   ├── LessonModel.swift            # Core lesson model
+│   │   │   │   └── LessonProgress.swift         # Progress tracking
+│   │   │   ├── ViewModels/               # Lesson view models
+│   │   │   │   └── LessonViewModel.swift        # Lesson state management
+│   │   │   ├── Views/                    # SwiftUI lesson views
+│   │   │   │   ├── LessonView.swift             # Main lesson view
+│   │   │   │   ├── ContentSectionView.swift     # Content display
+│   │   │   │   ├── QuestionSectionView.swift    # Question display
+│   │   │   │   ├── SummarySectionView.swift     # Summary display
+│   │   │   │   └── VisualPlaceholderView.swift  # Visual placeholders
+│   │   │   └── UIKit/                    # UIKit lesson implementation
+│   │   │       ├── LessonViewController.swift   # Main UIKit controller
+│   │   │       ├── NotesOverlayCoordinator.swift # Notes overlay logic
+│   │   │       ├── QuestionCanvasManager.swift  # Handwriting input
+│   │   │       └── Cells/                       # Section cells
+│   │   │           ├── ContentSectionCell.swift
+│   │   │           ├── QuestionSectionCell.swift
+│   │   │           ├── SummarySectionCell.swift
+│   │   │           └── VisualSectionCell.swift
 │   │   │
 │   │   ├── Notebook/                     # Notebook metadata models
 │   │   │   └── NotebookModel.swift
@@ -75,9 +120,32 @@ InkOS/
 │   │   │   │   ├── Contract.swift        # Search index contract/interface
 │   │   │   │   ├── SearchIndex.swift     # Core search index implementation
 │   │   │   │   └── SearchIndexTriggers.swift  # Event triggers for indexing
-│   │   │   └── Service/                  # Search service layer
-│   │   │       ├── SearchService.swift   # Search service implementation
-│   │   │       └── SearchServiceContract.swift  # Service contract/interface
+│   │   │   ├── Service/                  # Search service layer
+│   │   │   │   ├── SearchService.swift   # Search service implementation
+│   │   │   │   └── SearchServiceContract.swift  # Service contract/interface
+│   │   │   └── UI/                       # Search UI components
+│   │   │       └── Dashboard/            # Dashboard search integration
+│   │   │           ├── DashboardSearchBar.swift     # Search bar component
+│   │   │           └── DashboardSearchResults.swift # Search results view
+│   │   │
+│   │   ├── Skills/                       # AI-powered skills system
+│   │   │   ├── Core/                     # Skill infrastructure
+│   │   │   │   ├── SkillExecutor.swift          # Skill execution engine
+│   │   │   │   ├── SkillRegistry.swift          # Skill registration
+│   │   │   │   └── SkillsContract.swift         # Core contracts
+│   │   │   ├── Graph/                    # Graphing calculator skill
+│   │   │   │   ├── EquationRenderer.swift       # Equation rendering
+│   │   │   │   ├── GraphImageRenderer.swift     # Graph image generation
+│   │   │   │   ├── GraphInsertionService.swift  # Graph insertion to canvas
+│   │   │   │   ├── GraphView.swift              # Graph SwiftUI view
+│   │   │   │   ├── GraphViewModel.swift         # Graph state management
+│   │   │   │   └── MathExpressionParser.swift   # Math expression parsing
+│   │   │   ├── Invocation/               # Skill invocation system
+│   │   │   │   ├── AISkillInvocationService.swift  # AI-triggered invocation
+│   │   │   │   ├── InvocationContract.swift        # Invocation contracts
+│   │   │   │   └── SkillCloudClient.swift          # Cloud function client
+│   │   │   └── Skills/                   # Skill implementations
+│   │   │       └── GraphingCalculatorSkill.swift   # Graphing calculator
 │   │   │
 │   │   └── Shared/                       # Shared UI components & utilities
 │   │       ├── ContextMenuView.swift     # Reusable context menu component
@@ -86,11 +154,14 @@ InkOS/
 │   │
 │   ├── Storage/                          # Persistence Layer (Actors)
 │   │   ├── BundleManager.swift           # Central actor for file system operations
+│   │   ├── BundleManager+Lessons.swift   # Lesson-specific bundle operations
 │   │   ├── BundleStorage.swift           # Helper for directory paths
 │   │   ├── DocumentHandle.swift          # Safe handle for open notebook operations
 │   │   ├── PDFDocumentHandle.swift       # Handle for PDF document operations
 │   │   ├── Manifest.swift                # JSON metadata structure
 │   │   ├── FolderManifest.swift          # Folder metadata structure
+│   │   ├── LessonManifest.swift          # Lesson bundle metadata structure
+│   │   ├── LessonStorage.swift           # Lesson-specific storage operations
 │   │   ├── SDKProtocols.swift            # SDK protocol definitions
 │   │   │
 │   │   └── JIIXPersistence/              # JIIX format persistence
@@ -160,6 +231,12 @@ InkOS/
 │   │
 │   ├── Features/
 │   │   ├── NotebookModelTests.swift
+│   │   ├── AIChat/                       # AI chat tests
+│   │   │   ├── AttachmentContractTests.swift
+│   │   │   ├── ChatServiceTests.swift
+│   │   │   ├── ChatStorageTests.swift
+│   │   │   ├── ContextGathererTests.swift
+│   │   │   └── FirebaseChatClientTests.swift
 │   │   ├── AIIndexing/                   # AI indexing tests
 │   │   │   ├── ChunkingServiceTests.swift
 │   │   │   ├── ContentExtractorTests.swift
@@ -170,9 +247,19 @@ InkOS/
 │   │   │   ├── IndexingQueueTests.swift
 │   │   │   ├── VectorStoreClientTests.swift
 │   │   │   └── VectorStoreModelsTests.swift
-│   │   └── Search/
-│   │       ├── SearchIndexTests.swift
-│   │       └── SearchServiceTests.swift
+│   │   ├── Search/
+│   │   │   ├── SearchIndexTests.swift
+│   │   │   └── SearchServiceTests.swift
+│   │   └── Skills/                       # Skills tests
+│   │       ├── Graph/
+│   │       │   ├── EquationRendererTests.swift
+│   │       │   ├── GraphImageRendererTests.swift
+│   │       │   ├── GraphInsertionServiceTests.swift
+│   │       │   ├── GraphViewModelTests.swift
+│   │       │   └── MathExpressionParserTests.swift
+│   │       ├── GraphingCalculatorSkillTests.swift
+│   │       ├── SkillInvocationTests.swift
+│   │       └── SkillsCoreTests.swift
 │   │
 │   ├── Rendering/
 │   │   ├── DisplayViewModelTests.swift
