@@ -2,23 +2,14 @@ import UIKit
 
 // Circular glass button with a black circle icon in the center.
 // Matches the glass styling used by HomeButtonView for visual consistency.
-// Slides down when yielded to make room for the AI overlay.
+// Slides right off-screen when yielded to make room for the AI overlay.
 final class AIButtonView: UIView {
   // Notifies the host when the button is tapped.
   var tapped: (() -> Void)?
 
-  // When true, plays the yield animation (slide down).
-  // When false, slides back up.
-  var isYielded: Bool = false {
-    didSet {
-      guard isYielded != oldValue else { return }
-      if isYielded {
-        animateYield()
-      } else {
-        animateReturn()
-      }
-    }
-  }
+  // Tracks whether the button is currently yielded (slid off-screen).
+  // Use setYielded(_:animated:) to change this value with proper animation coordination.
+  private(set) var isYielded: Bool = false
 
   // Duration for the return animation.
   var returnAnimationDuration: TimeInterval = 0.44
@@ -26,7 +17,7 @@ final class AIButtonView: UIView {
   // Size of the circular button.
   private let buttonSize: CGFloat = 48
   // Size of the black circle icon inside the button.
-  private let iconSize: CGFloat = 20
+  private let iconSize: CGFloat = 24
   // Holds the glass background for the button.
   private let glassView = UIVisualEffectView()
   // The actual button control.
@@ -122,40 +113,66 @@ final class AIButtonView: UIView {
     tapped?()
   }
 
-  // Brightens the icon on touch down for tactile feedback.
+  // Touch down handler - no visual feedback.
   @objc private func buttonTouchDown() {
-    UIView.animate(withDuration: 0.1, delay: 0, options: [.curveEaseOut, .allowUserInteraction]) {
-      self.iconView.backgroundColor = UIColor(white: 0.75, alpha: 1.0)
-    }
+    // No action needed.
   }
 
-  // Restores the icon on touch up.
+  // Touch up handler - no visual feedback.
   @objc private func buttonTouchUp() {
-    UIView.animate(withDuration: 0.15, delay: 0, options: [.curveEaseOut, .allowUserInteraction]) {
-      self.iconView.backgroundColor = .black
+    // No action needed.
+  }
+
+  // Distance to slide when yielding (button size + padding).
+  private var yieldSlideDistance: CGFloat { buttonSize + 60 }
+
+  // Sets the yielded state with optional animation.
+  // When animated is true, the transform change is applied immediately
+  // so the caller can wrap it in their own animation block for coordination.
+  // When animated is false, the transform is set immediately without animation.
+  func setYielded(_ yielded: Bool, animated: Bool) {
+    guard yielded != isYielded else { return }
+    isYielded = yielded
+
+    let targetTransform = yielded
+      ? CGAffineTransform(translationX: yieldSlideDistance, y: 0)
+      : .identity
+
+    if animated {
+      // Apply transform directly - caller wraps this in UIView.animate block.
+      transform = targetTransform
+    } else {
+      // Immediate change without animation.
+      transform = targetTransform
     }
   }
 
-  // Slides the button down when yielding to the overlay.
-  private func animateYield() {
+  // Animates the button to yielded state with spring physics.
+  // Use this when the button needs to animate independently.
+  func animateYield() {
+    guard !isYielded else { return }
+    isYielded = true
     UIView.animate(
-      withDuration: 0.3,
+      withDuration: 0.35,
       delay: 0,
-      usingSpringWithDamping: 0.7,
-      initialSpringVelocity: 0.5,
+      usingSpringWithDamping: 0.85,
+      initialSpringVelocity: 0,
       options: []
     ) {
-      self.transform = CGAffineTransform(translationX: 0, y: 80)
+      self.transform = CGAffineTransform(translationX: self.yieldSlideDistance, y: 0)
     }
   }
 
-  // Slides the button back up to its original position.
-  private func animateReturn() {
+  // Animates the button back to its original position with spring physics.
+  // Use this when the button needs to animate independently.
+  func animateReturn() {
+    guard isYielded else { return }
+    isYielded = false
     UIView.animate(
       withDuration: returnAnimationDuration,
       delay: 0,
-      usingSpringWithDamping: 0.9,
-      initialSpringVelocity: 0.1,
+      usingSpringWithDamping: 0.85,
+      initialSpringVelocity: 0,
       options: []
     ) {
       self.transform = .identity

@@ -58,6 +58,20 @@ extension Color {
   static let ink = Color.black.opacity(0.88)
   static let inkSubtle = Color.black.opacity(0.62)
   static let inkFaint = Color.black.opacity(0.40)
+
+  // Lesson-specific colors for feedback and accents.
+  static let lessonAccent = Color.ink
+  static let correctGreen = Color(red: 0.20, green: 0.70, blue: 0.30)
+  static let incorrectRed = Color(red: 0.90, green: 0.30, blue: 0.30)
+}
+
+// Gradient for lesson cards in the dashboard.
+extension LinearGradient {
+  static let lessonCard = LinearGradient(
+    colors: [Color.blue.opacity(0.08), Color.purple.opacity(0.05)],
+    startPoint: .topLeading,
+    endPoint: .bottomTrailing
+  )
 }
 
 // Rounded rectangle with individually rounded corners.

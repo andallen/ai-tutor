@@ -184,6 +184,10 @@ class DashboardViewController: UIViewController {
       cell.configure(with: folder, thumbnails: thumbnails)
       cell.delegate = self
       return cell
+
+    case .lesson:
+      // Lessons not yet supported in UIKit dashboard.
+      return nil
     }
   }
 

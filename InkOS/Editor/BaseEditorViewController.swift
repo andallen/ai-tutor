@@ -399,7 +399,8 @@ class BaseEditorViewController: UIViewController {
         : CGAffineTransform(translationX: 0, y: slideDistance)
 
       // Yield the button (slides down when overlay is open).
-      buttonView.isYielded = self.isAIOverlayExpanded
+      // Use animated: false since we're inside an animation block.
+      buttonView.setYielded(self.isAIOverlayExpanded, animated: false)
     }
 
     let completion: (Bool) -> Void = { _ in
