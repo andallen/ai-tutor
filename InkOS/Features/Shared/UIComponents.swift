@@ -243,3 +243,173 @@ struct RoundedCornerShape: Shape {
     return path
   }
 }
+
+// Logs hit testing without capturing touches.
+struct HitTestLoggerView: UIViewRepresentable {
+  let label: String
+
+  func makeUIView(context: Context) -> UIView {
+    HitTestLoggerUIView(label: label)
+  }
+
+  func updateUIView(_ uiView: UIView, context: Context) {
+    (uiView as? HitTestLoggerUIView)?.label = label
+  }
+
+  func sizeThatFits(_ proposal: ProposedViewSize, uiView: UIView, context: Context) -> CGSize? {
+    let width = proposal.width ?? 0
+    let height = proposal.height ?? 0
+    return CGSize(width: width, height: height)
+  }
+
+  final class HitTestLoggerUIView: UIView {
+    var label: String
+
+    init(label: String) {
+      self.label = label
+      super.init(frame: .zero)
+      isUserInteractionEnabled = true
+      backgroundColor = .clear
+    }
+
+    required init?(coder: NSCoder) {
+      label = "HitTestLoggerView"
+      super.init(coder: coder)
+      isUserInteractionEnabled = true
+      backgroundColor = .clear
+    }
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+      if bounds.contains(point) {
+        print("[HitTestLoggerView] \(label) pointInside point=\(point) bounds=\(bounds)")
+      }
+      return true
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+      if bounds.contains(point) {
+        print("[HitTestLoggerView] \(label) hitTest point=\(point) bounds=\(bounds)")
+      }
+      return nil
+    }
+  }
+}
+
+// Logs touch locations and hit-tested views from the window.
+struct WindowTapLoggerView: UIViewRepresentable {
+  let label: String
+
+  func makeUIView(context: Context) -> UIView {
+    WindowTapLoggerHostView(label: label)
+  }
+
+  func updateUIView(_ uiView: UIView, context: Context) {
+    (uiView as? WindowTapLoggerHostView)?.label = label
+  }
+}
+
+final class WindowTapLoggerHostView: UIView, UIGestureRecognizerDelegate {
+  var label: String
+  private weak var touchRecognizer: LoggingTouchRecognizer?
+  private weak var attachedWindow: UIWindow?
+
+  init(label: String) {
+    self.label = label
+    super.init(frame: .zero)
+    isUserInteractionEnabled = false
+    backgroundColor = .clear
+  }
+
+  required init?(coder: NSCoder) {
+    label = "WindowTapLogger"
+    super.init(coder: coder)
+    isUserInteractionEnabled = false
+    backgroundColor = .clear
+  }
+
+  override func didMoveToWindow() {
+    super.didMoveToWindow()
+    attachToWindowIfNeeded()
+  }
+
+  private func attachToWindowIfNeeded() {
+    guard let window = window else { return }
+
+    if attachedWindow === window {
+      return
+    }
+
+    if let recognizer = touchRecognizer, let oldWindow = attachedWindow {
+      oldWindow.removeGestureRecognizer(recognizer)
+    }
+
+    let recognizer = LoggingTouchRecognizer(target: self, action: #selector(handleTouch(_:)))
+    recognizer.minimumPressDuration = 0
+    recognizer.allowableMovement = 10_000
+    recognizer.cancelsTouchesInView = false
+    recognizer.delaysTouchesBegan = false
+    recognizer.delaysTouchesEnded = false
+    recognizer.allowedTouchTypes = [
+      NSNumber(value: UITouch.TouchType.direct.rawValue),
+      NSNumber(value: UITouch.TouchType.pencil.rawValue),
+      NSNumber(value: UITouch.TouchType.indirectPointer.rawValue),
+    ]
+    recognizer.delegate = self
+    window.addGestureRecognizer(recognizer)
+
+    touchRecognizer = recognizer
+    attachedWindow = window
+    print("[WindowTapLoggerView] Attached to window for \(label)")
+  }
+
+  @objc private func handleTouch(_ recognizer: LoggingTouchRecognizer) {
+    guard recognizer.state == .began else { return }
+    guard let window = recognizer.view as? UIWindow else { return }
+    let location = recognizer.location(in: window)
+    let hitView = window.hitTest(location, with: nil)
+    let touchType = recognizer.lastTouchTypeName
+    print(
+      "[WindowTapLoggerView] \(label) touch began location=\(location) type=\(touchType) hitView=\(String(describing: hitView))"
+    )
+  }
+
+  func gestureRecognizer(
+    _ gestureRecognizer: UIGestureRecognizer,
+    shouldReceive touch: UITouch
+  ) -> Bool {
+    return true
+  }
+
+  // Tracks touch type for window-level logging.
+  final class LoggingTouchRecognizer: UILongPressGestureRecognizer {
+    private(set) var lastTouchTypeName: String = "unknown"
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+      if let touch = touches.first {
+        lastTouchTypeName = touchTypeName(for: touch.type)
+      }
+      super.touchesBegan(touches, with: event)
+    }
+
+    private func touchTypeName(for type: UITouch.TouchType) -> String {
+      switch type {
+      case .direct:
+        return "direct"
+      case .pencil:
+        return "pencil"
+      case .indirect:
+        return "indirect"
+      case .indirectPointer:
+        return "indirectPointer"
+      @unknown default:
+        return "unknown"
+      }
+    }
+  }
+
+  deinit {
+    if let recognizer = touchRecognizer, let oldWindow = attachedWindow {
+      oldWindow.removeGestureRecognizer(recognizer)
+    }
+  }
+}

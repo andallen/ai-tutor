@@ -228,18 +228,14 @@ struct DashboardView: View {
 
   // MARK: - Search State
 
-  // Controls whether the search overlay is expanded.
-  @State private var isSearchOverlayExpanded = false
-  // Text entered in the search bar.
-  @State private var searchText: String = ""
-  // Search results from SearchService.
-  @State private var searchResults: [SearchResult] = []
-  // Whether a search is currently in progress.
-  @State private var isSearching = false
+  // Shared state for the search overlay UI.
+  @StateObject private var searchOverlayState = SearchOverlayState()
   // Task for debounced search.
   @State private var searchDebounceTask: Task<Void, Never>?
-  // Focus state for the search text field.
-  @State private var isSearchFieldFocused: Bool = false
+  // Keeps a strong reference to the overlay window.
+  @State private var searchOverlayWindow: UIWindow?
+  // Hosting controller for the overlay window content.
+  @State private var searchOverlayHostingController: UIHostingController<SearchOverlayRootView>?
 
   // Screen bounds for layout calculations.
   // Updated from GeometryReader to avoid deprecated UIScreen.main usage.
@@ -280,6 +276,38 @@ struct DashboardView: View {
       )
       .toolbar {
         toolbarContent
+      }
+      #if DEBUG
+      .toolbar {
+        ToolbarItem(placement: .navigationBarLeading) {
+          Button {
+            Task {
+              print("🧪 Creating test notebooks...")
+
+              // Create a few test notebooks at root level
+              await library.createNotebook(displayName: "Budget Report 2024")
+              await library.createNotebook(displayName: "Meeting Notes - Q1 Planning")
+              await library.createNotebook(displayName: "Personal Journal")
+
+              // Create Work Projects folder with notebooks
+              if let workFolderID = await library.createFolder(displayName: "Work Projects") {
+                _ = await library.createNotebookInFolder(folderID: workFolderID, displayName: "Project Timeline")
+                _ = await library.createNotebookInFolder(folderID: workFolderID, displayName: "Client Meeting Notes")
+                _ = await library.createNotebookInFolder(folderID: workFolderID, displayName: "Budget Analysis")
+                print("  📁 Created Work Projects folder with 3 notebooks")
+              }
+
+              print("✅ Test data created! Try searching for: 'budget', 'meeting', or 'project'")
+            }
+          } label: {
+            Label("Test Data", systemImage: "testtube.2")
+          }
+        }
+      }
+      #endif
+      .onChange(of: searchOverlayState.searchText) { _, newValue in
+        print("[DashboardView] searchText changed to: '\(newValue)'")
+        handleSearchTextChanged(newValue)
       }
   }
 
@@ -421,7 +449,6 @@ struct DashboardView: View {
 
         // Search overlay with blur background and glass panel.
         // Slides down from top when search icon is tapped.
-        searchOverlaySection
       }
       // Collect card frame preferences for hero transitions.
       // Updates the reference-type store so UIKit can query current frames at dismiss time.
@@ -452,9 +479,7 @@ struct DashboardView: View {
       HStack(spacing: 16) {
         // Search button opens search overlay.
         Button {
-          isSearchOverlayExpanded = true
-          // Set focus immediately - SearchTextField handles delayed focus if view isn't ready.
-          isSearchFieldFocused = true
+          presentSearchOverlay()
         } label: {
           Image(systemName: "magnifyingglass")
         }
@@ -635,103 +660,103 @@ struct DashboardView: View {
     aiChatText = ""
   }
 
-  // MARK: - Search Overlay Section
+  // MARK: - Search Overlay Window
 
-  // The search overlay with blur background and glass panel.
-  // Slides down from top when expanded.
-  @ViewBuilder
-  private var searchOverlaySection: some View {
-    GeometryReader { geometry in
-      let safeAreaTop = geometry.safeAreaInsets.top
-      let screenWidth = geometry.size.width
-      let screenHeight = geometry.size.height
+  // Presents the search overlay above the navigation bar in its own window.
+  private func presentSearchOverlay() {
+    if searchOverlayWindow == nil {
+      createSearchOverlayWindow()
+    }
 
-      // Overlay dimensions (clamped to non-negative to avoid invalid frame warnings).
-      let overlayWidth = max(0, min(screenWidth - 48, 500))
-      let overlayHeight = max(0, min(screenHeight * 0.6, 480))
-      let cornerRadius: CGFloat = 24
-      let slideDistance = overlayHeight + safeAreaTop + 50
+    DispatchQueue.main.async {
+      self.searchOverlayState.isExpanded = true
+      self.searchOverlayState.isSearchFieldFocused = true
+    }
+  }
 
-      ZStack {
-        // Blur background (tap to dismiss).
-        // Always present so it can smoothly fade in/out.
-        AnimatedBlurView(
-          blurFraction: isSearchOverlayExpanded ? 1 : 0,
-          animationDuration: isSearchOverlayExpanded ? 0.35 : 0.2
-        )
-        .ignoresSafeArea()
-        .onTapGesture {
-          print("[DashboardView] Blur background tapped - dismissing search")
-          dismissSearch()
-        }
-        .allowsHitTesting(isSearchOverlayExpanded)
+  // Creates the search overlay window if a scene is available.
+  private func createSearchOverlayWindow() {
+    guard let windowScene = resolveSearchOverlayScene() else {
+      print("[DashboardView] Search overlay window scene unavailable")
+      return
+    }
 
-        // Glass panel with search bar and results.
-        VStack(spacing: 0) {
-          // Search bar at top.
-          DashboardSearchBar(
-            text: $searchText,
-            isFocused: $isSearchFieldFocused
-          )
-          .padding(.horizontal, 16)
-          .padding(.top, 16)
-          .padding(.bottom, 12)
+    let rootView = makeSearchOverlayRootView()
+    let hostingController = UIHostingController(rootView: rootView)
+    hostingController.view.backgroundColor = .clear
 
-          // Results list.
-          DashboardSearchResults(
-            results: searchResults,
-            query: searchText,
-            isLoading: isSearching,
-            onResultTapped: { result in
-              handleSearchResultTapped(result)
-            }
-          )
-          .padding(.bottom, 16)
-        }
-        .frame(width: overlayWidth, height: overlayHeight)
-        .background(
-          Group {
-            if #available(iOS 26.0, *) {
-              RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(Color.clear)
-                .glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
-            } else {
-              RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(.ultraThinMaterial)
-            }
-          }
-        )
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        .position(x: screenWidth / 2, y: safeAreaTop + 16 + overlayHeight / 2)
-        .offset(y: isSearchOverlayExpanded ? 0 : -slideDistance)
-        .animation(
-          .spring(response: 0.35, dampingFraction: 0.85, blendDuration: 0),
-          value: isSearchOverlayExpanded
-        )
-        .allowsHitTesting(isSearchOverlayExpanded)
+    let overlayWindow = UIWindow(windowScene: windowScene)
+    overlayWindow.rootViewController = hostingController
+    overlayWindow.windowLevel = .alert + 1
+    overlayWindow.isHidden = false
+    overlayWindow.makeKeyAndVisible()
+
+    searchOverlayHostingController = hostingController
+    searchOverlayWindow = overlayWindow
+  }
+
+  // Releases the overlay window and restores focus to the main window.
+  private func removeSearchOverlayWindow() {
+    searchOverlayWindow?.isHidden = true
+    searchOverlayWindow?.rootViewController = nil
+    searchOverlayWindow = nil
+    searchOverlayHostingController = nil
+    windowRef?.makeKeyAndVisible()
+  }
+
+  // Builds the root view used by the overlay window.
+  private func makeSearchOverlayRootView() -> SearchOverlayRootView {
+    SearchOverlayRootView(
+      state: searchOverlayState,
+      onDismiss: {
+        dismissSearch()
+      },
+      onClear: {
+        clearSearchText()
+      },
+      onResultTapped: { result in
+        handleSearchResultTapped(result)
       }
+    )
+  }
+
+  // Chooses the active scene for presenting the overlay window.
+  private func resolveSearchOverlayScene() -> UIWindowScene? {
+    if let windowScene = windowRef?.windowScene {
+      return windowScene
     }
-    .ignoresSafeArea()
-    .zIndex(160)
-    .allowsHitTesting(isSearchOverlayExpanded)
-    .onChange(of: searchText) { _, newValue in
-      print("[DashboardView] searchText changed to: '\(newValue)'")
-      handleSearchTextChanged(newValue)
-    }
+
+    return UIApplication.shared.connectedScenes
+      .compactMap { $0 as? UIWindowScene }
+      .first(where: { $0.activationState == .foregroundActive })
   }
 
   // Dismisses the search overlay and resets state.
   private func dismissSearch() {
-    isSearchFieldFocused = false
-    isSearchOverlayExpanded = false
+    searchOverlayState.isSearchFieldFocused = false
+    searchOverlayState.isExpanded = false
     // Clear search after animation completes.
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-      if !isSearchOverlayExpanded {
-        searchText = ""
-        searchResults = []
-        isSearching = false
+      if !searchOverlayState.isExpanded {
+        searchOverlayState.searchText = ""
+        searchOverlayState.searchResults = []
+        searchOverlayState.isSearching = false
+        removeSearchOverlayWindow()
       }
     }
+  }
+
+  // Clears the search text without closing the overlay.
+  private func clearSearchText() {
+    print("[DashboardView] Clearing search text")
+    // Clear the bound search text.
+    searchOverlayState.searchText = ""
+    // Reset results for the empty query state.
+    searchOverlayState.searchResults = []
+    // Stop the loading state.
+    searchOverlayState.isSearching = false
+    // Maintain focus in the search field.
+    searchOverlayState.isSearchFieldFocused = true
   }
 
   // Handles search text changes with debouncing.
@@ -740,12 +765,12 @@ struct DashboardView: View {
     let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
 
     if trimmed.isEmpty {
-      searchResults = []
-      isSearching = false
+      searchOverlayState.searchResults = []
+      searchOverlayState.isSearching = false
       return
     }
 
-    isSearching = true
+    searchOverlayState.isSearching = true
     searchDebounceTask = Task {
       try? await Task.sleep(nanoseconds: 250_000_000)
       guard !Task.isCancelled else { return }
@@ -758,7 +783,7 @@ struct DashboardView: View {
     // Search service integration will be added here.
     // For now, return empty results to test the UI.
     await MainActor.run {
-      isSearching = false
+      searchOverlayState.isSearching = false
       // Results will be populated when SearchService is integrated.
     }
   }
@@ -2799,6 +2824,7 @@ struct PDFImportModifier: ViewModifier {
       }
     }
   }
+
 }
 
 // MARK: - Card Frame Preference Key

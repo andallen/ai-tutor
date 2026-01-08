@@ -1,14 +1,13 @@
 import SwiftUI
 import UIKit
 
-// Native UIKit search bar with built-in clear button that actually works.
-// SwiftUI TextField blocks all touch events when focused - UITextField doesn't.
+// Native UIKit search field that avoids SwiftUI focus hit testing issues.
 struct DashboardSearchBar: UIViewRepresentable {
   @Binding var text: String
   @Binding var isFocused: Bool
 
   func makeUIView(context: Context) -> UIView {
-    let container = UIView()
+    let container = SearchBarContainerView()
     container.backgroundColor = .clear
 
     // Search icon.
@@ -17,7 +16,7 @@ struct DashboardSearchBar: UIViewRepresentable {
     iconView.contentMode = .scaleAspectFit
     iconView.translatesAutoresizingMaskIntoConstraints = false
 
-    // Native UITextField with working clear button.
+    // Native UITextField for consistent focus and typing.
     let textField = UITextField()
     textField.placeholder = "Search notes..."
     textField.font = .systemFont(ofSize: 17)
@@ -26,7 +25,7 @@ struct DashboardSearchBar: UIViewRepresentable {
     textField.autocapitalizationType = .none
     textField.autocorrectionType = .no
     textField.returnKeyType = .search
-    textField.clearButtonMode = .whileEditing // Native clear button!
+    textField.clearButtonMode = .never
     textField.delegate = context.coordinator
     textField.addTarget(context.coordinator, action: #selector(Coordinator.textChanged), for: .editingChanged)
     textField.translatesAutoresizingMaskIntoConstraints = false
@@ -63,6 +62,7 @@ struct DashboardSearchBar: UIViewRepresentable {
       textField.centerYAnchor.constraint(equalTo: container.centerYAnchor),
     ])
 
+    container.textField = textField
     context.coordinator.textField = textField
     return container
   }
@@ -81,6 +81,14 @@ struct DashboardSearchBar: UIViewRepresentable {
     } else if !isFocused && textField.isFirstResponder {
       textField.resignFirstResponder()
     }
+
+  }
+
+  // Tell SwiftUI the exact size this view needs.
+  // This ensures SwiftUI and UIKit agree on dimensions for proper hit testing.
+  func sizeThatFits(_ proposal: ProposedViewSize, uiView: UIView, context: Context) -> CGSize? {
+    let width = proposal.width ?? 300
+    return CGSize(width: width, height: 48)
   }
 
   func makeCoordinator() -> Coordinator {
@@ -114,6 +122,48 @@ struct DashboardSearchBar: UIViewRepresentable {
       textField.resignFirstResponder()
       return true
     }
+  }
+}
+
+// Logs container hit testing to identify touch interception.
+final class SearchBarContainerView: UIView {
+  weak var textField: UITextField?
+  private var lastBounds: CGRect = .zero
+  private var lastFrame: CGRect = .zero
+
+  override func layoutSubviews() {
+    super.layoutSubviews()
+
+    if bounds != lastBounds || frame != lastFrame {
+      print(
+        "[SearchBarContainerView] frame=\(frame) bounds=\(bounds) textField=\(textField?.frame ?? .zero)"
+      )
+      lastBounds = bounds
+      lastFrame = frame
+    }
+  }
+
+  override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+    let isInside = super.point(inside: point, with: event)
+    if isInside {
+      print("[SearchBarContainerView] pointInside point=\(point) bounds=\(bounds)")
+    }
+    return isInside
+  }
+
+  override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+    let hitView = super.hitTest(point, with: event)
+    if bounds.contains(point) {
+      print("[SearchBarContainerView] hitTest point=\(point) hitView=\(String(describing: hitView))")
+    }
+    return hitView
+  }
+
+  override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    if let touch = touches.first {
+      print("[SearchBarContainerView] touchesBegan location=\(touch.location(in: self)) type=\(touch.type)")
+    }
+    super.touchesBegan(touches, with: event)
   }
 }
 
