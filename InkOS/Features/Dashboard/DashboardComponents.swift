@@ -193,27 +193,19 @@ struct NotebookCardButton: View {
   // current position, which is immune to parent scale transforms.
   @State private var dragStartGlobalPosition: CGPoint = .zero
 
-  // CONSISTENCY: These values must match PDFDocumentCardButton and FolderCardButton
-  private let cardCornerRadius: CGFloat = 10
-  private let titleAreaHeight: CGFloat = 36
-  // Keeps a paper-like portrait ratio for the overall container.
-  private let cardAspectRatio: CGFloat = 0.72
-  // Minimum distance to move after long press to start drag mode.
-  private let dragThreshold: CGFloat = 10
-
   var body: some View {
     GeometryReader { proxy in
       let totalWidth = proxy.size.width
       let totalHeight = proxy.size.height
       // Card height is reduced to make room for the title below.
-      let cardHeight = totalHeight - titleAreaHeight
+      let cardHeight = totalHeight - CardConstants.titleAreaHeight
 
       VStack(alignment: .leading, spacing: 4) {
         // The card portion wrapped in a button.
         cardButton(width: totalWidth, height: cardHeight)
 
         // Title and date below the card. Opacity controlled by parent for fade effects.
-        NotebookCardTitle(notebook: notebook)
+        CardTitle(item: notebook)
           .opacity(titleOpacity)
           .animation(.easeOut(duration: 0.2), value: titleOpacity)
       }
@@ -230,7 +222,7 @@ struct NotebookCardButton: View {
         }
       )
     }
-    .aspectRatio(cardAspectRatio, contentMode: .fit)
+    .aspectRatio(CardConstants.aspectRatio, contentMode: .fit)
     // Combined gesture for press, long press, and drag after long press.
     .gesture(
       DragGesture(minimumDistance: 0)
@@ -246,54 +238,29 @@ struct NotebookCardButton: View {
   // Builds the card view (no separate tap gesture, handled by the main gesture).
   @ViewBuilder
   private func cardButton(width: CGFloat, height: CGFloat) -> some View {
-    let shape = RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
+    let shape = cardShape()
 
-    NotebookCardPreview(notebook: notebook, dimOpacity: dimOpacity)
+    CardPreviewImage(item: notebook, dimOpacity: dimOpacity)
       .frame(width: width, height: height)
-      .background(Color.white)
       .clipShape(shape)
-      .shadow(color: Color.black.opacity(0.14), radius: 7, x: 0, y: 4)
+      .cardShadow()
       .overlay(
         sweepOverlay(width: width, height: height)
       )
       .contentShape(shape)
       // Scale up slightly when pressed (before drag starts).
-      // CONSISTENCY: Press scale (1.04) must match PDFDocumentCardButton and FolderCardButton
-      .scaleEffect(dimOpacity > 0 && !isDragging ? 1.04 : 1.0)
-      // CONSISTENCY: Press animation must match PDFDocumentCardButton and FolderCardButton
-      .animation(.spring(response: 0.15, dampingFraction: 0.75), value: dimOpacity > 0 && !isDragging)
+      .scaleEffect(dimOpacity > 0 && !isDragging ? CardConstants.Press.scale : 1.0)
+      .animation(
+        .spring(response: CardConstants.Press.springResponse, dampingFraction: CardConstants.Press.springDamping),
+        value: dimOpacity > 0 && !isDragging
+      )
   }
 
   // Builds the sweep highlight overlay that plays on long press.
   @ViewBuilder
   private func sweepOverlay(width: CGFloat, height: CGFloat) -> some View {
-    let sweepDistance = width * 1.2
-    ZStack {
-      RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
-        .fill(Color.white.opacity(showHighlight ? 0.7 : 0.0))
-        .blendMode(.screen)
-        .animation(.easeOut(duration: 0.28), value: showHighlight)
-
-      RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
-        .fill(
-          LinearGradient(
-            stops: [
-              .init(color: Color.white.opacity(0.0), location: 0.0),
-              .init(color: Color.white.opacity(0.45), location: 0.45),
-              .init(color: Color.white.opacity(0.75), location: 0.55),
-              .init(color: Color.white.opacity(0.0), location: 1.0)
-            ],
-            startPoint: .leading,
-            endPoint: .trailing
-          )
-        )
-        .blendMode(.screen)
-        .offset(x: sweepOffset * sweepDistance)
-        .opacity(showHighlight ? 1.0 : 0.0)
-    }
-    .frame(width: width, height: height)
-    .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous))
-    .allowsHitTesting(false)
+    SweepAnimationOverlay(isActive: showHighlight, sweepOffset: sweepOffset)
+      .frame(width: width, height: height)
   }
 
   // Handles gesture changes (touch down, movement).
@@ -307,14 +274,13 @@ struct NotebookCardButton: View {
       isDragging = false
 
       // Dim immediately on touch down.
-      // CONSISTENCY: Dim timing and opacity must match all card types
-      withAnimation(.easeOut(duration: 0.06)) {
-        dimOpacity = 0.12
+      withAnimation(.easeOut(duration: CardConstants.Press.dimDuration)) {
+        dimOpacity = CardConstants.Press.dimOpacity
       }
 
       // Schedule context menu and sweep animation after a delay.
       let currentFrame = cardFrame
-      let cardHeight = currentFrame.height - titleAreaHeight
+      let cardHeight = currentFrame.height - CardConstants.titleAreaHeight
       let workItem = DispatchWorkItem { [onLongPress] in
         // Mark that context menu was triggered to prevent button action on release.
         didTriggerContextMenu = true
@@ -332,16 +298,16 @@ struct NotebookCardButton: View {
         // Continue with sweep animation.
         guard !showHighlight else { return }
         showHighlight = true
-        sweepOffset = -1.2
-        withAnimation(.easeOut(duration: 0.5)) {
-          sweepOffset = 1.2
+        sweepOffset = CardConstants.Sweep.offsetStart
+        withAnimation(.easeOut(duration: CardConstants.Sweep.duration)) {
+          sweepOffset = CardConstants.Sweep.offsetEnd
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + CardConstants.Sweep.duration) {
           showHighlight = false
         }
       }
       sweepWorkItem = workItem
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
+      DispatchQueue.main.asyncAfter(deadline: .now() + CardConstants.longPressDelay, execute: workItem)
       return
     }
 
@@ -351,7 +317,7 @@ struct NotebookCardButton: View {
         currentPosition.x - touchStartPosition.x,
         currentPosition.y - touchStartPosition.y
       )
-      if distance > dragThreshold {
+      if distance > CardConstants.dragThreshold {
         // Transition to drag mode.
         isDragging = true
         // Convert local position to global position for drag start.
@@ -395,7 +361,7 @@ struct NotebookCardButton: View {
     }
 
     // Reset state.
-    withAnimation(.easeOut(duration: 0.25)) {
+    withAnimation(.easeOut(duration: CardConstants.Press.dimFadeOutDuration)) {
       dimOpacity = 0
     }
     touchStartPosition = .zero
@@ -407,7 +373,7 @@ struct NotebookCardButton: View {
   }
 }
 
-// MARK: - Notebook Card Preview
+// MARK: - Notebook Card Preview (Legacy - use CardPreviewImage instead)
 
 // Displays only the notebook preview image. No title, no shadow.
 // Shadow is applied at the button level to work correctly with iOS context menu transitions.
@@ -492,37 +458,8 @@ struct NotebookCardTitle: View {
 
 // MARK: - Notebook Card Context Menu Preview
 
-// Standalone preview view for context menus that shows only the card without title.
-// Used with .contextMenu(menuItems:preview:) as the lifted preview.
-struct NotebookCardContextMenuPreview: View {
-  let notebook: NotebookMetadata
-
-  // Inset to crop out the thin black line on the right edge of the canvas capture.
-  private let previewEdgeInset: CGFloat = 2
-
-  var body: some View {
-    let previewImage = notebook.previewImageData.flatMap { UIImage(data: $0) }
-    let cardCornerRadius: CGFloat = 10
-    let previewWidth: CGFloat = 160
-    let previewHeight: CGFloat = 200
-
-    ZStack {
-      Color.white
-      if let previewImage {
-        Image(uiImage: previewImage)
-          .resizable()
-          .scaledToFill()
-          .frame(width: previewWidth + previewEdgeInset, height: previewHeight)
-          .frame(width: previewWidth, height: previewHeight, alignment: .leading)
-          .clipped()
-      }
-    }
-    .frame(width: previewWidth, height: previewHeight)
-    .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous))
-    // Matches the shadow on the actual card for smooth context menu dismiss transition.
-    .shadow(color: Color.black.opacity(0.14), radius: 7, x: 0, y: 4)
-  }
-}
+// Type alias for backward compatibility. Uses the generic CardContextMenuPreview.
+typealias NotebookCardContextMenuPreview = CardContextMenuPreview<NotebookMetadata>
 
 // MARK: - PDF Document Card Button
 
@@ -621,27 +558,21 @@ struct PDFDocumentCardButton: View {
   // current position, which is immune to parent scale transforms.
   @State private var dragStartGlobalPosition: CGPoint = .zero
 
-  // CONSISTENCY: These values must match NotebookCardButton and FolderCardButton
-  private let cardCornerRadius: CGFloat = 10
-  private let titleAreaHeight: CGFloat = 36
-  // Keeps a paper-like portrait ratio for the overall container.
-  private let cardAspectRatio: CGFloat = 0.72
-  // Minimum distance to move after long press to start drag mode.
-  private let dragThreshold: CGFloat = 10
+  // Uses shared constants from CardConstants for consistency across all card types.
 
   var body: some View {
     GeometryReader { proxy in
       let totalWidth = proxy.size.width
       let totalHeight = proxy.size.height
       // Card height is reduced to make room for the title below.
-      let cardHeight = totalHeight - titleAreaHeight
+      let cardHeight = totalHeight - CardConstants.titleAreaHeight
 
       VStack(alignment: .leading, spacing: 4) {
         // The card portion wrapped in gesture detection.
         cardButton(width: totalWidth, height: cardHeight)
 
         // Title and page count below the card. Opacity controlled by parent for fade effects.
-        PDFDocumentCardTitle(metadata: metadata)
+        CardTitle(item: metadata)
           .opacity(titleOpacity)
           .animation(.easeOut(duration: 0.2), value: titleOpacity)
       }
@@ -658,7 +589,7 @@ struct PDFDocumentCardButton: View {
         }
       )
     }
-    .aspectRatio(cardAspectRatio, contentMode: .fit)
+    .aspectRatio(CardConstants.aspectRatio, contentMode: .fit)
     // Combined gesture for press, long press, and drag after long press.
     .gesture(
       DragGesture(minimumDistance: 0)
@@ -674,54 +605,29 @@ struct PDFDocumentCardButton: View {
   // Builds the card view (no separate tap gesture, handled by the main gesture).
   @ViewBuilder
   private func cardButton(width: CGFloat, height: CGFloat) -> some View {
-    let shape = RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
+    let shape = cardShape()
 
-    PDFDocumentCardPreview(metadata: metadata, dimOpacity: dimOpacity)
+    CardPreviewImage(item: metadata, dimOpacity: dimOpacity)
       .frame(width: width, height: height)
-      .background(Color(.systemGray5))
       .clipShape(shape)
-      .shadow(color: Color.black.opacity(0.14), radius: 7, x: 0, y: 4)
+      .cardShadow()
       .overlay(
         sweepOverlay(width: width, height: height)
       )
       .contentShape(shape)
       // Scale up slightly when pressed (before drag starts).
-      // CONSISTENCY: Press scale (1.04) must match NotebookCardButton and FolderCardButton
-      .scaleEffect(dimOpacity > 0 && !isDragging ? 1.04 : 1.0)
-      // CONSISTENCY: Press animation must match NotebookCardButton and FolderCardButton
-      .animation(.spring(response: 0.15, dampingFraction: 0.75), value: dimOpacity > 0 && !isDragging)
+      .scaleEffect(dimOpacity > 0 && !isDragging ? CardConstants.Press.scale : 1.0)
+      .animation(
+        .spring(response: CardConstants.Press.springResponse, dampingFraction: CardConstants.Press.springDamping),
+        value: dimOpacity > 0 && !isDragging
+      )
   }
 
   // Builds the sweep highlight overlay that plays on long press.
   @ViewBuilder
   private func sweepOverlay(width: CGFloat, height: CGFloat) -> some View {
-    let sweepDistance = width * 1.2
-    ZStack {
-      RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
-        .fill(Color.white.opacity(showHighlight ? 0.7 : 0.0))
-        .blendMode(.screen)
-        .animation(.easeOut(duration: 0.28), value: showHighlight)
-
-      RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
-        .fill(
-          LinearGradient(
-            stops: [
-              .init(color: Color.white.opacity(0.0), location: 0.0),
-              .init(color: Color.white.opacity(0.45), location: 0.45),
-              .init(color: Color.white.opacity(0.75), location: 0.55),
-              .init(color: Color.white.opacity(0.0), location: 1.0)
-            ],
-            startPoint: .leading,
-            endPoint: .trailing
-          )
-        )
-        .blendMode(.screen)
-        .offset(x: sweepOffset * sweepDistance)
-        .opacity(showHighlight ? 1.0 : 0.0)
-    }
-    .frame(width: width, height: height)
-    .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous))
-    .allowsHitTesting(false)
+    SweepAnimationOverlay(isActive: showHighlight, sweepOffset: sweepOffset)
+      .frame(width: width, height: height)
   }
 
   // Handles gesture changes (touch down, movement).
@@ -735,14 +641,13 @@ struct PDFDocumentCardButton: View {
       isDragging = false
 
       // Dim immediately on touch down.
-      // CONSISTENCY: Dim timing and opacity must match all card types
-      withAnimation(.easeOut(duration: 0.06)) {
-        dimOpacity = 0.12
+      withAnimation(.easeOut(duration: CardConstants.Press.dimDuration)) {
+        dimOpacity = CardConstants.Press.dimOpacity
       }
 
       // Schedule context menu and sweep animation after a delay.
       let currentFrame = cardFrame
-      let cardHeight = currentFrame.height - titleAreaHeight
+      let cardHeight = currentFrame.height - CardConstants.titleAreaHeight
       let workItem = DispatchWorkItem { [onLongPress] in
         // Mark that context menu was triggered to prevent button action on release.
         didTriggerContextMenu = true
@@ -760,16 +665,16 @@ struct PDFDocumentCardButton: View {
         // Continue with sweep animation.
         guard !showHighlight else { return }
         showHighlight = true
-        sweepOffset = -1.2
-        withAnimation(.easeOut(duration: 0.5)) {
-          sweepOffset = 1.2
+        sweepOffset = CardConstants.Sweep.offsetStart
+        withAnimation(.easeOut(duration: CardConstants.Sweep.duration)) {
+          sweepOffset = CardConstants.Sweep.offsetEnd
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + CardConstants.Sweep.duration) {
           showHighlight = false
         }
       }
       sweepWorkItem = workItem
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
+      DispatchQueue.main.asyncAfter(deadline: .now() + CardConstants.longPressDelay, execute: workItem)
       return
     }
 
@@ -779,7 +684,7 @@ struct PDFDocumentCardButton: View {
         currentPosition.x - touchStartPosition.x,
         currentPosition.y - touchStartPosition.y
       )
-      if distance > dragThreshold {
+      if distance > CardConstants.dragThreshold {
         // Transition to drag mode.
         isDragging = true
         // Convert local position to global position for drag start.
@@ -823,7 +728,7 @@ struct PDFDocumentCardButton: View {
     }
 
     // Reset state.
-    withAnimation(.easeOut(duration: 0.25)) {
+    withAnimation(.easeOut(duration: CardConstants.Press.dimFadeOutDuration)) {
       dimOpacity = 0
     }
     touchStartPosition = .zero
@@ -909,33 +814,12 @@ struct PDFDocumentCardTitle: View {
 
 // MARK: - PDF Document Card Context Menu Preview
 
-// Standalone preview view for context menus that shows only the card without title.
-// Used with .contextMenu(menuItems:preview:) to keep the title visible in place
-// while lifting just the card as the preview.
+// Wrapper for backward compatibility. Uses the generic CardContextMenuPreview.
 struct PDFDocumentCardContextMenuPreview: View {
   let pdfDocument: PDFDocumentMetadata
 
   var body: some View {
-    let previewImage = pdfDocument.previewImageData.flatMap { UIImage(data: $0) }
-    let cardCornerRadius: CGFloat = 10
-
-    ZStack {
-      Color(.systemGray5)
-      if let previewImage {
-        Image(uiImage: previewImage)
-          .resizable()
-          .scaledToFill()
-          .frame(width: 160, height: 200)
-          .clipped()
-      } else {
-        // Placeholder PDF icon when no preview is available.
-        Image(systemName: "doc.richtext")
-          .font(.system(size: 48))
-          .foregroundColor(.accentColor)
-      }
-    }
-    .frame(width: 160, height: 200)
-    .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous))
+    CardContextMenuPreview(item: pdfDocument)
   }
 }
 

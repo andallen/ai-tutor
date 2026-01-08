@@ -61,18 +61,14 @@ struct FolderCardButton: View {
   // Tracks whether the context menu was triggered to prevent button action on release.
   @State private var didTriggerContextMenu = false
 
-  // CONSISTENCY: These values must match NotebookCardButton and PDFDocumentCardButton
-  private let cardCornerRadius: CGFloat = 10
-  private let titleAreaHeight: CGFloat = 36
-  // Keeps a paper-like portrait ratio for the overall container.
-  private let cardAspectRatio: CGFloat = 0.72
+  // Uses shared constants from CardConstants for consistency across all card types.
 
   var body: some View {
     GeometryReader { proxy in
       let totalWidth = proxy.size.width
       let totalHeight = proxy.size.height
       // Card height is reduced to make room for the title below.
-      let cardHeight = totalHeight - titleAreaHeight
+      let cardHeight = totalHeight - CardConstants.titleAreaHeight
 
       VStack(alignment: .leading, spacing: 4) {
         // The card portion wrapped in a button.
@@ -82,7 +78,7 @@ struct FolderCardButton: View {
           cardButton(width: totalWidth, height: cardHeight)
           // White overlay that fades out as previewOpacity approaches 1.
           // This covers the glass material so it fades in from clean white.
-          RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
+          RoundedRectangle(cornerRadius: CardConstants.cornerRadius, style: .continuous)
             .fill(Color.white)
             .frame(width: totalWidth, height: cardHeight)
             .opacity(1 - previewOpacity)
@@ -121,12 +117,13 @@ struct FolderCardButton: View {
         }
       )
     }
-    .aspectRatio(cardAspectRatio, contentMode: .fit)
+    .aspectRatio(CardConstants.aspectRatio, contentMode: .fit)
     // Scale animation applies to both card and title together.
-    // CONSISTENCY: Matches NotebookCardButton and PDFDocumentCardButton press scale.
-    .scaleEffect(isPressed ? 1.04 : 1.0)
-    // CONSISTENCY: Matches NotebookCardButton and PDFDocumentCardButton press animation.
-    .animation(.spring(response: 0.15, dampingFraction: 0.75), value: isPressed)
+    .scaleEffect(isPressed ? CardConstants.Press.scale : 1.0)
+    .animation(
+      .spring(response: CardConstants.Press.springResponse, dampingFraction: CardConstants.Press.springDamping),
+      value: isPressed
+    )
     // Detects touch down/up for scale and sweep animations.
     .simultaneousGesture(
       DragGesture(minimumDistance: 0)
@@ -144,15 +141,16 @@ struct FolderCardButton: View {
   // Uses onTapGesture instead of Button to avoid conflicts with gesture handling.
   @ViewBuilder
   private func cardButton(width: CGFloat, height: CGFloat) -> some View {
-    let shape = RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
+    let shape = cardShape()
 
     FolderCardPreview(folder: folder, thumbnails: thumbnails, draggedOutCount: draggedOutCount)
       .frame(width: width, height: height)
       .background(Color.white.opacity(0.01))
       .clipShape(shape)
-      .shadow(color: Color.black.opacity(0.14), radius: 7, x: 0, y: 4)
+      .cardShadow()
       .overlay(
-        sweepOverlay(width: width, height: height)
+        SweepAnimationOverlay(isActive: showHighlight, sweepOffset: sweepOffset)
+          .frame(width: width, height: height)
       )
       .contentShape(shape)
       .onTapGesture {
@@ -160,38 +158,6 @@ struct FolderCardButton: View {
         guard !didTriggerContextMenu else { return }
         action()
       }
-  }
-
-  // Builds the sweep highlight overlay that plays on long press.
-  @ViewBuilder
-  private func sweepOverlay(width: CGFloat, height: CGFloat) -> some View {
-    let sweepDistance = width * 1.2
-    ZStack {
-      RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
-        .fill(Color.white.opacity(showHighlight ? 0.7 : 0.0))
-        .blendMode(.screen)
-        .animation(.easeOut(duration: 0.28), value: showHighlight)
-
-      RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
-        .fill(
-          LinearGradient(
-            stops: [
-              .init(color: Color.white.opacity(0.0), location: 0.0),
-              .init(color: Color.white.opacity(0.45), location: 0.45),
-              .init(color: Color.white.opacity(0.75), location: 0.55),
-              .init(color: Color.white.opacity(0.0), location: 1.0)
-            ],
-            startPoint: .leading,
-            endPoint: .trailing
-          )
-        )
-        .blendMode(.screen)
-        .offset(x: sweepOffset * sweepDistance)
-        .opacity(showHighlight ? 1.0 : 0.0)
-    }
-    .frame(width: width, height: height)
-    .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous))
-    .allowsHitTesting(false)
   }
 
   // Handles press state changes to schedule sweep/context menu.
@@ -203,7 +169,7 @@ struct FolderCardButton: View {
       // Schedule context menu and sweep animation after a delay.
       // If gesture ends before the delay (a tap or cancel), the work item is cancelled.
       let currentFrame = cardFrame
-      let cardHeight = currentFrame.height - titleAreaHeight
+      let cardHeight = currentFrame.height - CardConstants.titleAreaHeight
       let workItem = DispatchWorkItem { [onLongPress] in
         // Mark that context menu was triggered to prevent button action on release.
         didTriggerContextMenu = true
@@ -216,16 +182,16 @@ struct FolderCardButton: View {
         // Continue with sweep animation.
         guard !showHighlight else { return }
         showHighlight = true
-        sweepOffset = -1.2
-        withAnimation(.easeOut(duration: 0.5)) {
-          sweepOffset = 1.2
+        sweepOffset = CardConstants.Sweep.offsetStart
+        withAnimation(.easeOut(duration: CardConstants.Sweep.duration)) {
+          sweepOffset = CardConstants.Sweep.offsetEnd
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + CardConstants.Sweep.duration) {
           showHighlight = false
         }
       }
       sweepWorkItem = workItem
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
+      DispatchQueue.main.asyncAfter(deadline: .now() + CardConstants.longPressDelay, execute: workItem)
     } else {
       // Cancel pending sweep if it hasn't fired yet.
       sweepWorkItem?.cancel()
@@ -249,18 +215,16 @@ struct FolderCardPreview: View {
   // Reduces the displayed item count to reflect the pending removal.
   var draggedOutCount: Int = 0
 
-  private let cardCornerRadius: CGFloat = 10
-
   var body: some View {
     GeometryReader { proxy in
       let width = proxy.size.width
       let height = proxy.size.height
 
       ZStack {
-        glassContent(cornerRadius: cardCornerRadius)
+        glassContent(cornerRadius: CardConstants.cornerRadius)
         thumbnailGrid(
           size: CGSize(width: width, height: height),
-          cornerRadius: cardCornerRadius
+          cornerRadius: CardConstants.cornerRadius
         )
       }
     }
@@ -406,17 +370,18 @@ struct FolderCardContextMenuPreview: View {
   let thumbnails: [UIImage]
 
   var body: some View {
-    let cardCornerRadius: CGFloat = 10
-    let cardSize = CGSize(width: 160, height: 200)
+    let cardSize = CGSize(
+      width: CardConstants.contextMenuPreviewWidth,
+      height: CardConstants.contextMenuPreviewHeight
+    )
 
     ZStack {
-      glassContent(cornerRadius: cardCornerRadius)
-      thumbnailGrid(size: cardSize, cornerRadius: cardCornerRadius)
+      glassContent(cornerRadius: CardConstants.cornerRadius)
+      thumbnailGrid(size: cardSize, cornerRadius: CardConstants.cornerRadius)
     }
     .frame(width: cardSize.width, height: cardSize.height)
-    .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous))
-    // Matches the shadow on the actual card for smooth context menu dismiss transition.
-    .shadow(color: Color.black.opacity(0.14), radius: 7, x: 0, y: 4)
+    .clipShape(RoundedRectangle(cornerRadius: CardConstants.cornerRadius, style: .continuous))
+    .cardShadow()
   }
 
   // Draws the liquid glass background effect.
