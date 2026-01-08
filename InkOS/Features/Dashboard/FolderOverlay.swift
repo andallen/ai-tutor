@@ -732,6 +732,10 @@ struct FolderOverlay: View {
     case .folder:
       // Folders inside folders not supported.
       return []
+
+    case .lesson:
+      // Lessons inside folders not supported.
+      return []
     }
   }
 }

@@ -45,7 +45,7 @@ struct AIButtonRepresentable: UIViewRepresentable {
   func makeUIView(context: Context) -> AIButtonView {
     let button = AIButtonView()
     button.tapped = tapped
-    button.isYielded = isYielded
+    button.setYielded(isYielded, animated: false)
     button.returnAnimationDuration = returnAnimationDuration
     return button
   }
@@ -53,7 +53,7 @@ struct AIButtonRepresentable: UIViewRepresentable {
   func updateUIView(_ uiView: AIButtonView, context: Context) {
     uiView.tapped = tapped
     uiView.returnAnimationDuration = returnAnimationDuration
-    uiView.isYielded = isYielded
+    uiView.setYielded(isYielded, animated: true)
   }
 }
 
@@ -97,6 +97,17 @@ struct DashboardView: View {
 
   // Tracks which PDF document is being moved to a folder.
   @State private var movingPDF: PDFDocumentMetadata?
+
+  // MARK: - Lesson State
+
+  // Tracks which lesson is being renamed.
+  @State private var renamingLesson: LessonMetadata?
+
+  // Tracks which lesson is being confirmed for deletion.
+  @State private var deletingLesson: LessonMetadata?
+
+  // Opens a lesson view when a lesson is tapped.
+  @State private var activeLessonID: String?
 
   // MARK: - Folder State
 
@@ -267,6 +278,9 @@ struct DashboardView: View {
           renamingPDF: $renamingPDF,
           deletingPDF: $deletingPDF,
           movingPDF: $movingPDF,
+          renamingLesson: $renamingLesson,
+          deletingLesson: $deletingLesson,
+          activeLessonID: $activeLessonID,
           renamingFolder: $renamingFolder,
           deletingFolder: $deletingFolder,
           showCreateFolderAlert: $showCreateFolderAlert,
@@ -707,6 +721,8 @@ struct DashboardView: View {
             folderCardView(folder: folder)
           case .pdfDocument(let pdfDocument):
             pdfDocumentCardView(pdfDocument: pdfDocument)
+          case .lesson(let lesson):
+            lessonCardView(lesson: lesson)
           }
         }
       }
@@ -1049,6 +1065,38 @@ struct DashboardView: View {
           value: [pdfDocument.id: geometry.frame(in: .global)]
         )
     }
+  }
+
+  // MARK: - Lesson Card View
+
+  // Builds a lesson card for display in the item grid.
+  @ViewBuilder
+  private func lessonCardView(lesson: LessonMetadata) -> some View {
+    let isContextMenuActive = contextMenuState?.matchesLesson(lesson) == true
+    LessonCardButton(
+      lesson: lesson,
+      action: { openLesson(lesson) },
+      onRename: {
+        renameText = lesson.displayName
+        renamingLesson = lesson
+      },
+      onDelete: { deletingLesson = lesson },
+      onLongPress: { frame, cardHeight in
+        contextMenuState = ContextMenuState(
+          item: .lesson(lesson),
+          sourceFrame: frame,
+          cardHeight: cardHeight
+        )
+      }
+    )
+    .scaleEffect(isContextMenuActive ? 1.08 : 1.0, anchor: .center)
+    .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isContextMenuActive)
+    .zIndex(isContextMenuActive ? 300 : 0)
+  }
+
+  // Opens a lesson for viewing and interaction.
+  private func openLesson(_ lesson: LessonMetadata) {
+    activeLessonID = lesson.id
   }
 
   // Creates a drop delegate for folder drag-and-drop operations.
@@ -2122,6 +2170,8 @@ struct DashboardView: View {
       return buildFolderContextMenuActions(for: folder)
     case .pdfDocument(let pdfDocument):
       return buildPDFContextMenuActions(for: pdfDocument)
+    case .lesson(let lesson):
+      return buildLessonContextMenuActions(for: lesson)
     }
   }
 
@@ -2202,6 +2252,23 @@ struct DashboardView: View {
     )
 
     return actions
+  }
+
+  // Builds context menu actions for a lesson.
+  private func buildLessonContextMenuActions(for lesson: LessonMetadata) -> [ContextMenuAction] {
+    [
+      ContextMenuAction(title: "Rename", systemImage: "pencil") {
+        renameText = lesson.displayName
+        renamingLesson = lesson
+      },
+      ContextMenuAction(
+        title: "Delete",
+        systemImage: "trash",
+        isDestructive: true
+      ) {
+        deletingLesson = lesson
+      },
+    ]
   }
 
   // MARK: - Search Overlay
@@ -2365,6 +2432,9 @@ struct DashboardViewModifiers: ViewModifier {
   @Binding var renamingPDF: PDFDocumentMetadata?
   @Binding var deletingPDF: PDFDocumentMetadata?
   @Binding var movingPDF: PDFDocumentMetadata?
+  @Binding var renamingLesson: LessonMetadata?
+  @Binding var deletingLesson: LessonMetadata?
+  @Binding var activeLessonID: String?
   @Binding var renamingFolder: FolderMetadata?
   @Binding var deletingFolder: FolderMetadata?
   @Binding var showCreateFolderAlert: Bool
@@ -2410,6 +2480,8 @@ struct DashboardViewModifiers: ViewModifier {
       deletingNotebook: $deletingNotebook,
       renamingPDF: $renamingPDF,
       deletingPDF: $deletingPDF,
+      renamingLesson: $renamingLesson,
+      deletingLesson: $deletingLesson,
       renamingFolder: $renamingFolder,
       deletingFolder: $deletingFolder,
       showCreateFolderAlert: $showCreateFolderAlert,
@@ -2427,6 +2499,7 @@ struct DashboardViewModifiers: ViewModifier {
     DashboardSheetModifiers(
       activeSession: $activeSession,
       activePDFSession: $activePDFSession,
+      activeLessonID: $activeLessonID,
       movingNotebook: $movingNotebook,
       movingPDF: $movingPDF,
       expandedFolder: $expandedFolder,
@@ -2456,6 +2529,7 @@ struct DashboardViewModifiers: ViewModifier {
 struct DashboardSheetModifiers: ViewModifier {
   @Binding var activeSession: NotebookSession?
   @Binding var activePDFSession: PDFDocumentSession?
+  @Binding var activeLessonID: String?
   @Binding var movingNotebook: NotebookMetadata?
   @Binding var movingPDF: PDFDocumentMetadata?
   @Binding var expandedFolder: FolderMetadata?
@@ -2484,6 +2558,19 @@ struct DashboardSheetModifiers: ViewModifier {
         content: { session in
           PDFEditorHostView(session: session)
             .ignoresSafeArea()
+        }
+      )
+      .fullScreenCover(
+        item: Binding(
+          get: { activeLessonID.map { LessonSession(id: $0) } },
+          set: { activeLessonID = $0?.id }
+        ),
+        onDismiss: { activeLessonID = nil },
+        content: { session in
+          LessonView(
+            lessonID: session.id,
+            onDismiss: { activeLessonID = nil }
+          )
         }
       )
       .sheet(item: $movingNotebook) { notebook in
@@ -2697,6 +2784,13 @@ struct PDFCardFramePreferenceKey: PreferenceKey {
   static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
     value.merge(nextValue()) { _, new in new }
   }
+}
+
+// MARK: - Lesson Session
+
+// Session model for lesson navigation.
+struct LessonSession: Identifiable {
+  let id: String
 }
 
 #if DEBUG

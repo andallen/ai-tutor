@@ -18,6 +18,9 @@ struct DashboardHostView: View {
   // PDF session state (passed to PDF editor when opening a PDF).
   @State private var activePDFSession: PDFDocumentSession?
 
+  // Lesson session state (passed to lesson view when opening a lesson).
+  @State private var activeLessonID: String?
+
   var body: some View {
     DashboardViewControllerRepresentable(
       onNotebookSelected: { notebook in
@@ -29,6 +32,9 @@ struct DashboardHostView: View {
         Task {
           await openPDF(pdf)
         }
+      },
+      onLessonSelected: { lesson in
+        activeLessonID = lesson.id
       }
     )
     .ignoresSafeArea()
@@ -80,6 +86,7 @@ struct DashboardHostView: View {
 struct DashboardViewControllerRepresentable: UIViewControllerRepresentable {
   let onNotebookSelected: (NotebookMetadata) -> Void
   let onPDFSelected: (PDFDocumentMetadata) -> Void
+  let onLessonSelected: (LessonMetadata) -> Void
 
   func makeUIViewController(context: Context) -> UINavigationController {
     let library = NotebookLibrary(bundleManager: BundleManager.shared)
@@ -96,25 +103,30 @@ struct DashboardViewControllerRepresentable: UIViewControllerRepresentable {
     // Update callbacks if needed.
     context.coordinator.onNotebookSelected = onNotebookSelected
     context.coordinator.onPDFSelected = onPDFSelected
+    context.coordinator.onLessonSelected = onLessonSelected
   }
 
   func makeCoordinator() -> Coordinator {
     Coordinator(
       onNotebookSelected: onNotebookSelected,
-      onPDFSelected: onPDFSelected
+      onPDFSelected: onPDFSelected,
+      onLessonSelected: onLessonSelected
     )
   }
 
   class Coordinator: NSObject, DashboardViewControllerDelegate {
     var onNotebookSelected: (NotebookMetadata) -> Void
     var onPDFSelected: (PDFDocumentMetadata) -> Void
+    var onLessonSelected: (LessonMetadata) -> Void
 
     init(
       onNotebookSelected: @escaping (NotebookMetadata) -> Void,
-      onPDFSelected: @escaping (PDFDocumentMetadata) -> Void
+      onPDFSelected: @escaping (PDFDocumentMetadata) -> Void,
+      onLessonSelected: @escaping (LessonMetadata) -> Void
     ) {
       self.onNotebookSelected = onNotebookSelected
       self.onPDFSelected = onPDFSelected
+      self.onLessonSelected = onLessonSelected
     }
 
     func dashboardDidSelectNotebook(_ notebook: NotebookMetadata) {
@@ -128,6 +140,10 @@ struct DashboardViewControllerRepresentable: UIViewControllerRepresentable {
     func dashboardDidSelectFolder(_ folder: FolderMetadata, thumbnails: [UIImage]) {
       // Folder overlay is now handled internally by DashboardViewController.
       // This delegate method is no longer called but kept for protocol conformance.
+    }
+
+    func dashboardDidSelectLesson(_ lesson: LessonMetadata) {
+      onLessonSelected(lesson)
     }
   }
 }

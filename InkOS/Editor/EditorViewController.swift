@@ -127,8 +127,10 @@ class EditorViewController: BaseEditorViewController {
     viewModel.clear()
   }
 
-  override func handleAIChatSend(message: String) {
-    // AI chat handling to be implemented.
+  // MARK: - AIOverlayContextProvider
+
+  override var currentNoteID: String? {
+    documentHandle?.notebookID
   }
 
   // MARK: - Exit Handling

@@ -2,6 +2,7 @@
 // Replaces SwiftUI DashboardView for full animation control.
 
 import Combine
+import SwiftUI
 import UIKit
 
 // Delegate for dashboard navigation events.
@@ -9,6 +10,7 @@ protocol DashboardViewControllerDelegate: AnyObject {
   func dashboardDidSelectNotebook(_ notebook: NotebookMetadata)
   func dashboardDidSelectPDF(_ pdf: PDFDocumentMetadata)
   func dashboardDidSelectFolder(_ folder: FolderMetadata, thumbnails: [UIImage])
+  func dashboardDidSelectLesson(_ lesson: LessonMetadata)
 }
 
 class DashboardViewController: UIViewController {
@@ -34,6 +36,18 @@ class DashboardViewController: UIViewController {
   // Loading state.
   private var isLoading = true
 
+  // AI overlay coordinator.
+  private var aiOverlayCoordinator: AIOverlayCoordinator?
+
+  // Tracks the currently expanded folder for AI context.
+  private(set) var expandedFolderID: String?
+
+  // Lesson generator for creating lessons.
+  private var lessonGenerator: LessonGenerator?
+
+  // Hosting controller for lesson generation overlay.
+  private var lessonOverlayHostingController: UIHostingController<LessonGenerationOverlay>?
+
   // Section definition.
   private enum Section: Hashable {
     case main
@@ -58,6 +72,14 @@ class DashboardViewController: UIViewController {
     setupCollectionView()
     setupDataSource()
     setupBindings()
+    setupAIOverlayCoordinator()
+  }
+
+  // Sets up the AI overlay coordinator with dashboard configuration.
+  private func setupAIOverlayCoordinator() {
+    let coordinator = AIOverlayCoordinator(configuration: .dashboard)
+    coordinator.attach(to: self, contextProvider: self)
+    aiOverlayCoordinator = coordinator
   }
 
   override func viewWillAppear(_ animated: Bool) {
@@ -77,10 +99,22 @@ class DashboardViewController: UIViewController {
     title = "InkOS"
     navigationController?.navigationBar.prefersLargeTitles = true
 
-    // Add menu button.
+    // Add search button on the left.
+    let searchButton = UIBarButtonItem(
+      systemItem: .search,
+      primaryAction: UIAction { [weak self] _ in
+        self?.showSearch()
+      }
+    )
+    navigationItem.leftBarButtonItem = searchButton
+
+    // Add menu button on the right.
     let plusMenu = UIMenu(children: [
       UIAction(title: "New Notebook", image: UIImage(systemName: "doc.badge.plus")) { [weak self] _ in
         self?.createNewNotebook()
+      },
+      UIAction(title: "New Lesson", image: UIImage(systemName: "book.closed.fill")) { [weak self] _ in
+        self?.showNewLessonOverlay()
       },
       UIAction(title: "New Folder", image: UIImage(systemName: "folder.badge.plus")) { [weak self] _ in
         self?.createNewFolder()
@@ -108,6 +142,7 @@ class DashboardViewController: UIViewController {
     collectionView.register(NotebookCell.self, forCellWithReuseIdentifier: NotebookCell.reuseIdentifier)
     collectionView.register(PDFDocumentCell.self, forCellWithReuseIdentifier: PDFDocumentCell.reuseIdentifier)
     collectionView.register(FolderCell.self, forCellWithReuseIdentifier: FolderCell.reuseIdentifier)
+    collectionView.register(LessonCell.self, forCellWithReuseIdentifier: LessonCell.reuseIdentifier)
 
     view.addSubview(collectionView)
   }
@@ -184,6 +219,15 @@ class DashboardViewController: UIViewController {
       cell.configure(with: folder, thumbnails: thumbnails)
       cell.delegate = self
       return cell
+
+    case .lesson(let lesson):
+      guard let cell = collectionView.dequeueReusableCell(
+        withReuseIdentifier: LessonCell.reuseIdentifier,
+        for: indexPath
+      ) as? LessonCell else { return nil }
+      cell.configure(with: lesson)
+      cell.delegate = self
+      return cell
     }
   }
 
@@ -217,6 +261,76 @@ class DashboardViewController: UIViewController {
 
   private func importPDF() {
     // TODO: Implement PDF import picker
+  }
+
+  // Shows the search interface.
+  private func showSearch() {
+    // TODO: Implement search UI
+    let alert = UIAlertController(
+      title: "Search",
+      message: "Search functionality is coming soon.",
+      preferredStyle: .alert
+    )
+    alert.addAction(UIAlertAction(title: "OK", style: .default))
+    present(alert, animated: true)
+  }
+
+  // Shows the lesson generation overlay.
+  private func showNewLessonOverlay() {
+    let overlay = LessonGenerationOverlay(
+      onGenerate: { [weak self] topic, pdfURL in
+        try await self?.generateLesson(prompt: topic, pdfURL: pdfURL)
+      },
+      onDismiss: { [weak self] in
+        self?.dismissLessonOverlay()
+      }
+    )
+
+    let hostingController = UIHostingController(rootView: overlay)
+    hostingController.view.backgroundColor = .clear
+    hostingController.modalPresentationStyle = .overFullScreen
+    hostingController.modalTransitionStyle = .crossDissolve
+
+    lessonOverlayHostingController = hostingController
+    present(hostingController, animated: true)
+  }
+
+  // Dismisses the lesson generation overlay.
+  private func dismissLessonOverlay() {
+    lessonOverlayHostingController?.dismiss(animated: false) { [weak self] in
+      self?.lessonOverlayHostingController = nil
+    }
+  }
+
+  // Generates a lesson with the given prompt and optional PDF.
+  private func generateLesson(prompt: String, pdfURL: URL?) async throws {
+    // Create generator if needed.
+    if lessonGenerator == nil {
+      lessonGenerator = LessonGenerator.createDefault(projectID: "inkos-a8de9")
+    }
+
+    guard let generator = lessonGenerator else {
+      throw NSError(
+        domain: "DashboardViewController",
+        code: 1,
+        userInfo: [NSLocalizedDescriptionKey: "Failed to create lesson generator"]
+      )
+    }
+
+    // Build the generation request.
+    let request = LessonGenerationRequest(
+      prompt: prompt,
+      displayName: nil,
+      pdfURL: pdfURL,
+      estimatedMinutes: 15,
+      folderID: expandedFolderID
+    )
+
+    // Generate the lesson.
+    let _ = try await generator.generate(request: request)
+
+    // Reload the library to show the new lesson.
+    await library.loadBundles()
   }
 
   // Shows rename alert for a notebook.
@@ -487,6 +601,9 @@ extension DashboardViewController: FolderCellDelegate {
     pdfs: [PDFDocumentMetadata],
     sourceFrame: CGRect
   ) {
+    // Track the expanded folder for AI context.
+    expandedFolderID = folder.id
+
     let overlayVC = FolderOverlayViewController(
       folder: folder,
       notebooks: notebooks,
@@ -516,7 +633,8 @@ extension DashboardViewController: FolderOverlayDelegate {
   }
 
   func folderOverlayDidDismiss(_ overlay: FolderOverlayViewController) {
-    // Overlay dismissed - nothing additional needed.
+    // Clear the expanded folder when overlay dismisses.
+    expandedFolderID = nil
   }
 
   func folderOverlayDidRequestRename(_ overlay: FolderOverlayViewController, notebook: NotebookMetadata) {
@@ -645,5 +763,94 @@ extension DashboardViewController: FolderOverlayDelegate {
         overlay.updateContents(notebooks: notebooks, pdfDocuments: pdfs)
       }
     }
+  }
+}
+
+// MARK: - LessonCellDelegate
+
+extension DashboardViewController: LessonCellDelegate {
+  func lessonCellDidTap(_ cell: LessonCell, lesson: LessonMetadata) {
+    delegate?.dashboardDidSelectLesson(lesson)
+  }
+
+  func lessonCellDidLongPress(
+    _ cell: LessonCell,
+    lesson: LessonMetadata,
+    frame: CGRect,
+    cardHeight: CGFloat
+  ) {
+    // Show context menu.
+    let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+    alert.addAction(UIAlertAction(title: "Rename", style: .default) { [weak self] _ in
+      self?.showRenameAlert(for: lesson)
+    })
+    alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
+      self?.showDeleteConfirmation(for: lesson)
+    })
+    alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+
+    // Configure popover for iPad.
+    if let popover = alert.popoverPresentationController {
+      popover.sourceView = cell
+      popover.sourceRect = cell.bounds
+    }
+
+    present(alert, animated: true)
+  }
+
+  // Shows rename alert for a lesson.
+  private func showRenameAlert(for lesson: LessonMetadata) {
+    let alert = UIAlertController(
+      title: "Rename Lesson",
+      message: "Enter a new name for this lesson.",
+      preferredStyle: .alert
+    )
+    alert.addTextField { textField in
+      textField.text = lesson.displayName
+    }
+    alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+    alert.addAction(UIAlertAction(title: "Rename", style: .default) { [weak self] _ in
+      guard let name = alert.textFields?.first?.text?.trimmingCharacters(in: .whitespaces),
+            !name.isEmpty else { return }
+      Task {
+        await self?.library.renameLesson(lessonID: lesson.id, newDisplayName: name)
+      }
+    })
+    present(alert, animated: true)
+  }
+
+  // Shows delete confirmation for a lesson.
+  private func showDeleteConfirmation(for lesson: LessonMetadata) {
+    let alert = UIAlertController(
+      title: "Delete Lesson?",
+      message: "\"\(lesson.displayName)\" will be permanently deleted. This cannot be undone.",
+      preferredStyle: .alert
+    )
+    alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+    alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
+      Task {
+        await self?.library.deleteLesson(lessonID: lesson.id)
+      }
+    })
+    present(alert, animated: true)
+  }
+}
+
+// MARK: - AIOverlayContextProvider
+
+extension DashboardViewController: AIOverlayContextProvider {
+  // Returns the appropriate location based on folder overlay state.
+  var overlayLocation: AIOverlayLocation {
+    expandedFolderID != nil ? .folder : .dashboard
+  }
+
+  // Dashboard doesn't have a current note.
+  var currentNoteID: String? {
+    nil
+  }
+
+  // Returns the expanded folder ID when viewing folder contents.
+  var currentFolderID: String? {
+    expandedFolderID
   }
 }
