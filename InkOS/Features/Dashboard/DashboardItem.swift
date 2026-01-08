@@ -10,10 +10,21 @@ import Foundation
 
 // Represents a notebook, folder, or PDF document for display in the Dashboard grid.
 // The Dashboard grid uses this type to render a mixed list of items.
-enum DashboardItem: Identifiable {
+// Conforms to Hashable for use with UICollectionViewDiffableDataSource.
+enum DashboardItem: Identifiable, Hashable {
   case notebook(NotebookMetadata)
   case folder(FolderMetadata)
   case pdfDocument(PDFDocumentMetadata)
+
+  // Custom Hashable implementation based on unique id.
+  func hash(into hasher: inout Hasher) {
+    hasher.combine(id)
+  }
+
+  // Custom Equatable implementation based on unique id.
+  static func == (lhs: DashboardItem, rhs: DashboardItem) -> Bool {
+    lhs.id == rhs.id
+  }
 
   // Unique identifier combining type prefix with item ID.
   // Ensures no collision between notebook, folder, and PDF document with same UUID.

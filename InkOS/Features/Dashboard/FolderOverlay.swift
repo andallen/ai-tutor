@@ -138,12 +138,14 @@ struct FolderOverlay: View {
   // Drag callbacks for notebooks being dragged out of the folder.
   let onNotebookDragStart: ((NotebookMetadata, CGRect, CGPoint) -> Void)?
   let onNotebookDragMove: ((CGPoint) -> Void)?
-  let onNotebookDragEnd: ((CGPoint) -> Void)?
+  // Completion callback: true = animate return, false = remove immediately.
+  let onNotebookDragEnd: ((CGPoint, @escaping (Bool) -> Void) -> Void)?
 
   // Drag callbacks for PDFs being dragged out of the folder.
   let onPDFDragStart: ((PDFDocumentMetadata, CGRect, CGPoint) -> Void)?
   let onPDFDragMove: ((CGPoint) -> Void)?
-  let onPDFDragEnd: ((CGPoint) -> Void)?
+  // Completion callback: true = animate return, false = remove immediately.
+  let onPDFDragEnd: ((CGPoint, @escaping (Bool) -> Void) -> Void)?
 
   // Called when a drag crosses outside the overlay bounds.
   let onDragExitedBounds: (() -> Void)?
@@ -654,8 +656,7 @@ struct FolderOverlay: View {
   }
 
   // Renders a notebook card in the folder grid.
-  // Uses FolderDraggableNotebookCard which leverages UIKit's UIDragInteraction
-  // for accurate position tracking that's immune to parent view transforms.
+  // Uses NotebookCardRepresentable which is a UIKit card reparented during drag.
   @ViewBuilder
   private func notebookItemCard(notebook: NotebookMetadata, cardWidth: CGFloat, cardHeight: CGFloat)
     -> some View {
@@ -663,10 +664,8 @@ struct FolderOverlay: View {
     let isBeingDragged = draggedNotebookID == notebook.id
     let isReturningFromDrag = returningFromDragNotebookID == notebook.id
 
-    FolderDraggableNotebookCard(
+    NotebookCardRepresentable(
       notebook: notebook,
-      cardWidth: cardWidth,
-      cardHeight: cardHeight,
       onTap: {
         onNotebookTap(notebook)
       },
@@ -694,15 +693,21 @@ struct FolderOverlay: View {
         onNotebookDragMove?(position)
         checkDragBounds(position: position)
       },
-      onDragEnd: { position in
+      onDragEnd: { position, completion in
         // Check if final position is outside bounds and fire callback immediately if needed.
         // This handles quick releases that happen before the boundsExitDelay fires.
         finalizeDragBounds(position: position)
-        // Always call parent drag end so DashboardView can reset drag state.
-        // DashboardView will check hasDragExitedOverlayBounds to decide whether to move.
-        onNotebookDragEnd?(position)
+        // Forward to parent with completion callback.
+        // Parent decides whether to animate return or remove immediately.
+        if let dragEnd = onNotebookDragEnd {
+          dragEnd(position, completion)
+        } else {
+          // No parent handler - animate return.
+          completion(true)
+        }
       }
     )
+    .frame(width: cardWidth, height: cardHeight)
     // Folder overlay cards are secondary views - use isSource: false to avoid conflicts
     // with dashboard cards when items move between folder and root during drag operations.
     .matchedGeometryEffect(
@@ -725,8 +730,7 @@ struct FolderOverlay: View {
   }
 
   // Renders a PDF card in the folder grid.
-  // Uses FolderDraggablePDFCard which leverages UIKit's UIDragInteraction
-  // for accurate position tracking that's immune to parent view transforms.
+  // Uses PDFCardRepresentable which is a UIKit card reparented during drag.
   @ViewBuilder
   private func pdfItemCard(pdf: PDFDocumentMetadata, cardWidth: CGFloat, cardHeight: CGFloat)
     -> some View {
@@ -734,10 +738,8 @@ struct FolderOverlay: View {
     let isBeingDragged = draggedPDFID == pdf.id
     let isReturningFromDrag = returningFromDragPDFID == pdf.id
 
-    FolderDraggablePDFCard(
-      pdf: pdf,
-      cardWidth: cardWidth,
-      cardHeight: cardHeight,
+    PDFCardRepresentable(
+      pdfDocument: pdf,
       onTap: {
         onPDFTap(pdf)
       },
@@ -765,15 +767,21 @@ struct FolderOverlay: View {
         onPDFDragMove?(position)
         checkDragBounds(position: position)
       },
-      onDragEnd: { position in
+      onDragEnd: { position, completion in
         // Check if final position is outside bounds and fire callback immediately if needed.
         // This handles quick releases that happen before the boundsExitDelay fires.
         finalizeDragBounds(position: position)
-        // Always call parent drag end so DashboardView can reset drag state.
-        // DashboardView will check hasDragExitedOverlayBounds to decide whether to move.
-        onPDFDragEnd?(position)
+        // Forward to parent with completion callback.
+        // Parent decides whether to animate return or remove immediately.
+        if let dragEnd = onPDFDragEnd {
+          dragEnd(position, completion)
+        } else {
+          // No parent handler - animate return.
+          completion(true)
+        }
       }
     )
+    .frame(width: cardWidth, height: cardHeight)
     // Folder overlay cards are secondary views - use isSource: false to avoid conflicts
     // with dashboard cards when items move between folder and root during drag operations.
     .matchedGeometryEffect(
