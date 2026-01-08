@@ -2,7 +2,7 @@ import UIKit
 
 // Circular glass button with a black circle icon in the center.
 // Matches the glass styling used by HomeButtonView for visual consistency.
-// Slides right off-screen when yielded to make room for the AI overlay.
+// Slides down off-screen when yielded to make room for the AI overlay.
 final class AIButtonView: UIView {
   // Notifies the host when the button is tapped.
   var tapped: (() -> Void)?
@@ -135,7 +135,7 @@ final class AIButtonView: UIView {
     isYielded = yielded
 
     let targetTransform = yielded
-      ? CGAffineTransform(translationX: yieldSlideDistance, y: 0)
+      ? CGAffineTransform(translationX: 0, y: yieldSlideDistance)
       : .identity
 
     if animated {
@@ -159,7 +159,7 @@ final class AIButtonView: UIView {
       initialSpringVelocity: 0,
       options: []
     ) {
-      self.transform = CGAffineTransform(translationX: self.yieldSlideDistance, y: 0)
+      self.transform = CGAffineTransform(translationX: 0, y: self.yieldSlideDistance)
     }
   }
 

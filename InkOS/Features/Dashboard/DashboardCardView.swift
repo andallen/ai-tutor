@@ -681,3 +681,95 @@ class FolderCardView: DashboardCardView {
     }
   }
 }
+
+// MARK: - Lesson Card View
+
+// UIKit card view for lessons.
+// Displays lesson preview image or placeholder, title, and "Lesson" subtitle.
+class LessonCardView: DashboardCardView {
+  private var lesson: LessonMetadata?
+  private let placeholderView = UIView()
+  private let placeholderIcon = UIImageView()
+  private let placeholderLabel = UILabel()
+
+  override init(frame: CGRect) {
+    super.init(frame: frame)
+    setupPlaceholder()
+  }
+
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  private func setupPlaceholder() {
+    // Container for placeholder content.
+    placeholderView.backgroundColor = .white
+    placeholderView.isHidden = true
+
+    // Icon.
+    placeholderIcon.image = UIImage(systemName: "book.pages")
+    placeholderIcon.tintColor = UIColor.black.withAlphaComponent(0.35)
+    placeholderIcon.contentMode = .scaleAspectFit
+    placeholderView.addSubview(placeholderIcon)
+
+    // Label.
+    placeholderLabel.text = "Lesson"
+    placeholderLabel.font = .systemFont(ofSize: 12, weight: .medium)
+    placeholderLabel.textColor = UIColor.black.withAlphaComponent(0.35)
+    placeholderLabel.textAlignment = .center
+    placeholderView.addSubview(placeholderLabel)
+
+    previewContainer.addSubview(placeholderView)
+  }
+
+  override func layoutPreviewContent() {
+    super.layoutPreviewContent()
+
+    placeholderView.frame = previewContainer.bounds
+
+    // Center icon and label in placeholder.
+    let iconSize: CGFloat = 32
+    let labelHeight: CGFloat = 16
+    let spacing: CGFloat = 8
+    let totalHeight = iconSize + spacing + labelHeight
+    let topOffset = (previewContainer.bounds.height - totalHeight) / 2
+
+    placeholderIcon.frame = CGRect(
+      x: (previewContainer.bounds.width - iconSize) / 2,
+      y: topOffset,
+      width: iconSize,
+      height: iconSize
+    )
+
+    placeholderLabel.frame = CGRect(
+      x: 0,
+      y: topOffset + iconSize + spacing,
+      width: previewContainer.bounds.width,
+      height: labelHeight
+    )
+  }
+
+  // Configures the card with lesson data.
+  func configure(with lesson: LessonMetadata) {
+    self.lesson = lesson
+
+    // Set preview image or show placeholder.
+    let previewImage = lesson.previewImage.flatMap { UIImage(data: $0) }
+    setPreviewImage(previewImage)
+    setPreviewBackgroundColor(.white)
+
+    // Show/hide placeholder based on preview availability.
+    placeholderView.isHidden = previewImage != nil
+
+    // Set title.
+    setTitle(lesson.displayName)
+
+    // Set subtitle to "Lesson".
+    setSubtitle("Lesson")
+  }
+
+  // Returns the configured lesson.
+  var configuredLesson: LessonMetadata? {
+    return lesson
+  }
+}
