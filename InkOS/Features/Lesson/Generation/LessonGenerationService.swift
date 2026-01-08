@@ -93,10 +93,78 @@ actor LessonGenerationService: LessonGenerationServiceProtocol {
     self.functionsBaseURL = URL(string: baseURLString)!
 
     self.jsonDecoder = JSONDecoder()
-    self.jsonDecoder.dateDecodingStrategy = .iso8601
+    // Use flexible date decoding that handles various formats or nil.
+    self.jsonDecoder.dateDecodingStrategy = .custom { decoder in
+      let container = try decoder.singleValueContainer()
+      let dateString = try container.decode(String.self)
+
+      // Try ISO 8601 with fractional seconds.
+      let isoFormatter = ISO8601DateFormatter()
+      isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+      if let date = isoFormatter.date(from: dateString) {
+        return date
+      }
+
+      // Try ISO 8601 without fractional seconds.
+      isoFormatter.formatOptions = [.withInternetDateTime]
+      if let date = isoFormatter.date(from: dateString) {
+        return date
+      }
+
+      // Fallback to current date if unparseable.
+      return Date()
+    }
   }
 
   // MARK: - Public Methods
+
+  // Generates a lesson plan (Stage 1) from a text prompt.
+  // Returns the structured markdown lesson plan.
+  // onStepProgress: Called with (status, name) for each phase.
+  func generateLessonPlan(
+    prompt: String,
+    sourceText: String? = nil,
+    onStepProgress: @escaping @Sendable (String, String) -> Void
+  ) async throws -> String {
+    // Build the request URL for the lesson planning endpoint.
+    let functionURL = functionsBaseURL.appendingPathComponent("generateLessonPlan")
+
+    // Create the request body.
+    var requestBody: [String: Any] = ["prompt": prompt]
+    if let sourceText = sourceText {
+      requestBody["sourceText"] = sourceText
+    }
+
+    let jsonData = try JSONSerialization.data(withJSONObject: requestBody)
+
+    // Build the HTTP request.
+    var request = URLRequest(url: functionURL)
+    request.httpMethod = "POST"
+    request.httpBody = jsonData
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+
+    // Execute the streaming request.
+    let (bytes, response) = try await urlSession.bytes(for: request)
+
+    // Check for HTTP errors.
+    guard let httpResponse = response as? HTTPURLResponse else {
+      throw LessonGenerationError.invalidResponse
+    }
+
+    guard httpResponse.statusCode == 200 else {
+      throw LessonGenerationError.serverError(
+        statusCode: httpResponse.statusCode,
+        message: "Server returned error"
+      )
+    }
+
+    // Parse the SSE stream for lesson plan steps.
+    return try await parseLessonPlanSSEStream(
+      bytes: bytes,
+      onStepProgress: onStepProgress
+    )
+  }
 
   // Generates a lesson from a text prompt with streaming progress.
   func generateLesson(
@@ -183,7 +251,64 @@ actor LessonGenerationService: LessonGenerationServiceProtocol {
     return try parseLesson(from: fullText)
   }
 
+  // Parses Server-Sent Events stream for lesson plan generation.
+  // Reports step progress and returns the final lesson plan markdown.
+  private func parseLessonPlanSSEStream(
+    bytes: URLSession.AsyncBytes,
+    onStepProgress: @escaping @Sendable (String, String) -> Void
+  ) async throws -> String {
+    var lessonPlan = ""
+    var lineBuffer = ""
+
+    for try await byte in bytes {
+      let char = Character(UnicodeScalar(byte))
+
+      if char == "\n" {
+        // Process complete line.
+        if lineBuffer.hasPrefix("data: ") {
+          let jsonString = String(lineBuffer.dropFirst(6))
+          if !jsonString.isEmpty {
+            do {
+              if let data = jsonString.data(using: .utf8),
+                 let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+
+                // Check for errors.
+                if let error = json["error"] as? String {
+                  throw LessonGenerationError.streamingFailed(reason: error)
+                }
+
+                // Check for step progress.
+                if let status = json["status"] as? String,
+                   let name = json["name"] as? String {
+                  onStepProgress(status, name)
+                }
+
+                // Check for completion with lesson plan.
+                if let done = json["done"] as? Bool, done {
+                  if let plan = json["lessonPlan"] as? String {
+                    lessonPlan = plan
+                  }
+                  break
+                }
+              }
+            } catch let error as LessonGenerationError {
+              throw error
+            } catch {
+              // Skip malformed JSON lines.
+            }
+          }
+        }
+        lineBuffer = ""
+      } else {
+        lineBuffer.append(char)
+      }
+    }
+
+    return lessonPlan
+  }
+
   // Parses Server-Sent Events stream and accumulates text.
+  // Handles both legacy chunk-based streaming and new stage-based progress.
   private func parseSSEStream(
     bytes: URLSession.AsyncBytes,
     onProgress: @escaping @Sendable (Int) -> Void
@@ -214,10 +339,21 @@ actor LessonGenerationService: LessonGenerationServiceProtocol {
                   if let fullText = json["fullText"] as? String {
                     accumulatedText = fullText
                   }
+                  // Report 100% progress on completion.
+                  onProgress(100)
                   break
                 }
 
-                // Accumulate chunk.
+                // Handle stage-based progress (two-stage pipeline).
+                // Stage 1: 0-50%, Stage 2: 50-100%.
+                if let stage = json["stage"] as? Int,
+                   let status = json["status"] as? String {
+                  let baseProgress = stage == 1 ? 0 : 50
+                  let stageProgress = status == "complete" ? 50 : 25
+                  onProgress(baseProgress + stageProgress)
+                }
+
+                // Legacy: Accumulate chunk.
                 if let chunk = json["chunk"] as? String {
                   accumulatedText += chunk
                   // Report progress.
@@ -225,7 +361,7 @@ actor LessonGenerationService: LessonGenerationServiceProtocol {
                   onProgress(count)
                 }
 
-                // Or use accumulated count from server.
+                // Legacy: Use accumulated count from server.
                 if let accumulated = json["accumulated"] as? Int {
                   onProgress(accumulated)
                 }
@@ -270,7 +406,27 @@ actor LessonGenerationService: LessonGenerationServiceProtocol {
     do {
       let lesson = try jsonDecoder.decode(Lesson.self, from: data)
       return lesson
+    } catch let decodingError as DecodingError {
+      // Provide detailed error information for debugging.
+      let detailedReason: String
+      switch decodingError {
+      case .keyNotFound(let key, let context):
+        detailedReason = "Missing key '\(key.stringValue)' at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+      case .typeMismatch(let type, let context):
+        detailedReason = "Type mismatch for \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: ".")): \(context.debugDescription)"
+      case .valueNotFound(let type, let context):
+        detailedReason = "Missing value of type \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+      case .dataCorrupted(let context):
+        detailedReason = "Corrupted data at \(context.codingPath.map { $0.stringValue }.joined(separator: ".")): \(context.debugDescription)"
+      @unknown default:
+        detailedReason = decodingError.localizedDescription
+      }
+      print("❌ Lesson JSON parsing failed: \(detailedReason)")
+      print("📄 Raw JSON (first 500 chars): \(String(cleanText.prefix(500)))")
+      throw LessonGenerationError.jsonParsingFailed(reason: detailedReason)
     } catch {
+      print("❌ Lesson JSON parsing failed: \(error.localizedDescription)")
+      print("📄 Raw JSON (first 500 chars): \(String(cleanText.prefix(500)))")
       throw LessonGenerationError.jsonParsingFailed(
         reason: error.localizedDescription
       )

@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 
 // Available lesson generation models.
 enum LessonModel: String, CaseIterable, Identifiable {
-  case gemini25Flash = "Gemini 2.5 Flash"
+  case gemini3FlashPreview = "Gemini 3 Flash Preview"
 
   var id: String { rawValue }
 }
@@ -215,7 +215,7 @@ struct LessonGenerationContent: View {
   var onGenerate: (URL?) -> Void
 
   // Currently selected model.
-  @State private var selectedModel: LessonModel = .gemini25Flash
+  @State private var selectedModel: LessonModel = .gemini3FlashPreview
   // Selected file URL for lesson generation.
   @State private var selectedFileURL: URL?
 

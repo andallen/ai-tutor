@@ -50,16 +50,21 @@ final class LessonViewModel: ObservableObject {
   // The answer comparison service for checking answers.
   private let answerComparisonService: any AnswerComparisonServiceProtocol
 
+  // Preview generator for creating thumbnails.
+  private let previewGenerator: LessonPreviewGenerator
+
   // The lesson ID being viewed.
   private var lessonID: String?
 
   init(
     bundleManager: BundleManager = .shared,
-    answerComparisonService: (any AnswerComparisonServiceProtocol)? = nil
+    answerComparisonService: (any AnswerComparisonServiceProtocol)? = nil,
+    previewGenerator: LessonPreviewGenerator = LessonPreviewGenerator()
   ) {
     self.bundleManager = bundleManager
     // Use mock service if none provided (for previews and testing).
     self.answerComparisonService = answerComparisonService ?? MockAnswerComparisonService()
+    self.previewGenerator = previewGenerator
   }
 
   // Computed property for completion percentage.
@@ -112,6 +117,11 @@ final class LessonViewModel: ObservableObject {
       self.progress = updatedProgress
       try? await bundleManager.saveLessonProgress(lessonID: lessonID, progress: updatedProgress)
 
+      // Generate preview if missing. This runs in the background after loading.
+      Task {
+        await ensurePreviewExists(for: loadedLesson, lessonID: lessonID)
+      }
+
       isLoading = false
     } catch {
       errorMessage = error.localizedDescription
@@ -119,24 +129,29 @@ final class LessonViewModel: ObservableObject {
     }
   }
 
+  // Generates a preview thumbnail if one doesn't exist.
+  private func ensurePreviewExists(for lesson: Lesson, lessonID: String) async {
+    // Check if preview already exists by trying to list lessons and finding this one.
+    do {
+      let lessons = try await bundleManager.listLessons()
+      if let existingLesson = lessons.first(where: { $0.id == lessonID }),
+         existingLesson.previewImage != nil {
+        // Preview already exists.
+        return
+      }
+    } catch {
+      // If listing fails, try to generate anyway.
+    }
+
+    // Generate and save the preview.
+    if let previewData = previewGenerator.generatePreview(for: lesson) {
+      try? await bundleManager.saveLessonThumbnail(lessonID: lessonID, imageData: previewData)
+    }
+  }
+
   // Checks if a section is completed.
   func isSectionCompleted(_ sectionID: String) -> Bool {
     progress?.sections[sectionID]?.completed ?? false
-  }
-
-  // Checks if a section is unlocked (previous section completed or first section).
-  func isSectionUnlocked(_ sectionID: String) -> Bool {
-    guard let lesson else { return false }
-    guard let index = lesson.sections.firstIndex(where: { $0.id == sectionID }) else {
-      return false
-    }
-
-    // First section is always unlocked.
-    if index == 0 { return true }
-
-    // Check if previous section is completed.
-    let previousSection = lesson.sections[index - 1]
-    return isSectionCompleted(previousSection.id)
   }
 
   // Marks a section as completed.

@@ -1,6 +1,7 @@
 import {onRequest} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import {z} from "zod";
+import {geminiGenerateUrl} from "./config";
 
 // Validation schema for answer comparison request
 const CompareAnswerSchema = z.object({
@@ -126,7 +127,7 @@ Evaluate the student's answer and provide feedback in JSON format.`;
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      geminiGenerateUrl(apiKey),
       {
         method: "POST",
         headers: {"Content-Type": "application/json"},

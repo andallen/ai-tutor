@@ -1,6 +1,8 @@
 import {onRequest} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import {z} from "zod";
+import {geminiGenerateUrl} from "./config";
+import {generateLessonPlanCore, callGemini} from "./lessonPlanning";
 
 // Validation schema for lesson generation request
 const GenerateLessonSchema = z.object({
@@ -9,7 +11,92 @@ const GenerateLessonSchema = z.object({
   estimatedMinutes: z.number().min(5).max(60).optional().default(15),
 });
 
-// System prompt with JSON schema for lesson generation
+/**
+ * Stage 2: Transform prompt that converts a lesson plan into JSON.
+ * Takes structured markdown from Stage 1 and outputs Lesson JSON format.
+ * @param {string} lessonPlan - The Stage 1 lesson plan markdown.
+ * @param {string} sourceType - Whether the source was "prompt" or "pdf".
+ * @return {string} The prompt for JSON transformation.
+ */
+function buildTransformPrompt(
+  lessonPlan: string,
+  sourceType: string
+): string {
+  return `You are an expert at transforming educational content into \
+interactive lesson formats.
+
+TASK: Convert the following lesson plan into a JSON lesson format.
+
+LESSON PLAN:
+---
+${lessonPlan}
+---
+
+OUTPUT FORMAT: Valid JSON only. No markdown code blocks, no explanations.
+
+Use this exact schema:
+
+{
+  "lessonId": "uuid-string",
+  "title": "Extract from LESSON PLAN header",
+  "metadata": {
+    "sourceType": "${sourceType}",
+    "createdAt": "${new Date().toISOString()}"
+  },
+  "sections": [
+    // For each concept in CONCEPT PROGRESSION, create:
+    // 1. A content section with the Core Knowledge
+    {
+      "id": "uuid",
+      "type": "content",
+      "content": "Markdown content from Core Knowledge, including Key Insight"
+    },
+    // 2. A visual section (optional, for concepts that benefit from visuals)
+    {
+      "id": "uuid",
+      "type": "visual",
+      "visualType": "generated",
+      "imagePrompt": "Detailed image description related to the concept"
+    },
+    // 3. Questions derived from Assessment Angles
+    {
+      "id": "uuid",
+      "type": "question",
+      "questionType": "multipleChoice",
+      "prompt": "Question testing the concept",
+      "options": ["A", "B", "C", "D"],
+      "answer": "Correct option text",
+      "explanation": "Why this is correct, addressing common misconception"
+    },
+    // At the end, a summary section
+    {
+      "id": "uuid",
+      "type": "summary",
+      "content": "Key Takeaways from SUMMARY POINTS"
+    }
+  ]
+}
+
+TRANSFORMATION RULES:
+1. Generate unique UUIDs for lessonId and each section id
+2. For each concept in CONCEPT PROGRESSION:
+   - Create a content section from Core Knowledge + Key Insight
+   - If the concept is visual or spatial, add a visual section
+   - Create 1-2 questions from the Assessment Angles
+   - Incorporate Common Misconception into question explanations
+3. Question types:
+   - multipleChoice: 4 options, test factual understanding
+   - freeResponse: open-ended, test deeper understanding
+   - math: if the concept involves calculations
+4. End with a summary section using SUMMARY POINTS
+5. Content uses Markdown formatting
+6. Follow the concept order from SUGGESTED PROGRESSION
+7. Total sections: roughly 3-4 per concept (content, visual, questions)
+
+Generate the JSON now:`;
+}
+
+// Legacy system prompt for direct generation (kept for generateLessonSync)
 const LESSON_SYSTEM_PROMPT = "You are an expert educational " +
   `content creator. Generate interactive lessons in JSON format.
 
@@ -22,8 +109,6 @@ Follow this exact JSON schema:
   "lessonId": "uuid-string",
   "title": "Lesson Title",
   "metadata": {
-    "subject": "Subject Area",
-    "estimatedMinutes": 15,
     "sourceType": "prompt",
     "createdAt": "ISO-8601 timestamp"
   },
@@ -85,7 +170,9 @@ Rules:
 9. Use standard notation for math (subscripts as ₂, arrows as →)
 10. Make content engaging and appropriate for the topic`;
 
-// Streaming lesson generation endpoint
+// Two-stage lesson generation endpoint.
+// Stage 1: Generate structured lesson plan (markdown).
+// Stage 2: Transform lesson plan into interactive JSON.
 export const generateLesson = onRequest({cors: true}, async (req, res) => {
   // Only allow POST requests
   if (req.method !== "POST") {
@@ -103,11 +190,12 @@ export const generateLesson = onRequest({cors: true}, async (req, res) => {
     return;
   }
 
-  const {prompt, sourceText, estimatedMinutes} = parseResult.data;
-  logger.info("Received lesson generation request", {
+  const {prompt, sourceText} = parseResult.data;
+  const sourceType = sourceText ? "pdf" : "prompt";
+  logger.info("Received lesson generation request (two-stage)", {
     promptLength: prompt.length,
     hasSourceText: !!sourceText,
-    estimatedMinutes,
+    sourceType,
   });
 
   // Get API key from environment
@@ -118,125 +206,64 @@ export const generateLesson = onRequest({cors: true}, async (req, res) => {
     return;
   }
 
-  // Build user message
-  let userMessage = `Create a ${estimatedMinutes}-minute ` +
-    `interactive lesson about: ${prompt}`;
-
-  if (sourceText) {
-    userMessage += "\n\nSource material to base the lesson on:\n---\n" +
-      `${sourceText}\n---\n\nFocus the lesson on the key concepts ` +
-      "from this material.";
-  }
-
-  // Build Gemini request
-  const contents = [
-    {
-      role: "user",
-      parts: [{text: LESSON_SYSTEM_PROMPT}],
-    },
-    {
-      role: "model",
-      parts: [{
-        text: "I understand. I will generate lessons in the exact " +
-          "JSON format specified, with no additional text or " +
-          "markdown formatting.",
-      }],
-    },
-    {
-      role: "user",
-      parts: [{text: userMessage}],
-    },
-  ];
-
   // Set SSE headers
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
 
   try {
-    // Use gemini-2.5-flash for better structured output
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
-      {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          contents,
-          generationConfig: {
-            temperature: 0.7,
-            topP: 0.95,
-            maxOutputTokens: 8192,
-          },
-        }),
+    // Stage 1: Generate structured lesson plan.
+    res.write(`data: ${JSON.stringify({
+      stage: 1,
+      status: "running",
+      name: "Planning lesson content",
+    })}\n\n`);
+
+    const lessonPlan = await generateLessonPlanCore(
+      apiKey,
+      prompt,
+      sourceText,
+      (status, name) => {
+        res.write(`data: ${JSON.stringify({stage: 1, status, name})}\n\n`);
       }
     );
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      logger.error("Gemini API error",
-        {status: response.status, errorData});
-      res.write(`data: ${JSON.stringify({
-        error: "Gemini API error",
-        details: errorData,
-      })}\n\n`);
-      res.end();
-      return;
-    }
+    res.write(`data: ${JSON.stringify({
+      stage: 1,
+      status: "complete",
+      name: "Lesson plan ready",
+    })}\n\n`);
 
-    // Stream the response chunks to the client
-    const reader = response.body?.getReader();
-    if (!reader) {
-      res.write(`data: ${JSON.stringify({error: "No response body"})}\n\n`);
-      res.end();
-      return;
-    }
+    logger.info("Stage 1 complete", {planLength: lessonPlan.length});
 
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let streamDone = false;
-    let totalText = "";
+    // Stage 2: Transform lesson plan into interactive JSON.
+    res.write(`data: ${JSON.stringify({
+      stage: 2,
+      status: "running",
+      name: "Building interactive lesson",
+    })}\n\n`);
 
-    while (!streamDone) {
-      const {done, value} = await reader.read();
-      if (done) {
-        streamDone = true;
-        continue;
-      }
+    const transformPrompt = buildTransformPrompt(lessonPlan, sourceType);
+    const lessonJson = await callGemini(apiKey, transformPrompt);
 
-      buffer += decoder.decode(value, {stream: true});
+    res.write(`data: ${JSON.stringify({
+      stage: 2,
+      status: "complete",
+      name: "Lesson ready",
+    })}\n\n`);
 
-      // Parse SSE events from buffer
-      const lines = buffer.split("\n");
-      buffer = lines.pop() || "";
+    logger.info("Stage 2 complete", {jsonLength: lessonJson.length});
 
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          const jsonStr = line.slice(6);
-          if (jsonStr.trim()) {
-            try {
-              const data = JSON.parse(jsonStr);
-              const text =
-                data.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (text) {
-                totalText += text;
-                // Send chunk to client
-                res.write(`data: ${JSON.stringify({
-                  chunk: text,
-                  accumulated: totalText.length,
-                })}\n\n`);
-              }
-            } catch {
-              // Skip malformed JSON chunks
-            }
-          }
-        }
-      }
-    }
-
-    // Send completion signal with full text
-    res.write(`data: ${JSON.stringify({done: true, fullText: totalText})}\n\n`);
+    // Send completion signal with full JSON text.
+    const doneEvent = JSON.stringify({done: true, fullText: lessonJson});
+    res.write(`data: ${doneEvent}\n\n`);
     res.end();
-    logger.info("Lesson generation completed", {totalLength: totalText.length});
+
+    logger.info("Two-stage lesson generation completed", {
+      prompt,
+      planLength: lessonPlan.length,
+      jsonLength: lessonJson.length,
+    });
   } catch (error) {
     logger.error("Error in lesson generation", {error});
     res.write(`data: ${JSON.stringify({
@@ -306,7 +333,7 @@ export const generateLessonSync = onRequest({cors: true}, async (req, res) => {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      geminiGenerateUrl(apiKey),
       {
         method: "POST",
         headers: {"Content-Type": "application/json"},

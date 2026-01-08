@@ -31,7 +31,7 @@ rm -f ./Logs/test_logs_raw.txt
 
 echo "🧪 Building and Testing InkOS..."
 
-DESTINATION="platform=iOS Simulator,name=iPhone 17 Pro"
+DESTINATION="platform=iOS,name=Andrew's iPhone"
 DERIVED_DATA_PATH="./Logs/DerivedData"
 
 # Run tests and capture output - allow command to fail
@@ -44,7 +44,6 @@ xcodebuild test \
   -only-testing:InkOSTests \
   -allowProvisioningUpdates \
   COMPILER_INDEX_STORE_ENABLE=NO \
-  CODE_SIGNING_ALLOWED=NO \
   | xcbeautify --disable-colored-output | tee ./Logs/test_logs_raw.txt
 XCODEBUILD_EXIT_CODE=$?
 set -e

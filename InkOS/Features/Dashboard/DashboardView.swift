@@ -2510,8 +2510,9 @@ struct DashboardViewModifiers: ViewModifier {
   }
 
   // Handles the lesson generation process.
+  // Uses two-stage pipeline: Stage 1 (planning) -> Stage 2 (transform to JSON).
   private func handleLessonGeneration(topic: String, fileURL: URL?) async throws {
-    print("🔵 Starting lesson generation for: \(topic)")
+    print("🔵 Starting two-stage lesson generation for: \(topic)")
     if let fileURL = fileURL {
       print("   📎 With file: \(fileURL.lastPathComponent)")
     }
@@ -2523,6 +2524,9 @@ struct DashboardViewModifiers: ViewModifier {
     let generator = LessonGenerator(generationService: generationService)
 
     // Generate the lesson with the provided parameters.
+    // The generateLesson endpoint now uses two-stage pipeline internally:
+    // Stage 1: Analyze topic and create structured lesson plan
+    // Stage 2: Transform lesson plan into interactive JSON
     // TODO: Add file upload support to LessonGenerationRequest
     let request = LessonGenerationRequest(
       prompt: "Create a lesson about \(topic)",
@@ -2530,7 +2534,9 @@ struct DashboardViewModifiers: ViewModifier {
       estimatedMinutes: 15
     )
 
-    print("🔵 Calling generator.generate()...")
+    print("🔵 Calling generator.generate() (two-stage pipeline)...")
+    print("   Stage 1: Analyzing topic and planning content")
+    print("   Stage 2: Building interactive lesson JSON")
     let lessonMetadata = try await generator.generate(request: request)
     print("✅ Generated lesson successfully: \(lessonMetadata.id)")
     print("   Display name: \(lessonMetadata.displayName)")

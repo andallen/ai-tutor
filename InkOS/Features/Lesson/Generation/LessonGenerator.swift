@@ -87,6 +87,9 @@ actor LessonGenerator: LessonGeneratorProtocol {
   // Bundle manager for storage operations.
   private let bundleManager: BundleManager
 
+  // Preview generator for creating lesson thumbnails.
+  private let previewGenerator: LessonPreviewGenerator
+
   // Current generation task (for cancellation).
   private var currentTask: Task<LessonMetadata, Error>?
 
@@ -97,11 +100,13 @@ actor LessonGenerator: LessonGeneratorProtocol {
   init(
     generationService: any LessonGenerationServiceProtocol,
     contentExtractor: ContentExtractor = ContentExtractor(),
-    bundleManager: BundleManager = .shared
+    bundleManager: BundleManager = .shared,
+    previewGenerator: LessonPreviewGenerator = LessonPreviewGenerator()
   ) {
     self.generationService = generationService
     self.contentExtractor = contentExtractor
     self.bundleManager = bundleManager
+    self.previewGenerator = previewGenerator
   }
 
   // Sets a callback for state changes.
@@ -209,7 +214,15 @@ actor LessonGenerator: LessonGeneratorProtocol {
       lesson: lesson
     )
 
-    // Step 4: Update state to completed.
+    // Step 4: Generate and save preview thumbnail.
+    if let previewData = previewGenerator.generatePreview(for: lesson) {
+      try? await bundleManager.saveLessonThumbnail(
+        lessonID: metadata.id,
+        imageData: previewData
+      )
+    }
+
+    // Step 5: Update state to completed.
     updateState(.completed(lessonID: metadata.id))
 
     return metadata

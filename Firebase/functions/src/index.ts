@@ -2,6 +2,7 @@ import {setGlobalOptions} from "firebase-functions";
 import {onRequest} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import {z} from "zod";
+import {geminiGenerateUrl, geminiStreamUrl} from "./config";
 
 // Export embeddings function for RAG indexing
 export {generateEmbeddings} from "./embeddings";
@@ -11,6 +12,9 @@ export {generateLesson, generateLessonSync} from "./lessonGeneration";
 
 // Export answer comparison function
 export {compareAnswer} from "./answerComparison";
+
+// Export lesson planning function (Stage 1 of two-stage pipeline)
+export {generateLessonPlan} from "./lessonPlanning";
 
 // Set maximum instances for cost control
 setGlobalOptions({maxInstances: 10});
@@ -72,7 +76,7 @@ export const sendMessage = onRequest({cors: true}, async (req, res) => {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      geminiGenerateUrl(apiKey),
       {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -143,7 +147,7 @@ export const streamMessage = onRequest({cors: true}, async (req, res) => {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
+      geminiStreamUrl(apiKey),
       {
         method: "POST",
         headers: {"Content-Type": "application/json"},

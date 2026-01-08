@@ -64,15 +64,6 @@ struct LessonView: View {
 
       Spacer()
 
-      // Progress indicator.
-      if viewModel.lesson != nil {
-        Text("\(viewModel.completedSectionCount) of \(viewModel.totalSectionCount)")
-          .font(.system(size: 14, weight: .medium))
-          .foregroundStyle(Color.inkSubtle)
-      }
-
-      Spacer()
-
       // Options menu placeholder.
       Menu {
         Button(role: .destructive) {
@@ -180,7 +171,7 @@ struct GlassButtonStyle: ButtonStyle {
 
 // MARK: - Lesson Header View
 
-// Displays the lesson title, metadata, and progress bar.
+// Displays the lesson title.
 struct LessonHeaderView: View {
   let lesson: Lesson
   @ObservedObject var viewModel: LessonViewModel
@@ -191,22 +182,6 @@ struct LessonHeaderView: View {
       Text(lesson.title)
         .font(.system(size: 28, weight: .bold))
         .foregroundStyle(Color.ink)
-
-      // Subtitle with metadata.
-      HStack(spacing: 8) {
-        if let subject = lesson.metadata.subject {
-          Text(subject)
-        }
-
-        if let minutes = lesson.metadata.estimatedMinutes {
-          if lesson.metadata.subject != nil {
-            Text("•")
-          }
-          Text("\(minutes) min")
-        }
-      }
-      .font(.system(size: 15, weight: .medium))
-      .foregroundStyle(Color.inkSubtle)
     }
   }
 }

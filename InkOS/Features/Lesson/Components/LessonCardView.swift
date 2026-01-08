@@ -234,6 +234,17 @@ struct LessonCardPreview: View {
             .frame(width: width + previewEdgeInset, height: height)
             .frame(width: width, height: height, alignment: .topLeading)
             .clipped()
+        } else {
+          // Placeholder when no preview image exists.
+          VStack(spacing: 8) {
+            Image(systemName: "book.pages")
+              .font(.system(size: 32))
+              .foregroundColor(Color.inkSubtle)
+            Text("Lesson")
+              .font(.system(size: 12, weight: .medium))
+              .foregroundColor(Color.inkSubtle)
+          }
+          .frame(width: width, height: height)
         }
 
         // Darkening overlay for press feedback.
@@ -299,6 +310,16 @@ struct LessonCardContextMenuPreview: View {
           .frame(width: previewWidth + previewEdgeInset, height: previewHeight)
           .frame(width: previewWidth, height: previewHeight, alignment: .topLeading)
           .clipped()
+      } else {
+        // Placeholder when no preview image exists.
+        VStack(spacing: 8) {
+          Image(systemName: "book.pages")
+            .font(.system(size: 32))
+            .foregroundColor(Color.inkSubtle)
+          Text("Lesson")
+            .font(.system(size: 12, weight: .medium))
+            .foregroundColor(Color.inkSubtle)
+        }
       }
     }
     .frame(width: previewWidth, height: previewHeight)
