@@ -20,43 +20,12 @@ enum CardConstants {
   static let contextMenuPreviewWidth: CGFloat = 160
   static let contextMenuPreviewHeight: CGFloat = 200
 
-  // Gesture thresholds.
-  static let dragThreshold: CGFloat = 10
-  static let longPressDelay: TimeInterval = 0.3
-
   // Shadow styling.
   enum Shadow {
     static let color = Color.black.opacity(0.14)
     static let radius: CGFloat = 7
     static let xOffset: CGFloat = 0
     static let yOffset: CGFloat = 4
-  }
-
-  // Press feedback animation values.
-  enum Press {
-    static let scale: CGFloat = 1.04
-    static let dimOpacity: Double = 0.12
-    static let dimDuration: TimeInterval = 0.06
-    static let dimFadeOutDuration: TimeInterval = 0.25
-    static let springResponse: Double = 0.15
-    static let springDamping: Double = 0.75
-  }
-
-  // Sweep animation on long press.
-  enum Sweep {
-    static let offsetStart: CGFloat = -1.2
-    static let offsetEnd: CGFloat = 1.2
-    static let duration: TimeInterval = 0.5
-    static let highlightFlashDuration: TimeInterval = 0.28
-    static let highlightOpacity: Double = 0.7
-
-    // Gradient stops for the sweep effect.
-    static let gradientStops: [Gradient.Stop] = [
-      .init(color: Color.white.opacity(0.0), location: 0.0),
-      .init(color: Color.white.opacity(0.45), location: 0.45),
-      .init(color: Color.white.opacity(0.75), location: 0.55),
-      .init(color: Color.white.opacity(0.0), location: 1.0)
-    ]
   }
 }
 

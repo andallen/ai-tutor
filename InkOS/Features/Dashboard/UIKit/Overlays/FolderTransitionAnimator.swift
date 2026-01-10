@@ -1,5 +1,5 @@
 // Animated transition for folder overlay presentation and dismissal.
-// Scales the overlay from/to the source folder card frame.
+// Scales the overlay from/to the source folder card frame with smooth blur sync.
 
 import UIKit
 
@@ -11,16 +11,16 @@ class FolderTransitionAnimator: NSObject, UIViewControllerAnimatedTransitioning 
   // Source frame of the folder card in window coordinates.
   let sourceFrame: CGRect
 
-  // Animation constants matching SwiftUI implementation.
-  private let expandDuration: TimeInterval = 0.38
-  private let expandDamping: CGFloat = 0.86
-  private let contractDuration: TimeInterval = 0.18
+  // Animation constants tuned for liquid glass effect.
+  private let expandDuration: TimeInterval = 0.45
+  private let expandDamping: CGFloat = 0.82
+  private let contractDuration: TimeInterval = 0.25
 
   // Source corner radius (folder card).
   private let sourceCornerRadius: CGFloat = 10
 
-  // Target corner radius (overlay).
-  private let targetCornerRadius: CGFloat = 24
+  // Target corner radius (larger overlay).
+  private let targetCornerRadius: CGFloat = 32
 
   init(presenting: Bool, sourceFrame: CGRect) {
     self.presenting = presenting
@@ -73,27 +73,27 @@ class FolderTransitionAnimator: NSObject, UIViewControllerAnimatedTransitioning 
     // Save final center.
     let finalCenter = animatingView.center
 
-    // Set initial state: scaled down at source position.
+    // Set initial state: scaled down at source position with slight transparency.
     animatingView.transform = CGAffineTransform(scaleX: scaleX, y: scaleY)
     animatingView.center = initialCenter
     animatingView.alpha = 0
     animatingView.layer.cornerRadius = sourceCornerRadius
 
-    // Animate to expanded state with spring.
+    // Animate to expanded state with spring for liquid feel.
     UIView.animate(
       withDuration: expandDuration,
       delay: 0,
       usingSpringWithDamping: expandDamping,
-      initialSpringVelocity: 0,
-      options: []
+      initialSpringVelocity: 0.3,
+      options: [.curveEaseOut]
     ) {
       animatingView.transform = .identity
       animatingView.center = finalCenter
       animatingView.layer.cornerRadius = self.targetCornerRadius
     }
 
-    // Separate opacity animation with faster timing for smooth fade-in.
-    UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut) {
+    // Quick fade-in synced with scale for glass material reveal.
+    UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseOut) {
       animatingView.alpha = 1
     } completion: { _ in
       transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
@@ -120,15 +120,19 @@ class FolderTransitionAnimator: NSObject, UIViewControllerAnimatedTransitioning 
     // Target center (source frame center).
     let targetCenter = CGPoint(x: sourceFrame.midX, y: sourceFrame.midY)
 
-    // Animate to collapsed state with ease-out.
-    UIView.animate(withDuration: contractDuration, delay: 0, options: .curveEaseOut) {
+    // Animate to collapsed state with smooth ease-in-out.
+    UIView.animate(
+      withDuration: contractDuration,
+      delay: 0,
+      options: [.curveEaseInOut]
+    ) {
       animatingView.transform = CGAffineTransform(scaleX: scaleX, y: scaleY)
       animatingView.center = targetCenter
       animatingView.layer.cornerRadius = self.sourceCornerRadius
     }
 
-    // Faster opacity animation for smooth fade-out.
-    UIView.animate(withDuration: 0.12, delay: 0, options: .curveEaseIn) {
+    // Fade-out timed to complete just before scale animation.
+    UIView.animate(withDuration: 0.18, delay: 0, options: .curveEaseIn) {
       animatingView.alpha = 0
     } completion: { _ in
       fromView.removeFromSuperview()

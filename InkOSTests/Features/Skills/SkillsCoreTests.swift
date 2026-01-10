@@ -677,13 +677,13 @@ struct SkillResultDataTests {
 
   @Test("lesson result contains structured content")
   func lessonResult() {
-    let lesson = LessonContent(
+    let lesson = SkillLessonContent(
       title: "Math Basics",
       sections: [
-        LessonSection(heading: "Introduction", content: "Welcome to math")
+        SkillLessonSection(heading: "Introduction", content: "Welcome to math")
       ],
       exercises: [
-        LessonExercise(prompt: "What is 2+2?", hint: "Count", answer: "4")
+        SkillLessonExercise(prompt: "What is 2+2?", hint: "Count", answer: "4")
       ]
     )
     let data = SkillResultData.lesson(lesson)
@@ -890,7 +890,6 @@ struct MessageRoleTests {
   func allRolesExist() {
     #expect(MessageRole.user.rawValue == "user")
     #expect(MessageRole.assistant.rawValue == "assistant")
-    #expect(MessageRole.system.rawValue == "system")
   }
 
   @Test("is codable")
@@ -1922,19 +1921,19 @@ struct SkillExecutorTests {
 
 // MARK: - Supporting Types Tests
 
-@Suite("LessonContent Tests")
-struct LessonContentTests {
+@Suite("SkillLessonContent Tests")
+struct SkillLessonContentTests {
 
   @Test("lesson content preserves all fields")
   func preservesFields() {
-    let lesson = LessonContent(
+    let lesson = SkillLessonContent(
       title: "Introduction to Swift",
       sections: [
-        LessonSection(heading: "Variables", content: "Variables store data"),
-        LessonSection(heading: "Functions", content: "Functions are reusable"),
+        SkillLessonSection(heading: "Variables", content: "Variables store data"),
+        SkillLessonSection(heading: "Functions", content: "Functions are reusable"),
       ],
       exercises: [
-        LessonExercise(prompt: "Create a variable", hint: "Use let or var", answer: "let x = 1")
+        SkillLessonExercise(prompt: "Create a variable", hint: "Use let or var", answer: "let x = 1")
       ]
     )
 
@@ -1947,9 +1946,9 @@ struct LessonContentTests {
 
   @Test("lesson without exercises")
   func lessonWithoutExercises() {
-    let lesson = LessonContent(
+    let lesson = SkillLessonContent(
       title: "Overview",
-      sections: [LessonSection(heading: "Intro", content: "Welcome")],
+      sections: [SkillLessonSection(heading: "Intro", content: "Welcome")],
       exercises: nil
     )
 
@@ -1958,12 +1957,12 @@ struct LessonContentTests {
 
   @Test("lesson content is equatable")
   func isEquatable() {
-    let lesson1 = LessonContent(
+    let lesson1 = SkillLessonContent(
       title: "Test",
       sections: [],
       exercises: nil
     )
-    let lesson2 = LessonContent(
+    let lesson2 = SkillLessonContent(
       title: "Test",
       sections: [],
       exercises: nil

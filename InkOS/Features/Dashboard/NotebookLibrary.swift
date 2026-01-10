@@ -187,8 +187,7 @@ class NotebookLibrary: ObservableObject {
       }
 
       // Sort by modifiedAt descending (most recent first).
-      // IMPORTANT: This sort order must match the display order in FolderOverlay
-      // for thumbnail index consistency when dragging items out of folders.
+      // This sort order must match the display order in FolderOverlayViewController.
       metadata.sort { $0.modifiedAt > $1.modifiedAt }
 
       return metadata

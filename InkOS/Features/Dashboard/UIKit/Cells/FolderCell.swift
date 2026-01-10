@@ -7,6 +7,12 @@ import UIKit
 protocol FolderCellDelegate: AnyObject {
   func folderCellDidTap(_ cell: FolderCell, folder: FolderMetadata)
   func folderCellDidLongPress(_ cell: FolderCell, folder: FolderMetadata, frame: CGRect, cardHeight: CGFloat)
+  func folderCellMenu(_ cell: FolderCell, folder: FolderMetadata) -> UIMenu?
+}
+
+// Default implementation for optional menu method.
+extension FolderCellDelegate {
+  func folderCellMenu(_ cell: FolderCell, folder: FolderMetadata) -> UIMenu? { nil }
 }
 
 class FolderCell: UICollectionViewCell {
@@ -20,10 +26,6 @@ class FolderCell: UICollectionViewCell {
 
   // Delegate for interaction callbacks.
   weak var delegate: FolderCellDelegate?
-
-  // Drop target visual state.
-  private var isDropTarget = false
-  private let dropTargetOverlay = UIView()
 
   override init(frame: CGRect) {
     super.init(frame: frame)
@@ -51,65 +53,35 @@ class FolderCell: UICollectionViewCell {
       cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
     ])
 
-    // Setup drop target overlay (hidden by default).
-    dropTargetOverlay.backgroundColor = UIColor.systemGray4.withAlphaComponent(0.5)
-    dropTargetOverlay.layer.cornerRadius = CardConstants.cornerRadius
-    dropTargetOverlay.alpha = 0
-    dropTargetOverlay.isUserInteractionEnabled = false
-    dropTargetOverlay.translatesAutoresizingMaskIntoConstraints = false
-    contentView.insertSubview(dropTargetOverlay, belowSubview: cardView)
-
-    NSLayoutConstraint.activate([
-      dropTargetOverlay.topAnchor.constraint(equalTo: contentView.topAnchor, constant: -8),
-      dropTargetOverlay.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: -8),
-      dropTargetOverlay.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 8),
-      dropTargetOverlay.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 8)
-    ])
+    // Set up menu provider for long press.
+    cardView.menuProvider = { [weak self] in
+      guard let self, let folder = self.folder else { return nil }
+      return self.delegate?.folderCellMenu(self, folder: folder)
+    }
   }
 
   // Configures the cell with folder data and thumbnails.
   func configure(with folder: FolderMetadata, thumbnails: [UIImage]) {
     self.folder = folder
     cardView.configure(with: folder, thumbnails: thumbnails)
-  }
 
-  // Shows or hides the drop target visual state.
-  func setDropTargetActive(_ active: Bool, animated: Bool) {
-    guard isDropTarget != active else { return }
-    isDropTarget = active
-
-    let targetAlpha: CGFloat = active ? 1.0 : 0.0
-    let targetScale: CGFloat = active ? 0.82 : 1.0
-
-    if animated {
-      UIView.animate(
-        withDuration: 0.3,
-        delay: 0,
-        usingSpringWithDamping: 0.7,
-        initialSpringVelocity: 0,
-        options: []
-      ) {
-        self.dropTargetOverlay.alpha = targetAlpha
-        self.cardView.transform = CGAffineTransform(scaleX: targetScale, y: targetScale)
-      }
-    } else {
-      dropTargetOverlay.alpha = targetAlpha
-      cardView.transform = CGAffineTransform(scaleX: targetScale, y: targetScale)
-    }
-  }
-
-  // Returns the card view for snapshot during drag.
-  var cardViewForSnapshot: UIView {
-    cardView
+    // Set accessibility identifier for UI testing.
+    accessibilityIdentifier = "folderCard_\(folder.id)"
+    isAccessibilityElement = true
+    accessibilityLabel = "Folder: \(folder.displayName)"
   }
 
   override func prepareForReuse() {
     super.prepareForReuse()
     folder = nil
-    isDropTarget = false
-    dropTargetOverlay.alpha = 0
-    cardView.transform = .identity
     cardView.prepareForReuse()
+    // Reset any lift animation.
+    cardView.animateLift(false)
+  }
+
+  // Resets the lift animation after action sheet dismisses.
+  func resetLiftAnimation() {
+    cardView.animateLift(false)
   }
 }
 
@@ -117,17 +89,24 @@ class FolderCell: UICollectionViewCell {
 
 extension FolderCell: DashboardCardDelegate {
   func cardDidTap(_ card: DashboardCardView) {
-    guard let folder else { return }
+    print("[FolderCell] cardDidTap called")
+    guard let folder else {
+      print("[FolderCell] cardDidTap - no folder, returning")
+      return
+    }
+    print("[FolderCell] cardDidTap - delegate is \(delegate == nil ? "nil" : "set")")
     delegate?.folderCellDidTap(self, folder: folder)
   }
 
   func cardDidLongPress(_ card: DashboardCardView, frame: CGRect, cardHeight: CGFloat) {
-    guard let folder else { return }
+    print("[FolderCell] cardDidLongPress called, frame=\(frame), cardHeight=\(cardHeight)")
+    guard let folder else {
+      print("[FolderCell] cardDidLongPress - no folder, returning")
+      return
+    }
+    print("[FolderCell] cardDidLongPress - folder=\(folder.displayName)")
+    print("[FolderCell] cardDidLongPress - delegate is \(delegate == nil ? "nil" : "set")")
     delegate?.folderCellDidLongPress(self, folder: folder, frame: frame, cardHeight: cardHeight)
+    print("[FolderCell] cardDidLongPress - delegate notified")
   }
-
-  // Folders don't support drag, so these are no-ops.
-  func cardDidStartDrag(_ card: DashboardCardView, frame: CGRect, position: CGPoint) {}
-  func cardDidMoveDrag(_ card: DashboardCardView, position: CGPoint) {}
-  func cardDidEndDrag(_ card: DashboardCardView, position: CGPoint) {}
 }

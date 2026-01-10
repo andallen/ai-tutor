@@ -49,7 +49,7 @@ struct LessonGenerationOverlay: View {
     .ignoresSafeArea()
     .onAppear {
       // Animate overlay in.
-      withAnimation(.spring(response: 0.42, dampingFraction: 0.85)) {
+      withAnimation(.spring(response: 0.42, dampingFraction: 0.85, blendDuration: 0)) {
         isPresented = true
       }
       // Focus text field after a short delay.
@@ -100,12 +100,15 @@ struct LessonGenerationOverlay: View {
         errorDisplay(error)
       }
     }
-    .glassOverlayBackground(cornerRadius: overlayCornerRadius)
+    .background(
+      .ultraThinMaterial,
+      in: RoundedRectangle(cornerRadius: overlayCornerRadius, style: .continuous)
+    )
     .clipShape(RoundedRectangle(cornerRadius: overlayCornerRadius, style: .continuous))
     .shadow(color: Color.black.opacity(0.18), radius: 24, x: 0, y: 12)
     .offset(y: isPresented ? 0 : 100)
     .opacity(isPresented ? 1 : 0)
-    .animation(.spring(response: 0.42, dampingFraction: 0.85), value: isPresented)
+    .animation(.spring(response: 0.42, dampingFraction: 0.85, blendDuration: 0), value: isPresented)
   }
 
   // MARK: - Error Display

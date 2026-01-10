@@ -1,4 +1,8 @@
 {
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "permissions": {
     "allow": [
       "Bash(grep:*)",
@@ -8,11 +12,9 @@
       "Bash(ls:*)",
       "Bash(git add:*)",
       "Bash(plutil:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(xcrun devicectl:*)",
+      "Bash(xcrun xctrace:*)"
     ]
-  },
-  "attribution": {
-    "commit": "",
-    "pr": ""
   }
 }

@@ -1,6 +1,6 @@
 // UIKit folder overlay view controller.
-// Displays an expanded folder with its contents in a modal overlay.
-// Uses custom presentation for scale-from-source animation.
+// Displays an expanded folder with its contents in a liquid glass modal overlay.
+// Uses custom presentation for scale-from-source animation with synchronized blur.
 
 import UIKit
 
@@ -34,20 +34,22 @@ class FolderOverlayViewController: UIViewController {
   // Delegate for interactions.
   weak var delegate: FolderOverlayDelegate?
 
-  // Layout constants matching SwiftUI implementation.
-  private let overlayWidth: CGFloat = 280
-  private let overlayCornerRadius: CGFloat = 24
-  private let contentPadding: CGFloat = 16
-  private let headerHeight: CGFloat = 50
-  private let gridSpacing: CGFloat = 22
+  // Layout constants for larger liquid glass overlay.
+  private let overlayWidth: CGFloat = 420
+  private let overlayCornerRadius: CGFloat = 32
+  private let contentPadding: CGFloat = 24
+  private let headerHeight: CGFloat = 60
+  private let gridSpacing: CGFloat = 24
   private let cardAspectRatio: CGFloat = 0.72
   private let columns: Int = 2
 
-  // Main container view.
+  // Main container view with shadow.
   private let containerView = UIView()
 
-  // Glass background effect.
-  private let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .systemThinMaterial))
+  // Liquid glass background layers.
+  private let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+  private let glassGradientLayer = CAGradientLayer()
+  private let glassBorderLayer = CAShapeLayer()
 
   // Header label.
   private let headerLabel = UILabel()
@@ -120,25 +122,45 @@ class FolderOverlayViewController: UIViewController {
     tapGesture.delegate = self
     view.addGestureRecognizer(tapGesture)
 
-    // Container view with shadow.
+    // Container view with layered drop shadow for depth.
     containerView.backgroundColor = .clear
     containerView.layer.cornerRadius = overlayCornerRadius
-    containerView.layer.shadowColor = UIColor.black.cgColor
-    containerView.layer.shadowOpacity = 0.2
-    containerView.layer.shadowRadius = 16
-    containerView.layer.shadowOffset = CGSize(width: 0, height: 8)
     containerView.clipsToBounds = false
     view.addSubview(containerView)
 
-    // Glass blur background.
+    // Primary soft shadow for ambient depth.
+    containerView.layer.shadowColor = UIColor.black.cgColor
+    containerView.layer.shadowOpacity = 0.12
+    containerView.layer.shadowRadius = 40
+    containerView.layer.shadowOffset = CGSize(width: 0, height: 16)
+
+    // Liquid glass blur background with ultra-thin material.
     blurView.layer.cornerRadius = overlayCornerRadius
     blurView.clipsToBounds = true
     containerView.addSubview(blurView)
 
-    // Header label.
+    // Glass gradient overlay for subtle shine effect (top-left highlight).
+    glassGradientLayer.colors = [
+      UIColor.white.withAlphaComponent(0.35).cgColor,
+      UIColor.white.withAlphaComponent(0.08).cgColor,
+      UIColor.clear.cgColor
+    ]
+    glassGradientLayer.locations = [0.0, 0.3, 0.6]
+    glassGradientLayer.startPoint = CGPoint(x: 0, y: 0)
+    glassGradientLayer.endPoint = CGPoint(x: 1, y: 1)
+    glassGradientLayer.cornerRadius = overlayCornerRadius
+    blurView.contentView.layer.addSublayer(glassGradientLayer)
+
+    // Glass border for subtle edge definition.
+    glassBorderLayer.fillColor = UIColor.clear.cgColor
+    glassBorderLayer.strokeColor = UIColor.white.withAlphaComponent(0.4).cgColor
+    glassBorderLayer.lineWidth = 1.0
+    blurView.contentView.layer.addSublayer(glassBorderLayer)
+
+    // Header label with slightly larger font for bigger overlay.
     headerLabel.text = folder.displayName
-    headerLabel.font = .systemFont(ofSize: 18, weight: .semibold)
-    headerLabel.textColor = UIColor.black.withAlphaComponent(0.88)
+    headerLabel.font = .systemFont(ofSize: 20, weight: .semibold)
+    headerLabel.textColor = UIColor.black.withAlphaComponent(0.85)
     headerLabel.lineBreakMode = .byTruncatingTail
     blurView.contentView.addSubview(headerLabel)
   }
@@ -239,12 +261,26 @@ class FolderOverlayViewController: UIViewController {
 
     blurView.frame = containerView.bounds
 
-    // Header.
+    // Update glass gradient layer frame.
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    glassGradientLayer.frame = blurView.bounds
+
+    // Update glass border path.
+    let borderPath = UIBezierPath(
+      roundedRect: blurView.bounds.insetBy(dx: 0.5, dy: 0.5),
+      cornerRadius: overlayCornerRadius - 0.5
+    )
+    glassBorderLayer.path = borderPath.cgPath
+    glassBorderLayer.frame = blurView.bounds
+    CATransaction.commit()
+
+    // Header with larger padding.
     headerLabel.frame = CGRect(
       x: contentPadding,
       y: contentPadding,
       width: containerFrame.width - contentPadding * 2,
-      height: 22
+      height: 26
     )
 
     // Collection view below header.
@@ -261,7 +297,7 @@ class FolderOverlayViewController: UIViewController {
   private func calculateContainerFrame() -> CGRect {
     let totalItems = notebooks.count + pdfDocuments.count
 
-    // Calculate grid dimensions.
+    // Calculate grid dimensions with larger spacing.
     let availableWidth = overlayWidth - contentPadding * 2 - gridSpacing * CGFloat(columns - 1)
     let cardWidth = availableWidth / CGFloat(columns)
     let cardHeight = cardWidth / cardAspectRatio
@@ -269,11 +305,11 @@ class FolderOverlayViewController: UIViewController {
     let rows = max(1, (totalItems + columns - 1) / columns)
     let gridHeight = CGFloat(rows) * cardHeight + CGFloat(max(0, rows - 1)) * gridSpacing
 
-    // Total height.
-    let contentHeight = headerHeight + 8 + gridHeight + contentPadding
+    // Total height with more breathing room.
+    let contentHeight = headerHeight + 12 + gridHeight + contentPadding
 
     // Minimum height for empty state.
-    let minHeight: CGFloat = headerHeight + 160 + contentPadding
+    let minHeight: CGFloat = headerHeight + 200 + contentPadding
     let isEmpty = notebooks.isEmpty && pdfDocuments.isEmpty
     let totalHeight = isEmpty ? minHeight : contentHeight
 
@@ -365,74 +401,28 @@ extension FolderOverlayViewController: FolderOverlayCellDelegate {
     delegate?.folderOverlayDidSelectPDF(self, pdf: pdf)
   }
 
-  func folderOverlayCellDidLongPress(_ cell: FolderOverlayCell, frame: CGRect, cardHeight: CGFloat) {
-    // Show context menu based on cell content.
-    guard let indexPath = collectionView.indexPath(for: cell),
-          let item = dataSource.itemIdentifier(for: indexPath) else { return }
-
-    switch item {
-    case .notebook(let notebook):
-      showContextMenu(for: notebook, sourceView: cell)
-    case .pdf(let pdf):
-      showContextMenu(for: pdf, sourceView: cell)
-    }
+  // Context menu action callbacks.
+  func folderOverlayCellDidRequestRename(_ cell: FolderOverlayCell, notebook: NotebookMetadata) {
+    delegate?.folderOverlayDidRequestRename(self, notebook: notebook)
   }
 
-  // Shows context menu for a notebook.
-  private func showContextMenu(for notebook: NotebookMetadata, sourceView: UIView) {
-    let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-
-    alert.addAction(UIAlertAction(title: "Rename", style: .default) { [weak self] _ in
-      guard let self else { return }
-      self.delegate?.folderOverlayDidRequestRename(self, notebook: notebook)
-    })
-
-    alert.addAction(UIAlertAction(title: "Move Out of Folder", style: .default) { [weak self] _ in
-      guard let self else { return }
-      self.delegate?.folderOverlayDidRequestMoveToRoot(self, notebook: notebook)
-    })
-
-    alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
-      guard let self else { return }
-      self.delegate?.folderOverlayDidRequestDelete(self, notebook: notebook)
-    })
-
-    alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-
-    if let popover = alert.popoverPresentationController {
-      popover.sourceView = sourceView
-      popover.sourceRect = sourceView.bounds
-    }
-
-    present(alert, animated: true)
+  func folderOverlayCellDidRequestRename(_ cell: FolderOverlayCell, pdf: PDFDocumentMetadata) {
+    delegate?.folderOverlayDidRequestRename(self, pdf: pdf)
   }
 
-  // Shows context menu for a PDF.
-  private func showContextMenu(for pdf: PDFDocumentMetadata, sourceView: UIView) {
-    let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+  func folderOverlayCellDidRequestDelete(_ cell: FolderOverlayCell, notebook: NotebookMetadata) {
+    delegate?.folderOverlayDidRequestDelete(self, notebook: notebook)
+  }
 
-    alert.addAction(UIAlertAction(title: "Rename", style: .default) { [weak self] _ in
-      guard let self else { return }
-      self.delegate?.folderOverlayDidRequestRename(self, pdf: pdf)
-    })
+  func folderOverlayCellDidRequestDelete(_ cell: FolderOverlayCell, pdf: PDFDocumentMetadata) {
+    delegate?.folderOverlayDidRequestDelete(self, pdf: pdf)
+  }
 
-    alert.addAction(UIAlertAction(title: "Move Out of Folder", style: .default) { [weak self] _ in
-      guard let self else { return }
-      self.delegate?.folderOverlayDidRequestMoveToRoot(self, pdf: pdf)
-    })
+  func folderOverlayCellDidRequestMoveToRoot(_ cell: FolderOverlayCell, notebook: NotebookMetadata) {
+    delegate?.folderOverlayDidRequestMoveToRoot(self, notebook: notebook)
+  }
 
-    alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
-      guard let self else { return }
-      self.delegate?.folderOverlayDidRequestDelete(self, pdf: pdf)
-    })
-
-    alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-
-    if let popover = alert.popoverPresentationController {
-      popover.sourceView = sourceView
-      popover.sourceRect = sourceView.bounds
-    }
-
-    present(alert, animated: true)
+  func folderOverlayCellDidRequestMoveToRoot(_ cell: FolderOverlayCell, pdf: PDFDocumentMetadata) {
+    delegate?.folderOverlayDidRequestMoveToRoot(self, pdf: pdf)
   }
 }

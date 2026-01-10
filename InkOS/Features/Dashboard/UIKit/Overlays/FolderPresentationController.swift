@@ -1,5 +1,5 @@
 // Custom presentation controller for folder overlay.
-// Manages the animated blur background behind the overlay.
+// Manages the animated blur background synced with overlay expand/contract.
 
 import UIKit
 
@@ -17,7 +17,10 @@ class FolderPresentationController: UIPresentationController {
   private var targetBlurFraction: CGFloat = 0
   private var animationStartTime: CFTimeInterval = 0
   private var animationStartFraction: CGFloat = 0
-  private var animationDuration: TimeInterval = 0.35
+  private var animationDuration: TimeInterval = 0.45
+
+  // Maximum blur intensity (0.0 to 1.0).
+  private let maxBlurIntensity: CGFloat = 0.85
 
   override init(presentedViewController: UIViewController, presenting presentingViewController: UIViewController?) {
     super.init(presentedViewController: presentedViewController, presenting: presentingViewController)
@@ -29,7 +32,7 @@ class FolderPresentationController: UIPresentationController {
 
     // Create animator that applies blur when fractionComplete increases.
     let animator = UIViewPropertyAnimator(duration: 1, curve: .linear) { [weak self] in
-      self?.blurView.effect = UIBlurEffect(style: .regular)
+      self?.blurView.effect = UIBlurEffect(style: .systemThinMaterial)
     }
     animator.pausesOnCompletion = true
     animator.fractionComplete = 0
@@ -45,13 +48,13 @@ class FolderPresentationController: UIPresentationController {
     blurView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
     containerView.insertSubview(blurView, at: 0)
 
-    // Animate blur to full intensity.
-    animateTo(fraction: 1.0, duration: 0.35)
+    // Animate blur in sync with overlay expansion.
+    animateTo(fraction: maxBlurIntensity, duration: 0.45)
   }
 
   override func dismissalTransitionWillBegin() {
-    // Animate blur to zero.
-    animateTo(fraction: 0.0, duration: 0.2)
+    // Clear blur as overlay contracts.
+    animateTo(fraction: 0.0, duration: 0.25)
   }
 
   override func dismissalTransitionDidEnd(_ completed: Bool) {

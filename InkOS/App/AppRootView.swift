@@ -18,15 +18,8 @@ struct AppRootView: View {
         // Display an error view if the engine failed to initialize.
         EngineErrorView(errorMessage: errorMessage)
       } else {
-        // Normal app flow with the Dashboard.
-        // Use feature flag to switch between SwiftUI and UIKit implementations.
-        if DashboardFeatureFlags.useUIKitDashboard {
-          DashboardHostView()
-        } else {
-          NavigationStack {
-            DashboardView()
-          }
-        }
+        // Normal app flow with the UIKit Dashboard.
+        DashboardHostView()
       }
     }
     .task {

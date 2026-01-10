@@ -456,6 +456,7 @@ extension DashboardViewController: UICollectionViewDelegate {
 
 extension DashboardViewController: NotebookCellDelegate {
   func notebookCellDidTap(_ cell: NotebookCell, notebook: NotebookMetadata) {
+    print("[DashboardVC] notebookCellDidTap called for \(notebook.displayName)")
     delegate?.dashboardDidSelectNotebook(notebook)
   }
 
@@ -465,40 +466,18 @@ extension DashboardViewController: NotebookCellDelegate {
     frame: CGRect,
     cardHeight: CGFloat
   ) {
-    // Show context menu.
-    let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-    alert.addAction(UIAlertAction(title: "Rename", style: .default) { [weak self] _ in
-      self?.showRenameAlert(for: notebook)
-    })
-    alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
-      self?.showDeleteConfirmation(for: notebook)
-    })
-    alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-
-    // Configure popover for iPad.
-    if let popover = alert.popoverPresentationController {
-      popover.sourceView = cell
-      popover.sourceRect = cell.bounds
-    }
-
-    present(alert, animated: true)
+    // Menu is handled by notebookCellMenu via UIEditMenuInteraction.
   }
 
-  func notebookCellDidStartDrag(
-    _ cell: NotebookCell,
-    notebook: NotebookMetadata,
-    frame: CGRect,
-    position: CGPoint
-  ) {
-    // Phase 3: Drag handling
-  }
-
-  func notebookCellDidMoveDrag(_ cell: NotebookCell, position: CGPoint) {
-    // Phase 3: Drag handling
-  }
-
-  func notebookCellDidEndDrag(_ cell: NotebookCell, position: CGPoint) {
-    // Phase 3: Drag handling
+  func notebookCellMenu(_ cell: NotebookCell, notebook: NotebookMetadata) -> UIMenu? {
+    return UIMenu(children: [
+      UIAction(title: "Rename", image: UIImage(systemName: "pencil")) { [weak self] _ in
+        self?.showRenameAlert(for: notebook)
+      },
+      UIAction(title: "Delete", image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+        self?.showDeleteConfirmation(for: notebook)
+      }
+    ])
   }
 }
 
@@ -506,6 +485,7 @@ extension DashboardViewController: NotebookCellDelegate {
 
 extension DashboardViewController: PDFDocumentCellDelegate {
   func pdfCellDidTap(_ cell: PDFDocumentCell, pdf: PDFDocumentMetadata) {
+    print("[DashboardVC] pdfCellDidTap called for \(pdf.displayName)")
     delegate?.dashboardDidSelectPDF(pdf)
   }
 
@@ -515,39 +495,18 @@ extension DashboardViewController: PDFDocumentCellDelegate {
     frame: CGRect,
     cardHeight: CGFloat
   ) {
-    // Show context menu.
-    let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-    alert.addAction(UIAlertAction(title: "Rename", style: .default) { [weak self] _ in
-      self?.showRenameAlert(for: pdf)
-    })
-    alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
-      self?.showDeleteConfirmation(for: pdf)
-    })
-    alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-
-    if let popover = alert.popoverPresentationController {
-      popover.sourceView = cell
-      popover.sourceRect = cell.bounds
-    }
-
-    present(alert, animated: true)
+    // Menu is handled by pdfCellMenu via UIEditMenuInteraction.
   }
 
-  func pdfCellDidStartDrag(
-    _ cell: PDFDocumentCell,
-    pdf: PDFDocumentMetadata,
-    frame: CGRect,
-    position: CGPoint
-  ) {
-    // Phase 3: Drag handling
-  }
-
-  func pdfCellDidMoveDrag(_ cell: PDFDocumentCell, position: CGPoint) {
-    // Phase 3: Drag handling
-  }
-
-  func pdfCellDidEndDrag(_ cell: PDFDocumentCell, position: CGPoint) {
-    // Phase 3: Drag handling
+  func pdfCellMenu(_ cell: PDFDocumentCell, pdf: PDFDocumentMetadata) -> UIMenu? {
+    return UIMenu(children: [
+      UIAction(title: "Rename", image: UIImage(systemName: "pencil")) { [weak self] _ in
+        self?.showRenameAlert(for: pdf)
+      },
+      UIAction(title: "Delete", image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+        self?.showDeleteConfirmation(for: pdf)
+      }
+    ])
   }
 }
 
@@ -555,8 +514,12 @@ extension DashboardViewController: PDFDocumentCellDelegate {
 
 extension DashboardViewController: FolderCellDelegate {
   func folderCellDidTap(_ cell: FolderCell, folder: FolderMetadata) {
+    print("[DashboardVC] folderCellDidTap called for \(folder.displayName)")
     // Get the source frame for animation.
-    guard let window = view.window else { return }
+    guard let window = view.window else {
+      print("[DashboardVC] folderCellDidTap - no window, returning")
+      return
+    }
     let sourceFrame = cell.convert(cell.bounds, to: window)
 
     // Load folder contents and present overlay.
@@ -576,22 +539,18 @@ extension DashboardViewController: FolderCellDelegate {
     frame: CGRect,
     cardHeight: CGFloat
   ) {
-    // Show context menu.
-    let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-    alert.addAction(UIAlertAction(title: "Rename", style: .default) { [weak self] _ in
-      self?.showRenameAlert(for: folder)
-    })
-    alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
-      self?.showDeleteConfirmation(for: folder)
-    })
-    alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+    // Menu is handled by folderCellMenu via UIEditMenuInteraction.
+  }
 
-    if let popover = alert.popoverPresentationController {
-      popover.sourceView = cell
-      popover.sourceRect = cell.bounds
-    }
-
-    present(alert, animated: true)
+  func folderCellMenu(_ cell: FolderCell, folder: FolderMetadata) -> UIMenu? {
+    return UIMenu(children: [
+      UIAction(title: "Rename", image: UIImage(systemName: "pencil")) { [weak self] _ in
+        self?.showRenameAlert(for: folder)
+      },
+      UIAction(title: "Delete", image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+        self?.showDeleteConfirmation(for: folder)
+      }
+    ])
   }
 
   // Presents the folder overlay with custom transition.
@@ -779,23 +738,18 @@ extension DashboardViewController: LessonCellDelegate {
     frame: CGRect,
     cardHeight: CGFloat
   ) {
-    // Show context menu.
-    let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-    alert.addAction(UIAlertAction(title: "Rename", style: .default) { [weak self] _ in
-      self?.showRenameAlert(for: lesson)
-    })
-    alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
-      self?.showDeleteConfirmation(for: lesson)
-    })
-    alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+    // Menu is handled by lessonCellMenu via UIEditMenuInteraction.
+  }
 
-    // Configure popover for iPad.
-    if let popover = alert.popoverPresentationController {
-      popover.sourceView = cell
-      popover.sourceRect = cell.bounds
-    }
-
-    present(alert, animated: true)
+  func lessonCellMenu(_ cell: LessonCell, lesson: LessonMetadata) -> UIMenu? {
+    return UIMenu(children: [
+      UIAction(title: "Rename", image: UIImage(systemName: "pencil")) { [weak self] _ in
+        self?.showRenameAlert(for: lesson)
+      },
+      UIAction(title: "Delete", image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+        self?.showDeleteConfirmation(for: lesson)
+      }
+    ])
   }
 
   // Shows rename alert for a lesson.

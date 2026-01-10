@@ -8,6 +8,12 @@ import UIKit
 protocol LessonCellDelegate: AnyObject {
   func lessonCellDidTap(_ cell: LessonCell, lesson: LessonMetadata)
   func lessonCellDidLongPress(_ cell: LessonCell, lesson: LessonMetadata, frame: CGRect, cardHeight: CGFloat)
+  func lessonCellMenu(_ cell: LessonCell, lesson: LessonMetadata) -> UIMenu?
+}
+
+// Default implementation for optional menu method.
+extension LessonCellDelegate {
+  func lessonCellMenu(_ cell: LessonCell, lesson: LessonMetadata) -> UIMenu? { nil }
 }
 
 class LessonCell: UICollectionViewCell {
@@ -47,22 +53,35 @@ class LessonCell: UICollectionViewCell {
       cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
       cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
     ])
+
+    // Set up menu provider for long press.
+    cardView.menuProvider = { [weak self] in
+      guard let self, let lesson = self.lesson else { return nil }
+      return self.delegate?.lessonCellMenu(self, lesson: lesson)
+    }
   }
 
   // Configures the cell with lesson data.
   func configure(with lesson: LessonMetadata) {
     self.lesson = lesson
     cardView.configure(with: lesson)
-  }
 
-  // Returns the card view for snapshot during drag.
-  var cardViewForSnapshot: UIView {
-    cardView
+    // Set accessibility identifier for UI testing.
+    accessibilityIdentifier = "lessonCard_\(lesson.id)"
+    isAccessibilityElement = true
+    accessibilityLabel = "Lesson: \(lesson.displayName)"
   }
 
   override func prepareForReuse() {
     super.prepareForReuse()
     lesson = nil
+    // Reset any lift animation.
+    cardView.animateLift(false)
+  }
+
+  // Resets the lift animation after action sheet dismisses.
+  func resetLiftAnimation() {
+    cardView.animateLift(false)
   }
 }
 
@@ -70,24 +89,24 @@ class LessonCell: UICollectionViewCell {
 
 extension LessonCell: DashboardCardDelegate {
   func cardDidTap(_ card: DashboardCardView) {
-    guard let lesson else { return }
+    print("[LessonCell] cardDidTap called")
+    guard let lesson else {
+      print("[LessonCell] cardDidTap - no lesson, returning")
+      return
+    }
+    print("[LessonCell] cardDidTap - delegate is \(delegate == nil ? "nil" : "set")")
     delegate?.lessonCellDidTap(self, lesson: lesson)
   }
 
   func cardDidLongPress(_ card: DashboardCardView, frame: CGRect, cardHeight: CGFloat) {
-    guard let lesson else { return }
+    print("[LessonCell] cardDidLongPress called, frame=\(frame), cardHeight=\(cardHeight)")
+    guard let lesson else {
+      print("[LessonCell] cardDidLongPress - no lesson, returning")
+      return
+    }
+    print("[LessonCell] cardDidLongPress - lesson=\(lesson.displayName)")
+    print("[LessonCell] cardDidLongPress - delegate is \(delegate == nil ? "nil" : "set")")
     delegate?.lessonCellDidLongPress(self, lesson: lesson, frame: frame, cardHeight: cardHeight)
-  }
-
-  func cardDidStartDrag(_ card: DashboardCardView, frame: CGRect, position: CGPoint) {
-    // Lessons do not support drag-to-move.
-  }
-
-  func cardDidMoveDrag(_ card: DashboardCardView, position: CGPoint) {
-    // Lessons do not support drag-to-move.
-  }
-
-  func cardDidEndDrag(_ card: DashboardCardView, position: CGPoint) {
-    // Lessons do not support drag-to-move.
+    print("[LessonCell] cardDidLongPress - delegate notified")
   }
 }

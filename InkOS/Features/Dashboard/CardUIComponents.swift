@@ -4,51 +4,6 @@
 import SwiftUI
 import UIKit
 
-// MARK: - Sweep Animation Overlay
-
-// Animated sweep highlight that plays on long press.
-// Shows a white gradient that sweeps across the card.
-struct SweepAnimationOverlay: View {
-  // Whether the sweep animation is currently active.
-  let isActive: Bool
-  // Current sweep position (-1.2 to 1.2, where 0 is center).
-  let sweepOffset: CGFloat
-  // Corner radius to match the card shape.
-  var cornerRadius: CGFloat = CardConstants.cornerRadius
-
-  var body: some View {
-    GeometryReader { proxy in
-      let width = proxy.size.width
-      let height = proxy.size.height
-      let sweepDistance = width * 1.2
-
-      ZStack {
-        // Flash highlight that appears briefly.
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-          .fill(Color.white.opacity(isActive ? CardConstants.Sweep.highlightOpacity : 0.0))
-          .blendMode(.screen)
-          .animation(.easeOut(duration: CardConstants.Sweep.highlightFlashDuration), value: isActive)
-
-        // Sweep gradient that moves across the card.
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-          .fill(
-            LinearGradient(
-              stops: CardConstants.Sweep.gradientStops,
-              startPoint: .leading,
-              endPoint: .trailing
-            )
-          )
-          .blendMode(.screen)
-          .offset(x: sweepOffset * sweepDistance)
-          .opacity(isActive ? 1.0 : 0.0)
-      }
-      .frame(width: width, height: height)
-      .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-      .allowsHitTesting(false)
-    }
-  }
-}
-
 // MARK: - Card Title
 
 // Displays the card title and subtitle.

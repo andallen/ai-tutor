@@ -1,0 +1,58 @@
+
+----- xcbeautify -----
+Version: 3.1.2
+----------------------
+
+note: Building targets in dependency order
+note: Target dependency graph (3 targets)
+[InkOS] Write Auxiliary File InkOS.SwiftFileList
+[InkOS] Write Auxiliary File InkOS.SwiftConstValuesFileList
+[InkOS] Write Auxiliary File InkOS.LinkFileList
+[InkOS] Write Auxiliary File InkOS-OutputFileMap.json
+[InkOS] Write Auxiliary File InkOS.SwiftFileList
+[InkOS] Write Auxiliary File InkOS.SwiftConstValuesFileList
+[InkOS] Write Auxiliary File InkOS.LinkFileList
+[InkOS] Write Auxiliary File InkOS-OutputFileMap.json
+[InkOS] Compiling DashboardCardRepresentable.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Features/Dashboard/DashboardCardRepresentable.swift:143:29: immutable value 'cardView' was never used; consider replacing with '_' or removing it
+      guard isDragging, let cardView = cardView else { return }
+                        ~~~~^~~~~~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Features/Dashboard/DashboardCardRepresentable.swift:353:29: immutable value 'cardView' was never used; consider replacing with '_' or removing it
+      guard isDragging, let cardView = cardView else { return }
+                        ~~~~^~~~~~~~
+[InkOS] Compiling DashboardCardView.swift
+[InkOS] Compiling DashboardCardView.swift
+[InkOS] Compiling DashboardCardRepresentable.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Features/Dashboard/DashboardCardRepresentable.swift:143:29: immutable value 'cardView' was never used; consider replacing with '_' or removing it
+      guard isDragging, let cardView = cardView else { return }
+                        ~~~~^~~~~~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Features/Dashboard/DashboardCardRepresentable.swift:353:29: immutable value 'cardView' was never used; consider replacing with '_' or removing it
+      guard isDragging, let cardView = cardView else { return }
+                        ~~~~^~~~~~~~
+[InkOS] Copy arm64-apple-ios-simulator.swiftmodule -> InkOS.swiftmodule
+[InkOS] Copy arm64-apple-ios-simulator.abi.json -> InkOS.abi.json
+[InkOS] Copy arm64-apple-ios-simulator.swiftsourceinfo -> InkOS.swiftsourceinfo
+[InkOS] Copy x86_64-apple-ios-simulator.swiftmodule -> InkOS.swiftmodule
+[InkOS] Copy x86_64-apple-ios-simulator.abi.json -> InkOS.abi.json
+[InkOS] Copy x86_64-apple-ios-simulator.swiftsourceinfo -> InkOS.swiftsourceinfo
+[InkOS] Compiling SmartGuideViewController.mm
+[InkOS] Compiling SmartGuideViewController.mm
+[InkOS] Linking InkOS.debug.dylib
+[!] ld: ignoring duplicate libraries: '-lc++'
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Linking InkOS.debug.dylib
+[!] ld: ignoring duplicate libraries: '-lc++'
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+note: Using stub executor library with Swift entry point. (in target 'InkOS' from project 'InkOS')
+[InkOS] Create Universal Binary InkOS.debug.dylib
+note: Using stub executor library with Swift entry point. (in target 'InkOS' from project 'InkOS')
+[InkOS] Linking InkOS
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Linking InkOS
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Create Universal Binary InkOS
+[InkOS] Running script Copy Recognition Assets
+[InkOS] Extract App Intents Metadata
+[InkOS] Processing Info.plist
+note: Run script build phase 'Copy Recognition Assets' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'InkOS' from project 'InkOS')
+Build Succeeded

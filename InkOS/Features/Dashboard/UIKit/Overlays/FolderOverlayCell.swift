@@ -1,5 +1,5 @@
 // Collection view cell for items inside the folder overlay.
-// Displays notebooks and PDFs with tap and long press support.
+// Displays notebooks and PDFs with tap and context menu support.
 
 import UIKit
 
@@ -7,7 +7,14 @@ import UIKit
 protocol FolderOverlayCellDelegate: AnyObject {
   func folderOverlayCellDidTapNotebook(_ cell: FolderOverlayCell, notebook: NotebookMetadata)
   func folderOverlayCellDidTapPDF(_ cell: FolderOverlayCell, pdf: PDFDocumentMetadata)
-  func folderOverlayCellDidLongPress(_ cell: FolderOverlayCell, frame: CGRect, cardHeight: CGFloat)
+
+  // Context menu action callbacks.
+  func folderOverlayCellDidRequestRename(_ cell: FolderOverlayCell, notebook: NotebookMetadata)
+  func folderOverlayCellDidRequestRename(_ cell: FolderOverlayCell, pdf: PDFDocumentMetadata)
+  func folderOverlayCellDidRequestDelete(_ cell: FolderOverlayCell, notebook: NotebookMetadata)
+  func folderOverlayCellDidRequestDelete(_ cell: FolderOverlayCell, pdf: PDFDocumentMetadata)
+  func folderOverlayCellDidRequestMoveToRoot(_ cell: FolderOverlayCell, notebook: NotebookMetadata)
+  func folderOverlayCellDidRequestMoveToRoot(_ cell: FolderOverlayCell, pdf: PDFDocumentMetadata)
 }
 
 class FolderOverlayCell: UICollectionViewCell {
@@ -27,8 +34,6 @@ class FolderOverlayCell: UICollectionViewCell {
   // Card preview container.
   private let previewContainer = UIView()
   private let previewImageView = UIImageView()
-  private let dimOverlay = UIView()
-  private let sweepLayer = CAGradientLayer()
 
   // Placeholder for PDFs without preview.
   private let placeholderImageView = UIImageView()
@@ -39,7 +44,9 @@ class FolderOverlayCell: UICollectionViewCell {
 
   // Gesture recognizers.
   private var tapRecognizer: UITapGestureRecognizer!
-  private var longPressRecognizer: UILongPressGestureRecognizer!
+
+  // Context menu interaction.
+  private var contextMenuInteraction: UIContextMenuInteraction?
 
   // Date formatter for notebook subtitles.
   private static let dateFormatter: DateFormatter = {
@@ -48,9 +55,6 @@ class FolderOverlayCell: UICollectionViewCell {
     formatter.dateFormat = "h:mm a  MM/dd/yy"
     return formatter
   }()
-
-  // Gesture state.
-  private var longPressTriggered = false
 
   override init(frame: CGRect) {
     super.init(frame: frame)
@@ -90,29 +94,6 @@ class FolderOverlayCell: UICollectionViewCell {
     placeholderImageView.isHidden = true
     previewImageView.addSubview(placeholderImageView)
 
-    // Dim overlay for press feedback.
-    dimOverlay.backgroundColor = .black
-    dimOverlay.alpha = 0
-    dimOverlay.layer.cornerRadius = CardConstants.cornerRadius
-    dimOverlay.clipsToBounds = true
-    dimOverlay.isUserInteractionEnabled = false
-    previewContainer.addSubview(dimOverlay)
-
-    // Sweep gradient layer.
-    sweepLayer.colors = [
-      UIColor.white.withAlphaComponent(0.0).cgColor,
-      UIColor.white.withAlphaComponent(0.45).cgColor,
-      UIColor.white.withAlphaComponent(0.75).cgColor,
-      UIColor.white.withAlphaComponent(0.0).cgColor
-    ]
-    sweepLayer.locations = [0.0, 0.45, 0.55, 1.0]
-    sweepLayer.startPoint = CGPoint(x: 0, y: 0.5)
-    sweepLayer.endPoint = CGPoint(x: 1, y: 0.5)
-    sweepLayer.opacity = 0
-    sweepLayer.cornerRadius = CardConstants.cornerRadius
-    sweepLayer.masksToBounds = true
-    previewContainer.layer.addSublayer(sweepLayer)
-
     // Title label.
     titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
     titleLabel.textColor = UIColor.black.withAlphaComponent(0.88)
@@ -130,11 +111,9 @@ class FolderOverlayCell: UICollectionViewCell {
     tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(handleTap))
     contentView.addGestureRecognizer(tapRecognizer)
 
-    longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
-    longPressRecognizer.minimumPressDuration = CardConstants.longPressDelay
-    contentView.addGestureRecognizer(longPressRecognizer)
-
-    tapRecognizer.require(toFail: longPressRecognizer)
+    // Add context menu interaction for long-press.
+    contextMenuInteraction = UIContextMenuInteraction(delegate: self)
+    contentView.addInteraction(contextMenuInteraction!)
   }
 
   override func layoutSubviews() {
@@ -147,8 +126,6 @@ class FolderOverlayCell: UICollectionViewCell {
     // Preview container.
     previewContainer.frame = CGRect(x: 0, y: 0, width: width, height: previewHeight)
     previewImageView.frame = previewContainer.bounds
-    dimOverlay.frame = previewContainer.bounds
-    sweepLayer.frame = previewContainer.bounds
 
     // Update shadow path for performance.
     previewContainer.layer.shadowPath = UIBezierPath(
@@ -215,11 +192,9 @@ class FolderOverlayCell: UICollectionViewCell {
     subtitleLabel.isHidden = false
   }
 
-  // MARK: - Gesture Handlers
+  // MARK: - Gesture Handler
 
   @objc private func handleTap() {
-    guard !longPressTriggered else { return }
-
     switch itemType {
     case .notebook(let notebook):
       delegate?.folderOverlayCellDidTapNotebook(self, notebook: notebook)
@@ -230,121 +205,120 @@ class FolderOverlayCell: UICollectionViewCell {
     }
   }
 
-  @objc private func handleLongPress(_ recognizer: UILongPressGestureRecognizer) {
-    switch recognizer.state {
-    case .began:
-      longPressTriggered = true
-      showPressFeedback()
-      playSweepAnimation()
-
-      // Report long press to delegate.
-      guard let window = self.window else { return }
-      let frameInWindow = previewContainer.convert(previewContainer.bounds, to: window)
-      delegate?.folderOverlayCellDidLongPress(self, frame: frameInWindow, cardHeight: previewContainer.bounds.height)
-
-    case .ended, .cancelled, .failed:
-      hidePressFeedback()
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-        self.longPressTriggered = false
-      }
-
-    default:
-      break
-    }
-  }
-
-  // MARK: - Press Feedback
-
-  private func showPressFeedback() {
-    UIView.animate(withDuration: CardConstants.Press.dimDuration, delay: 0, options: .curveEaseOut) {
-      self.dimOverlay.alpha = CardConstants.Press.dimOpacity
-    }
-
-    UIView.animate(
-      withDuration: CardConstants.Press.springResponse,
-      delay: 0,
-      usingSpringWithDamping: CardConstants.Press.springDamping,
-      initialSpringVelocity: 0,
-      options: []
-    ) {
-      self.contentView.transform = CGAffineTransform(
-        scaleX: CardConstants.Press.scale,
-        y: CardConstants.Press.scale
-      )
-    }
-  }
-
-  private func hidePressFeedback() {
-    UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut) {
-      self.dimOverlay.alpha = 0
-    }
-
-    UIView.animate(
-      withDuration: CardConstants.Press.springResponse,
-      delay: 0,
-      usingSpringWithDamping: CardConstants.Press.springDamping,
-      initialSpringVelocity: 0,
-      options: []
-    ) {
-      self.contentView.transform = .identity
-    }
-  }
-
-  // MARK: - Sweep Animation
-
-  private func playSweepAnimation() {
-    // Flash overlay.
-    let flashLayer = CALayer()
-    flashLayer.backgroundColor = UIColor.white.withAlphaComponent(0.7).cgColor
-    flashLayer.frame = previewContainer.bounds
-    flashLayer.cornerRadius = CardConstants.cornerRadius
-    flashLayer.masksToBounds = true
-    previewContainer.layer.addSublayer(flashLayer)
-
-    // Fade out flash.
-    let flashAnimation = CABasicAnimation(keyPath: "opacity")
-    flashAnimation.fromValue = 0.7
-    flashAnimation.toValue = 0.0
-    flashAnimation.duration = 0.28
-    flashAnimation.fillMode = .forwards
-    flashAnimation.isRemovedOnCompletion = false
-    flashLayer.add(flashAnimation, forKey: "flashFade")
-
-    // Sweep gradient across.
-    sweepLayer.opacity = 1.0
-    let sweepWidth = contentView.bounds.width * 1.2
-
-    sweepLayer.frame = CGRect(
-      x: -sweepWidth,
-      y: 0,
-      width: sweepWidth,
-      height: previewContainer.bounds.height
-    )
-
-    let sweepAnimation = CABasicAnimation(keyPath: "position.x")
-    sweepAnimation.fromValue = -sweepWidth / 2
-    sweepAnimation.toValue = contentView.bounds.width + sweepWidth / 2
-    sweepAnimation.duration = 0.5
-    sweepAnimation.timingFunction = CAMediaTimingFunction(name: .easeOut)
-    sweepAnimation.fillMode = .forwards
-    sweepAnimation.isRemovedOnCompletion = false
-    sweepLayer.add(sweepAnimation, forKey: "sweepMove")
-
-    // Clean up after animation.
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-      self?.sweepLayer.opacity = 0
-      self?.sweepLayer.removeAllAnimations()
-      flashLayer.removeFromSuperlayer()
-    }
-  }
-
   override func prepareForReuse() {
     super.prepareForReuse()
     itemType = .none
-    longPressTriggered = false
     previewImageView.image = nil
     placeholderImageView.isHidden = true
-    contentView.transform = .identity
-    dimOverlay.alpha = 0
+  }
+}
+
+// MARK: - UIContextMenuInteractionDelegate
+
+extension FolderOverlayCell: UIContextMenuInteractionDelegate {
+  func contextMenuInteraction(
+    _ interaction: UIContextMenuInteraction,
+    configurationForMenuAtLocation location: CGPoint
+  ) -> UIContextMenuConfiguration? {
+    return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+      guard let self else { return nil }
+      return self.buildContextMenu()
+    }
+  }
+
+  func contextMenuInteraction(
+    _ interaction: UIContextMenuInteraction,
+    previewForHighlightingMenuWithConfiguration configuration: UIContextMenuConfiguration
+  ) -> UITargetedPreview? {
+    // Use the preview container for the lift animation.
+    let parameters = UIPreviewParameters()
+    parameters.backgroundColor = .clear
+    parameters.visiblePath = UIBezierPath(
+      roundedRect: previewContainer.bounds,
+      cornerRadius: CardConstants.cornerRadius
+    )
+    return UITargetedPreview(view: previewContainer, parameters: parameters)
+  }
+
+  func contextMenuInteraction(
+    _ interaction: UIContextMenuInteraction,
+    previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration
+  ) -> UITargetedPreview? {
+    let parameters = UIPreviewParameters()
+    parameters.backgroundColor = .clear
+    parameters.visiblePath = UIBezierPath(
+      roundedRect: previewContainer.bounds,
+      cornerRadius: CardConstants.cornerRadius
+    )
+    return UITargetedPreview(view: previewContainer, parameters: parameters)
+  }
+
+  private func buildContextMenu() -> UIMenu {
+    switch itemType {
+    case .notebook(let notebook):
+      return buildNotebookMenu(notebook)
+    case .pdf(let pdf):
+      return buildPDFMenu(pdf)
+    case .none:
+      return UIMenu(children: [])
+    }
+  }
+
+  private func buildNotebookMenu(_ notebook: NotebookMetadata) -> UIMenu {
+    let renameAction = UIAction(
+      title: "Rename",
+      image: UIImage(systemName: "pencil")
+    ) { [weak self] _ in
+      guard let self else { return }
+      self.delegate?.folderOverlayCellDidRequestRename(self, notebook: notebook)
+    }
+
+    let moveOutAction = UIAction(
+      title: "Move Out of Folder",
+      image: UIImage(systemName: "folder.badge.minus")
+    ) { [weak self] _ in
+      guard let self else { return }
+      self.delegate?.folderOverlayCellDidRequestMoveToRoot(self, notebook: notebook)
+    }
+
+    let deleteAction = UIAction(
+      title: "Delete",
+      image: UIImage(systemName: "trash"),
+      attributes: .destructive
+    ) { [weak self] _ in
+      guard let self else { return }
+      self.delegate?.folderOverlayCellDidRequestDelete(self, notebook: notebook)
+    }
+
+    return UIMenu(children: [renameAction, moveOutAction, deleteAction])
+  }
+
+  private func buildPDFMenu(_ pdf: PDFDocumentMetadata) -> UIMenu {
+    let renameAction = UIAction(
+      title: "Rename",
+      image: UIImage(systemName: "pencil")
+    ) { [weak self] _ in
+      guard let self else { return }
+      self.delegate?.folderOverlayCellDidRequestRename(self, pdf: pdf)
+    }
+
+    let moveOutAction = UIAction(
+      title: "Move Out of Folder",
+      image: UIImage(systemName: "folder.badge.minus")
+    ) { [weak self] _ in
+      guard let self else { return }
+      self.delegate?.folderOverlayCellDidRequestMoveToRoot(self, pdf: pdf)
+    }
+
+    let deleteAction = UIAction(
+      title: "Delete",
+      image: UIImage(systemName: "trash"),
+      attributes: .destructive
+    ) { [weak self] _ in
+      guard let self else { return }
+      self.delegate?.folderOverlayCellDidRequestDelete(self, pdf: pdf)
+    }
+
+    return UIMenu(children: [renameAction, moveOutAction, deleteAction])
   }
 }

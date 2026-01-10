@@ -4,12 +4,6 @@
 import PDFKit
 import SwiftUI
 
-// Feature flag to switch between SwiftUI and UIKit dashboards.
-// Set to true to use the new UIKit implementation.
-enum DashboardFeatureFlags {
-  static let useUIKitDashboard = true
-}
-
 // SwiftUI view that hosts the UIKit DashboardViewController.
 struct DashboardHostView: View {
   // Notebook session state (passed to editor when opening a notebook).

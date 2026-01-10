@@ -3,23 +3,41 @@ import UIKit
 // MARK: - Card Delegate Protocol
 
 // Protocol for card interaction callbacks.
-// All positions are in window coordinates for drag operations.
 protocol DashboardCardDelegate: AnyObject {
+  // Called when the card is tapped.
   func cardDidTap(_ card: DashboardCardView)
+
+  // Called when the card is long-pressed (for context menu).
   func cardDidLongPress(_ card: DashboardCardView, frame: CGRect, cardHeight: CGFloat)
-  func cardDidStartDrag(_ card: DashboardCardView, frame: CGRect, position: CGPoint)
-  func cardDidMoveDrag(_ card: DashboardCardView, position: CGPoint)
-  func cardDidEndDrag(_ card: DashboardCardView, position: CGPoint)
+}
+
+// Default implementations for optional delegate methods.
+extension DashboardCardDelegate {
+  func cardDidLongPress(_ card: DashboardCardView, frame: CGRect, cardHeight: CGFloat) {}
+}
+
+// MARK: - Context Menu Provider Protocol
+
+// Protocol for providing context menu configuration to cards.
+// Implemented by representable coordinators to customize menu content.
+protocol DashboardCardContextMenuProvider: AnyObject {
+  // Returns the menu configuration for this card, or nil for no menu.
+  func contextMenuConfiguration(for card: DashboardCardView) -> UIContextMenuConfiguration?
+
+  // Returns a preview view controller for the context menu lift animation.
+  func contextMenuPreviewViewController(for card: DashboardCardView) -> UIViewController?
 }
 
 // MARK: - Base Dashboard Card View
 
 // Base UIKit view for dashboard cards (notebooks, PDFs, and folders).
 // Uses gesture recognizers for proper interaction with SwiftUI scroll views.
-// Handles press feedback, sweep animation, and drag initiation.
 // Subclasses provide custom content via setupPreviewContent() and configure methods.
 class DashboardCardView: UIView {
   weak var delegate: DashboardCardDelegate?
+
+  // Context menu provider for customizing long-press menu.
+  weak var contextMenuProvider: DashboardCardContextMenuProvider?
 
   // Card dimensions - must match SwiftUI constants.
   static let cornerRadius: CGFloat = 10
@@ -31,30 +49,13 @@ class DashboardCardView: UIView {
   private static let shadowRadius: CGFloat = 7
   private static let shadowOffset = CGSize(width: 0, height: 4)
 
-  // Press feedback configuration.
-  private static let pressScale: CGFloat = 1.04
-  private static let pressDimOpacity: CGFloat = 0.12
-  private static let pressDimDuration: TimeInterval = 0.06
-  private static let pressScaleDuration: TimeInterval = 0.15
-
-  // Gesture configuration.
-  private let longPressDelay: TimeInterval = 0.3
-  private let dragThreshold: CGFloat = 10
-
-  // Whether this card type supports drag-to-move. Folders override to false.
-  var isDraggable: Bool { true }
-
   // Container for preview content. Subclasses add their content here.
-  // Provides shadow and houses the dim overlay and sweep animation.
+  // Provides shadow and houses content.
   private(set) var previewContainer = UIView()
 
   // Default preview image view. Used by notebooks and PDFs.
   // Folders override setupPreviewContent() to provide their own content.
   private let previewImageView = UIImageView()
-
-  // Overlay and animation layers.
-  private let dimOverlay = UIView()
-  private let sweepLayer = CAGradientLayer()
 
   // Title labels.
   private let titleLabel = UILabel()
@@ -64,12 +65,13 @@ class DashboardCardView: UIView {
   private var tapRecognizer: UITapGestureRecognizer!
   private var longPressRecognizer: UILongPressGestureRecognizer!
 
-  // Gesture state.
-  private var longPressStartLocation: CGPoint = .zero
-  private var hasTriggeredLongPress = false
-  private var isDragging = false
+  // Edit menu interaction for showing menu without preview lift.
+  private var editMenuInteraction: UIEditMenuInteraction?
 
-  // Title opacity control (for drop target effects).
+  // Menu to show on long press. Set by the cell when configuring.
+  var menuProvider: (() -> UIMenu?)?
+
+  // Title opacity control for visual effects.
   var titleOpacity: CGFloat = 1.0 {
     didSet {
       titleLabel.alpha = titleOpacity
@@ -105,29 +107,6 @@ class DashboardCardView: UIView {
     // Let subclasses set up their preview content.
     setupPreviewContent()
 
-    // Dim overlay for press feedback (added after content so it's on top).
-    dimOverlay.backgroundColor = .black
-    dimOverlay.alpha = 0
-    dimOverlay.isUserInteractionEnabled = false
-    dimOverlay.layer.cornerRadius = Self.cornerRadius
-    dimOverlay.clipsToBounds = true
-    previewContainer.addSubview(dimOverlay)
-
-    // Sweep gradient layer for long press animation.
-    sweepLayer.colors = [
-      UIColor.white.withAlphaComponent(0.0).cgColor,
-      UIColor.white.withAlphaComponent(0.45).cgColor,
-      UIColor.white.withAlphaComponent(0.75).cgColor,
-      UIColor.white.withAlphaComponent(0.0).cgColor
-    ]
-    sweepLayer.locations = [0.0, 0.45, 0.55, 1.0]
-    sweepLayer.startPoint = CGPoint(x: 0, y: 0.5)
-    sweepLayer.endPoint = CGPoint(x: 1, y: 0.5)
-    sweepLayer.opacity = 0
-    sweepLayer.cornerRadius = Self.cornerRadius
-    sweepLayer.masksToBounds = true
-    previewContainer.layer.addSublayer(sweepLayer)
-
     // Title label.
     titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
     titleLabel.textColor = UIColor.black.withAlphaComponent(0.88)
@@ -155,22 +134,56 @@ class DashboardCardView: UIView {
   }
 
   private func setupGestureRecognizers() {
-    // Tap recognizer for quick taps.
-    tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
-    addGestureRecognizer(tapRecognizer)
-
-    // Long press recognizer for long press and drag.
-    // Uses minimal allowable movement so user can initiate drag after long press.
-    longPressRecognizer = UILongPressGestureRecognizer(
-      target: self,
-      action: #selector(handleLongPress(_:))
-    )
-    longPressRecognizer.minimumPressDuration = longPressDelay
-    longPressRecognizer.allowableMovement = CGFloat.greatestFiniteMagnitude
+    // Long press recognizer for showing menu.
+    longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+    longPressRecognizer.minimumPressDuration = 0.3
+    longPressRecognizer.delegate = self
     addGestureRecognizer(longPressRecognizer)
 
-    // Tap should fail if long press is recognized.
+    // Tap recognizer for quick taps.
+    tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+    tapRecognizer.delegate = self
     tapRecognizer.require(toFail: longPressRecognizer)
+    addGestureRecognizer(tapRecognizer)
+
+    // Edit menu interaction for showing menu without preview lift.
+    editMenuInteraction = UIEditMenuInteraction(delegate: self)
+    addInteraction(editMenuInteraction!)
+  }
+
+  @objc private func handleLongPress(_ recognizer: UILongPressGestureRecognizer) {
+    guard recognizer.state == .began else { return }
+
+    // Animate lift effect.
+    animateLift(true)
+
+    // Present the edit menu at the long press location.
+    let location = recognizer.location(in: self)
+    let config = UIEditMenuConfiguration(identifier: nil, sourcePoint: location)
+    editMenuInteraction?.presentEditMenu(with: config)
+  }
+
+  // Animates the lift effect when long-pressing.
+  // Scales the card up slightly and enhances shadow to indicate selection.
+  // Public so cells/view controllers can reset the animation after action sheet dismisses.
+  func animateLift(_ lifted: Bool) {
+    // Scale UP to 108% when lifted for a "pop" effect.
+    let scale: CGFloat = lifted ? 1.08 : 1.0
+    // Enhance shadow when lifted.
+    let shadowRadius: CGFloat = lifted ? 16 : Self.shadowRadius
+    let shadowOpacity: Float = lifted ? 0.3 : Self.shadowOpacity
+
+    UIView.animate(
+      withDuration: 0.25,
+      delay: 0,
+      usingSpringWithDamping: 0.7,
+      initialSpringVelocity: 0,
+      options: [.allowUserInteraction, .beginFromCurrentState]
+    ) {
+      self.transform = lifted ? CGAffineTransform(scaleX: scale, y: scale) : .identity
+      self.previewContainer.layer.shadowRadius = shadowRadius
+      self.previewContainer.layer.shadowOpacity = shadowOpacity
+    }
   }
 
   // MARK: - Layout
@@ -187,10 +200,6 @@ class DashboardCardView: UIView {
 
     // Let subclasses lay out their content.
     layoutPreviewContent()
-
-    // Overlays match container bounds.
-    dimOverlay.frame = previewContainer.bounds
-    sweepLayer.frame = previewContainer.bounds
 
     // Update shadow path for performance.
     previewContainer.layer.shadowPath = UIBezierPath(
@@ -238,177 +247,6 @@ class DashboardCardView: UIView {
 
   @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
     delegate?.cardDidTap(self)
-  }
-
-  @objc private func handleLongPress(_ recognizer: UILongPressGestureRecognizer) {
-    guard let window = self.window else { return }
-
-    let location = recognizer.location(in: window)
-
-    switch recognizer.state {
-    case .began:
-      // Long press triggered - show context menu feedback.
-      hasTriggeredLongPress = true
-      longPressStartLocation = recognizer.location(in: self)
-
-      // Show press feedback scale.
-      showPressFeedback()
-
-      // Play sweep animation and notify delegate.
-      triggerLongPress()
-
-    case .changed:
-      // Only allow drag if this card type supports it.
-      guard isDraggable else { return }
-
-      // Check if user has moved enough to initiate drag.
-      let currentLocation = recognizer.location(in: self)
-      let distance = hypot(
-        currentLocation.x - longPressStartLocation.x,
-        currentLocation.y - longPressStartLocation.y
-      )
-
-      if !isDragging && distance > dragThreshold {
-        // Start drag mode.
-        isDragging = true
-        let frameInWindow = self.convert(self.bounds, to: window)
-        delegate?.cardDidStartDrag(self, frame: frameInWindow, position: location)
-      } else if isDragging {
-        // Continue dragging - report position update.
-        delegate?.cardDidMoveDrag(self, position: location)
-      }
-
-    case .ended:
-      if isDragging {
-        // End drag with final position.
-        delegate?.cardDidEndDrag(self, position: location)
-      } else {
-        // Long press ended without drag - hide feedback.
-        hidePressFeedback()
-      }
-      cleanup()
-
-    case .cancelled, .failed:
-      if isDragging {
-        delegate?.cardDidEndDrag(self, position: location)
-      }
-      hidePressFeedback()
-      cleanup()
-
-    default:
-      break
-    }
-  }
-
-  // MARK: - Press Feedback
-
-  private func showPressFeedback() {
-    UIView.animate(withDuration: Self.pressDimDuration, delay: 0, options: .curveEaseOut) {
-      self.dimOverlay.alpha = Self.pressDimOpacity
-    }
-
-    // Scale up slightly.
-    UIView.animate(
-      withDuration: Self.pressScaleDuration,
-      delay: 0,
-      usingSpringWithDamping: 0.75,
-      initialSpringVelocity: 0,
-      options: []
-    ) {
-      self.previewContainer.transform = CGAffineTransform(scaleX: Self.pressScale, y: Self.pressScale)
-    }
-  }
-
-  private func hidePressFeedback() {
-    UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut) {
-      self.dimOverlay.alpha = 0
-    }
-
-    UIView.animate(
-      withDuration: Self.pressScaleDuration,
-      delay: 0,
-      usingSpringWithDamping: 0.75,
-      initialSpringVelocity: 0,
-      options: []
-    ) {
-      self.previewContainer.transform = .identity
-    }
-  }
-
-  // MARK: - Long Press and Sweep Animation
-
-  private func triggerLongPress() {
-    hasTriggeredLongPress = true
-
-    // Hide dim overlay when context menu triggers.
-    UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseOut) {
-      self.dimOverlay.alpha = 0
-    }
-
-    // Notify delegate.
-    guard let window = self.window else { return }
-    let frameInWindow = self.convert(self.bounds, to: window)
-    let previewHeight = bounds.height - Self.titleAreaHeight
-    delegate?.cardDidLongPress(self, frame: frameInWindow, cardHeight: previewHeight)
-
-    // Play sweep animation.
-    playSweepAnimation()
-  }
-
-  private func playSweepAnimation() {
-    // Flash overlay.
-    let flashLayer = CALayer()
-    flashLayer.backgroundColor = UIColor.white.withAlphaComponent(0.7).cgColor
-    flashLayer.frame = previewContainer.bounds
-    flashLayer.cornerRadius = Self.cornerRadius
-    flashLayer.masksToBounds = true
-    previewContainer.layer.addSublayer(flashLayer)
-
-    // Fade out flash.
-    let flashAnimation = CABasicAnimation(keyPath: "opacity")
-    flashAnimation.fromValue = 0.7
-    flashAnimation.toValue = 0.0
-    flashAnimation.duration = 0.28
-    flashAnimation.fillMode = .forwards
-    flashAnimation.isRemovedOnCompletion = false
-    flashLayer.add(flashAnimation, forKey: "flashFade")
-
-    // Sweep gradient across.
-    sweepLayer.opacity = 1.0
-    let sweepWidth = bounds.width * 1.2
-
-    // Position sweep off screen left.
-    sweepLayer.frame = CGRect(
-      x: -sweepWidth,
-      y: 0,
-      width: sweepWidth,
-      height: previewContainer.bounds.height
-    )
-
-    // Animate sweep to right.
-    let sweepAnimation = CABasicAnimation(keyPath: "position.x")
-    sweepAnimation.fromValue = -sweepWidth / 2
-    sweepAnimation.toValue = bounds.width + sweepWidth / 2
-    sweepAnimation.duration = 0.5
-    sweepAnimation.timingFunction = CAMediaTimingFunction(name: .easeOut)
-    sweepAnimation.fillMode = .forwards
-    sweepAnimation.isRemovedOnCompletion = false
-    sweepLayer.add(sweepAnimation, forKey: "sweepMove")
-
-    // Clean up after animation.
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-      self?.sweepLayer.opacity = 0
-      self?.sweepLayer.removeAllAnimations()
-      flashLayer.removeFromSuperlayer()
-    }
-  }
-
-  // MARK: - Cleanup
-
-  private func cleanup() {
-    hasTriggeredLongPress = false
-    isDragging = false
-    longPressStartLocation = .zero
   }
 
   // MARK: - Intrinsic Content Size
@@ -520,7 +358,6 @@ class PDFCardView: DashboardCardView {
 
 // UIKit card view for folders.
 // Displays a 2x2 thumbnail grid with glass background.
-// Folders are not draggable but can be drop targets.
 class FolderCardView: DashboardCardView {
   private var folder: FolderMetadata?
   private var thumbnails: [UIImage] = []
@@ -538,9 +375,6 @@ class FolderCardView: DashboardCardView {
 
   // Placeholder views for items without thumbnails.
   private let placeholderViews: [UIView] = (0..<4).map { _ in UIView() }
-
-  // Folders are not draggable.
-  override var isDraggable: Bool { false }
 
   // MARK: - Preview Content Setup
 
@@ -773,5 +607,78 @@ class LessonCardView: DashboardCardView {
   // Returns the configured lesson.
   var configuredLesson: LessonMetadata? {
     return lesson
+  }
+}
+
+// MARK: - UIEditMenuInteractionDelegate
+
+extension DashboardCardView: UIEditMenuInteractionDelegate {
+  func editMenuInteraction(
+    _ interaction: UIEditMenuInteraction,
+    menuFor configuration: UIEditMenuConfiguration,
+    suggestedActions: [UIMenuElement]
+  ) -> UIMenu? {
+    // Return the menu from the provider (set by the cell).
+    return menuProvider?()
+  }
+
+  func editMenuInteraction(
+    _ interaction: UIEditMenuInteraction,
+    targetRectFor configuration: UIEditMenuConfiguration
+  ) -> CGRect {
+    // Get card position in window coordinates.
+    guard let window = window else {
+      return previewContainer.frame
+    }
+
+    let frameInWindow = convert(bounds, to: window)
+
+    // Check if card is in the leftmost column.
+    // Left edge of leftmost cards is typically around 24pt (section inset).
+    let isLeftColumn = frameInWindow.minX < 50
+
+    if isLeftColumn {
+      // Left column - use default positioning.
+      return previewContainer.frame
+    } else {
+      // Non-left column - return narrow rect centered horizontally over the card.
+      // Menu anchors to this rect and appears centered over it.
+      // Shift 4pt left to compensate for UIEditMenuInteraction's internal offset.
+      let centerX = previewContainer.frame.midX - 4
+      return CGRect(
+        x: centerX - 1,
+        y: previewContainer.frame.minY,
+        width: 2,
+        height: previewContainer.frame.height
+      )
+    }
+  }
+
+  func editMenuInteraction(
+    _ interaction: UIEditMenuInteraction,
+    willDismissMenuFor configuration: UIEditMenuConfiguration,
+    animator: any UIEditMenuInteractionAnimating
+  ) {
+    // Reset lift animation immediately when menu starts to dismiss.
+    // Call directly instead of in completion handler for instant visual feedback.
+    animateLift(false)
+  }
+}
+
+// MARK: - UIGestureRecognizerDelegate
+
+extension DashboardCardView: UIGestureRecognizerDelegate {
+  func gestureRecognizer(
+    _ gestureRecognizer: UIGestureRecognizer,
+    shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+  ) -> Bool {
+    // Allow long press and tap coordination.
+    if gestureRecognizer == longPressRecognizer && otherGestureRecognizer == tapRecognizer {
+      return true
+    }
+    if gestureRecognizer == tapRecognizer && otherGestureRecognizer == longPressRecognizer {
+      return true
+    }
+    return false
   }
 }
