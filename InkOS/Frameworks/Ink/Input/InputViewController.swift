@@ -245,9 +245,9 @@ extension InputViewController: UIGestureRecognizerDelegate {
     if gestureRecognizer is UIPinchGestureRecognizer {
       return true
     }
-    // Pan gesture only begins when not in forcePen mode and scrolling is allowed.
+    // Pan gesture only begins when not in forcePen mode and an editor exists.
     let shouldBegin =
-      self.viewModel.inputMode != .forcePen && self.viewModel.editor?.isScrollAllowed ?? false
+      self.viewModel.inputMode != .forcePen && self.viewModel.editor != nil
     return shouldBegin
   }
 

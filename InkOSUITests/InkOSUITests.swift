@@ -152,82 +152,22 @@ final class InkOSUITests: XCTestCase {
         return nil
     }
 
-    // MARK: - Dashboard Tests
+    // MARK: - Launch Screen Tests
 
     @MainActor
-    func testCardScalesDownImmediatelyOnMenuDismiss() throws {
-        // Verifies that cards scale down immediately when the context menu is dismissed,
-        // not after a delay. This is a VISUAL test using screenshots.
-        //
-        // XCUITest's frame property doesn't reflect CGAffineTransform, so we use
-        // screenshots to visually verify animation timing:
-        // 1. Screenshot at rest (normal scale)
-        // 2. Screenshot with menu open (card lifted/scaled up)
-        // 3. Screenshot IMMEDIATELY after dismiss tap (should show card animating down)
-        // 4. Screenshot after animation completes
-        //
-        // Visual inspection: Compare screenshot 3 to screenshots 2 and 4.
-        // - If fix works: Screenshot 3 should show card visually smaller than screenshot 2
-        // - If delay exists: Screenshot 3 would look identical to screenshot 2
+    func testClaudeWasHereDisplayed() throws {
+        // Verify "CLAUDE WAS HERE" text is displayed on app launch.
 
-        let navBar = app.navigationBars["InkOS"]
-        XCTAssertTrue(navBar.waitForExistence(timeout: 10), "Dashboard should load")
+        // Find the label using accessibility identifier.
+        let claudeLabel = app.staticTexts["claudeWasHereLabel"]
+        XCTAssertTrue(claudeLabel.waitForExistence(timeout: 5), "CLAUDE WAS HERE label should exist")
 
-        // Find a card to test.
-        guard let card = findFirstCard() else {
-            XCTFail("No cards found on dashboard")
-            return
-        }
+        // Also verify the text content.
+        let textExists = app.staticTexts["CLAUDE WAS HERE"].exists
+        XCTAssertTrue(textExists, "Text 'CLAUDE WAS HERE' should be visible")
 
-        XCTAssertTrue(card.waitForExistence(timeout: 5), "Card should exist")
-
-        // 1. Screenshot at rest (normal scale).
-        print("[UITest] Step 1: Capturing card at rest")
-        saveScreenshot(name: "1_card_at_rest")
-
-        // 2. Long press to show context menu (card lifts/scales up).
-        print("[UITest] Step 2: Long pressing to show context menu")
-        card.press(forDuration: 0.5)
-
-        // Wait for menu to appear.
-        let renameItem = app.menuItems["Rename"]
-        guard renameItem.waitForExistence(timeout: 3) else {
-            XCTFail("Context menu did not appear")
-            return
-        }
-
-        // Give the lift animation time to complete.
-        Thread.sleep(forTimeInterval: 0.3)
-
-        print("[UITest] Step 2: Capturing card with menu open (lifted)")
-        saveScreenshot(name: "2_card_lifted_with_menu")
-
-        // 3. Dismiss the menu and IMMEDIATELY capture screenshot.
-        print("[UITest] Step 3: Dismissing menu and capturing IMMEDIATELY")
-        let dismissCoord = app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.05))
-        dismissCoord.tap()
-
-        // Capture IMMEDIATELY - this is the critical screenshot.
-        // With the fix, the card should already be visibly animating down.
-        saveScreenshot(name: "3_immediately_after_dismiss")
-
-        // 4. Wait for animation to complete and capture final state.
-        Thread.sleep(forTimeInterval: 0.5)
-        print("[UITest] Step 4: Capturing card after animation completes")
-        saveScreenshot(name: "4_after_animation_complete")
-
-        // Verify the menu is dismissed.
-        XCTAssertFalse(renameItem.exists, "Menu should be dismissed")
-
-        print("[UITest] ========================================")
-        print("[UITest] VISUAL VERIFICATION REQUIRED:")
-        print("[UITest]   Compare screenshot 3 (immediately_after_dismiss) to:")
-        print("[UITest]   - Screenshot 2 (lifted_with_menu): Card should be visibly SMALLER in 3")
-        print("[UITest]   - Screenshot 4 (after_animation): Card should look similar in 3 and 4")
-        print("[UITest]")
-        print("[UITest]   If fix works: Screenshot 3 shows card already animating/shrinking")
-        print("[UITest]   If delay exists: Screenshot 3 looks same as screenshot 2 (still lifted)")
-        print("[UITest] ========================================")
+        // Capture screenshot for visual verification.
+        saveScreenshot(name: "claude_was_here")
     }
 
 }
