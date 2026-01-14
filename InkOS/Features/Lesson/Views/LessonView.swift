@@ -46,45 +46,42 @@ struct LessonView: View {
 
   private var navigationBar: some View {
     HStack {
-      // Home button.
+      // Home button - matches HomeButtonView styling from editors.
       Button(action: {
         onDismiss()
       }) {
         ZStack {
           Circle()
-            .fill(.ultraThinMaterial)
-            .frame(width: 44, height: 44)
+            .fill(.regularMaterial)
+            .frame(width: 48, height: 48)
 
           Image(systemName: "house")
             .font(.system(size: 18, weight: .regular))
             .foregroundStyle(Color.offBlack)
         }
       }
-      .buttonStyle(GlassButtonStyle())
+      .buttonStyle(HomeButtonStyle())
+      .accessibilityLabel("Go home")
+      .accessibilityHint("Double tap to return to dashboard")
 
       Spacer()
 
-      // Options menu placeholder.
-      Menu {
-        Button(role: .destructive) {
-          // Delete action would go here.
-        } label: {
-          Label("Delete Lesson", systemImage: "trash")
-        }
-      } label: {
-        ZStack {
-          Circle()
-            .fill(.ultraThinMaterial)
-            .frame(width: 44, height: 44)
-
-          Image(systemName: "ellipsis")
-            .font(.system(size: 18, weight: .medium))
-            .foregroundStyle(Color.offBlack)
-        }
+      // Progress indicator showing current position.
+      if let lesson = viewModel.lesson {
+        LessonProgressView(
+          currentSection: viewModel.currentSectionIndex + 1,
+          totalSections: lesson.sections.count
+        )
       }
+
+      Spacer()
+
+      // Empty spacer to balance the home button.
+      Color.clear
+        .frame(width: 48, height: 48)
     }
     .padding(.horizontal, 20)
-    .padding(.top, 8)
+    .padding(.top, 4)
   }
 
   // MARK: - Lesson Content
@@ -115,6 +112,8 @@ struct LessonView: View {
       .frame(maxWidth: 680)
       .frame(maxWidth: .infinity)
     }
+    .scrollIndicators(.automatic)
+    .scrollDismissesKeyboard(.interactively)
   }
 
   // MARK: - Loading View
@@ -125,9 +124,11 @@ struct LessonView: View {
         .scaleEffect(1.2)
 
       Text("Loading lesson...")
-        .font(.system(size: 15, weight: .medium))
+        .font(.subheadline.weight(.medium))
         .foregroundStyle(Color.inkSubtle)
     }
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel("Loading lesson")
   }
 
   // MARK: - Error View
@@ -135,15 +136,16 @@ struct LessonView: View {
   private func errorView(message: String) -> some View {
     VStack(spacing: 16) {
       Image(systemName: "exclamationmark.triangle")
-        .font(.system(size: 48))
+        .font(.largeTitle)
         .foregroundStyle(Color.incorrectRed)
+        .accessibilityHidden(true)
 
       Text("Unable to load lesson")
-        .font(.system(size: 17, weight: .semibold))
+        .font(.headline)
         .foregroundStyle(Color.ink)
 
       Text(message)
-        .font(.system(size: 15))
+        .font(.subheadline)
         .foregroundStyle(Color.inkSubtle)
         .multilineTextAlignment(.center)
 
@@ -152,20 +154,67 @@ struct LessonView: View {
       }
       .buttonStyle(.borderedProminent)
       .padding(.top, 8)
+      .accessibilityHint("Returns to the dashboard")
     }
     .padding(32)
+    .accessibilityElement(children: .contain)
   }
 }
 
-// MARK: - Glass Button Style
+// MARK: - Home Button Style
 
-// Button style matching the glass aesthetic of the app.
-struct GlassButtonStyle: ButtonStyle {
+// Button style matching HomeButtonView from the editors.
+// Uses scale down on press with white highlight, spring bounce back.
+struct HomeButtonStyle: ButtonStyle {
   func makeBody(configuration: Configuration) -> some View {
     configuration.label
       .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
-      .opacity(configuration.isPressed ? 0.8 : 1.0)
-      .animation(.spring(response: 0.15, dampingFraction: 0.75), value: configuration.isPressed)
+      .background(
+        Circle()
+          .fill(Color.white.opacity(configuration.isPressed ? 0.3 : 0))
+          .frame(width: 48, height: 48)
+      )
+      .animation(
+        configuration.isPressed
+          ? .easeOut(duration: 0.1)
+          : .spring(response: 0.35, dampingFraction: 0.5),
+        value: configuration.isPressed
+      )
+  }
+}
+
+// MARK: - Lesson Progress View
+
+// Displays compact progress indicator for the navigation bar.
+struct LessonProgressView: View {
+  let currentSection: Int
+  let totalSections: Int
+
+  var body: some View {
+    HStack(spacing: 8) {
+      // Progress dots or text for small section counts.
+      if totalSections <= 8 {
+        HStack(spacing: 4) {
+          ForEach(0..<totalSections, id: \.self) { index in
+            Circle()
+              .fill(index < currentSection ? Color.lessonAccent : Color.inkFaint)
+              .frame(width: 6, height: 6)
+          }
+        }
+      } else {
+        // Text for larger section counts.
+        Text("\(currentSection) of \(totalSections)")
+          .font(.caption.weight(.medium))
+          .foregroundStyle(Color.inkSubtle)
+      }
+    }
+    .padding(.horizontal, 12)
+    .padding(.vertical, 6)
+    .background(
+      Capsule()
+        .fill(.ultraThinMaterial)
+    )
+    .accessibilityLabel("Section \(currentSection) of \(totalSections)")
   }
 }
 
@@ -178,10 +227,19 @@ struct LessonHeaderView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
+      // Subject badge if available.
+      if let subject = lesson.metadata.subject {
+        Text(subject.uppercased())
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(Color.lessonAccent)
+          .accessibilityLabel("Subject: \(subject)")
+      }
+
       // Title.
       Text(lesson.title)
-        .font(.system(size: 28, weight: .bold))
+        .font(.title.bold())
         .foregroundStyle(Color.ink)
+        .accessibilityAddTraits(.isHeader)
     }
   }
 }

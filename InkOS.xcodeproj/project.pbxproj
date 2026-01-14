@@ -194,6 +194,7 @@
 				AEAFC2362EF4B85B00811728 /* Frameworks */,
 				AEAFC2372EF4B85B00811728 /* Resources */,
 				AEA6BC5A2EF8654800D18138 /* Copy Recognition Assets */,
+				0DDFAA30004964993C82F526 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -298,6 +299,27 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		0DDFAA30004964993C82F526 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-InkOS/Pods-InkOS-resources-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			inputPaths = (
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-InkOS/Pods-InkOS-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-InkOS/Pods-InkOS-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		12CB4D4CBD5D64C8E35D38B7 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;

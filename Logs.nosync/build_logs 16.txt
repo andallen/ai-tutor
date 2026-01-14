@@ -1,0 +1,91 @@
+
+----- xcbeautify -----
+Version: 3.1.2
+----------------------
+
+note: Building targets in dependency order
+note: Target dependency graph (5 targets)
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/Pods/Pods.xcodeproj: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 6.0, but the range of supported deployment target versions is 12.0 to 26.2.99. (in target 'iosMath-mathFonts' from project 'Pods')
+ProcessInfoPlistFile /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/Logs/DerivedData/Build/Products/Debug-iphonesimulator/iosMath/mathFonts.bundle/Info.plist /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/Pods/Target\ Support\ Files/iosMath/ResourceBundle-mathFonts-iosMath-Info.plist (in target 'iosMath-mathFonts' from project 'Pods')
+    cd /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/Pods
+note: Run script build phase 'Copy Recognition Assets' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'InkOS' from project 'InkOS')
+[InkOS] Compiling LessonViewModel.swift
+[InkOS] Compiling QuestionSectionView.swift
+[x] /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/QuestionSectionView.swift:53:31: type 'Color' has no member 'cardBackground'
+                  .fill(Color.cardBackground)
+                        ~~~~~ ^~~~~~~~~~~~~~
+[InkOS] Compiling QuestionSectionCell.swift
+[InkOS] Compiling LessonViewController.swift
+[InkOS] Compiling DashboardView.swift
+[InkOS] Compiling LessonCardView.swift
+[InkOS] Compiling VisualPlaceholderView.swift
+[InkOS] Compiling SummarySectionView.swift
+[InkOS] Compiling LessonGenerationOverlay.swift
+[InkOS] Compiling LessonHostView.swift
+[InkOS] Compiling GraphView.swift
+[InkOS] Compiling LessonView.swift
+[InkOS] Compiling ContentSectionView.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:175:40: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(boldContent)).bold()
+                                       ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:175:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(boldContent)).bold()
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:187:40: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(italicContent)).italic()
+                                       ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:187:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(italicContent)).italic()
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:200:11: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+          + Text(String(codeContent))
+          ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:199:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before)
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:208:23: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+      result = result + Text(remaining)
+                      ^
+[InkOS] Copy arm64-apple-ios-simulator.swiftsourceinfo -> InkOS.swiftsourceinfo
+[InkOS] Copy arm64-apple-ios-simulator.swiftmodule -> InkOS.swiftmodule
+[InkOS] Copy arm64-apple-ios-simulator.abi.json -> InkOS.abi.json
+[InkOS] Copy x86_64-apple-ios-simulator.swiftmodule -> InkOS.swiftmodule
+[InkOS] Copy x86_64-apple-ios-simulator.abi.json -> InkOS.abi.json
+[InkOS] Copy x86_64-apple-ios-simulator.swiftsourceinfo -> InkOS.swiftsourceinfo
+[InkOS] Compiling LessonViewModel.swift
+[InkOS] Compiling QuestionSectionCell.swift
+[InkOS] Compiling QuestionSectionView.swift
+[InkOS] Compiling VisualPlaceholderView.swift
+[InkOS] Compiling LessonViewController.swift
+[InkOS] Compiling ContentSectionView.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:175:40: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(boldContent)).bold()
+                                       ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:175:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(boldContent)).bold()
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:187:40: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(italicContent)).italic()
+                                       ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:187:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(italicContent)).italic()
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:200:11: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+          + Text(String(codeContent))
+          ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:199:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before)
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:208:23: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+      result = result + Text(remaining)
+                      ^
+[InkOS] Compiling SummarySectionView.swift
+[InkOS] Compiling LessonHostView.swift
+[InkOS] Compiling GraphView.swift
+[InkOS] Compiling LessonGenerationOverlay.swift
+[InkOS] Compiling DashboardView.swift
+[InkOS] Compiling LessonCardView.swift
+[InkOS] Compiling LessonView.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/Pods/Pods.xcodeproj: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 6.0, but the range of supported deployment target versions is 12.0 to 26.2.99. (in target 'iosMath' from project 'Pods')
+
+

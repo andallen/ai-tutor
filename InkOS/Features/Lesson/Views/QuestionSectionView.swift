@@ -13,13 +13,51 @@ struct QuestionSectionView: View {
   let section: QuestionSection
   @ObservedObject var viewModel: LessonViewModel
 
+  // Whether the reload button should be visible.
+  private var showReloadButton: Bool {
+    guard let state = viewModel.answerStates[section.id] else { return false }
+    switch state {
+    case .correct, .incorrect, .revealed:
+      return true
+    default:
+      return false
+    }
+  }
+
   var body: some View {
     VStack(alignment: .leading, spacing: 20) {
-      // Question prompt.
-      Text(section.prompt)
-        .font(.system(size: 17, weight: .semibold))
-        .foregroundStyle(Color.ink)
-        .lineSpacing(4)
+      // Question header with reload button.
+      HStack(alignment: .top) {
+        // Question prompt.
+        Text(section.prompt)
+          .font(.headline)
+          .foregroundStyle(Color.ink)
+          .lineSpacing(4)
+          .accessibilityAddTraits(.isHeader)
+
+        Spacer()
+
+        // Reload button to reset question and try again.
+        if showReloadButton {
+          Button {
+            Task {
+              await viewModel.resetQuestion(for: section.id)
+            }
+          } label: {
+            Image(systemName: "arrow.counterclockwise")
+              .font(.system(size: 14, weight: .medium))
+              .foregroundStyle(Color.inkSubtle)
+              .frame(width: 32, height: 32)
+              .background(
+                Circle()
+                  .fill(Color(UIColor.secondarySystemBackground))
+              )
+          }
+          .buttonStyle(PlainButtonStyle())
+          .accessibilityLabel("Reset question")
+          .accessibilityHint("Double tap to reset and try again")
+        }
+      }
 
       // Question input based on type.
       switch section.questionType {
@@ -112,26 +150,28 @@ struct MultipleChoiceView: View {
           }
         } label: {
           Text(checkButtonText)
-            .font(.system(size: 16, weight: .semibold))
+            .font(.callout.weight(.semibold))
             .foregroundStyle(Color.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 44)
+            .frame(minHeight: 44)
             .background(
               RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(checkButtonDisabled ? Color.inkFaint : Color.lessonAccent)
             )
         }
         .disabled(checkButtonDisabled)
+        .animation(nil, value: checkButtonDisabled)
+        .accessibilityHint(checkButtonDisabled ? "Select an answer first" : "Double tap to check your answer")
 
         // Show Answer button.
         Button {
           viewModel.revealAnswer(for: sectionID)
         } label: {
           Text("Show Answer")
-            .font(.system(size: 16, weight: .medium))
+            .font(.callout.weight(.medium))
             .foregroundStyle(Color.lessonAccent)
             .frame(maxWidth: .infinity)
-            .frame(height: 44)
+            .frame(minHeight: 44)
             .background(
               RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(Color.lessonAccent, lineWidth: 1.5)
@@ -139,6 +179,7 @@ struct MultipleChoiceView: View {
         }
         .disabled(showAnswerDisabled)
         .opacity(showAnswerDisabled ? 0.5 : 1.0)
+        .accessibilityHint("Double tap to reveal the correct answer")
       }
       .padding(.top, 8)
     }
@@ -243,10 +284,11 @@ struct OptionButton: View {
               .frame(width: 12, height: 12)
           }
         }
+        .accessibilityHidden(true)
 
         // Option text.
         Text(text)
-          .font(.system(size: 16))
+          .font(.callout)
           .foregroundStyle(Color.ink)
           .multilineTextAlignment(.leading)
 
@@ -255,12 +297,14 @@ struct OptionButton: View {
         // Status icon.
         if state == .correct {
           Image(systemName: "checkmark.circle.fill")
-            .font(.system(size: 20))
+            .font(.title3)
             .foregroundStyle(Color.correctGreen)
+            .accessibilityHidden(true)
         } else if state == .incorrect {
           Image(systemName: "xmark.circle.fill")
-            .font(.system(size: 20))
+            .font(.title3)
             .foregroundStyle(Color.incorrectRed)
+            .accessibilityHidden(true)
         }
       }
       .padding(.horizontal, 16)
@@ -276,6 +320,23 @@ struct OptionButton: View {
     .buttonStyle(PlainButtonStyle())
     .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isSelected)
     .animation(.spring(response: 0.2, dampingFraction: 0.7), value: state)
+    .accessibilityLabel(text)
+    .accessibilityValue(accessibilityValue)
+    .accessibilityAddTraits(isSelected ? .isSelected : [])
+  }
+
+  // Provides accessibility value describing the option state.
+  private var accessibilityValue: String {
+    switch state {
+    case .normal:
+      return isSelected ? "Selected" : ""
+    case .selected:
+      return "Selected"
+    case .correct:
+      return "Correct answer"
+    case .incorrect:
+      return "Incorrect"
+    }
   }
 
   // Border color based on state.
@@ -364,16 +425,17 @@ struct AnswerFeedbackView: View {
   private func feedbackCard(isCorrect: Bool, feedback: String) -> some View {
     HStack(alignment: .top, spacing: 12) {
       Image(systemName: isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
-        .font(.system(size: 24))
+        .font(.title2)
         .foregroundStyle(isCorrect ? Color.correctGreen : Color.incorrectRed)
+        .accessibilityHidden(true)
 
       VStack(alignment: .leading, spacing: 4) {
         Text(isCorrect ? "Correct!" : "Not quite")
-          .font(.system(size: 17, weight: .semibold))
+          .font(.headline)
           .foregroundStyle(Color.ink)
 
         Text(feedback)
-          .font(.system(size: 15))
+          .font(.subheadline)
           .foregroundStyle(Color.inkSubtle)
           .lineSpacing(3)
       }
@@ -389,6 +451,8 @@ struct AnswerFeedbackView: View {
       RoundedRectangle(cornerRadius: 12, style: .continuous)
         .stroke(isCorrect ? Color.correctGreen.opacity(0.25) : Color.incorrectRed.opacity(0.25), lineWidth: 1)
     )
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel(isCorrect ? "Correct! \(feedback)" : "Not quite. \(feedback)")
   }
 
   // Card showing the revealed correct answer.
@@ -396,16 +460,17 @@ struct AnswerFeedbackView: View {
   private func revealedAnswerCard() -> some View {
     HStack(alignment: .top, spacing: 12) {
       Image(systemName: "lightbulb.fill")
-        .font(.system(size: 24))
+        .font(.title2)
         .foregroundStyle(Color.lessonAccent)
+        .accessibilityHidden(true)
 
       VStack(alignment: .leading, spacing: 4) {
         Text("Correct Answer")
-          .font(.system(size: 17, weight: .semibold))
+          .font(.headline)
           .foregroundStyle(Color.ink)
 
         Text(correctAnswer)
-          .font(.system(size: 15))
+          .font(.subheadline)
           .foregroundStyle(Color.inkSubtle)
       }
 
@@ -420,6 +485,8 @@ struct AnswerFeedbackView: View {
       RoundedRectangle(cornerRadius: 12, style: .continuous)
         .stroke(Color.lessonAccent.opacity(0.25), lineWidth: 1)
     )
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel("Correct answer: \(correctAnswer)")
   }
 }
 
@@ -436,7 +503,7 @@ struct FreeResponsePlaceholderView: View {
     VStack(spacing: 12) {
       // Text input area.
       TextEditor(text: $textInput)
-        .font(.system(size: 17))
+        .font(.body)
         .foregroundStyle(Color.ink)
         .frame(minHeight: 120)
         .padding(12)
@@ -452,7 +519,7 @@ struct FreeResponsePlaceholderView: View {
           Group {
             if textInput.isEmpty {
               Text("Type your answer...")
-                .font(.system(size: 17))
+                .font(.body)
                 .foregroundStyle(Color.inkFaint)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 20)
@@ -461,15 +528,18 @@ struct FreeResponsePlaceholderView: View {
           },
           alignment: .topLeading
         )
+        .accessibilityLabel("Answer input")
+        .accessibilityHint("Enter your response")
 
       // Keyboard toggle hint (handwriting not yet implemented).
       HStack {
         Image(systemName: "keyboard")
-          .font(.system(size: 14))
+          .font(.caption)
         Text("Handwriting input coming soon")
-          .font(.system(size: 13))
+          .font(.caption)
       }
       .foregroundStyle(Color.inkFaint)
+      .accessibilityHidden(true)
 
       // Action buttons.
       HStack(spacing: 16) {
@@ -482,30 +552,32 @@ struct FreeResponsePlaceholderView: View {
           }
         } label: {
           Text("Check")
-            .font(.system(size: 16, weight: .semibold))
+            .font(.callout.weight(.semibold))
             .foregroundStyle(Color.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 44)
+            .frame(minHeight: 44)
             .background(
               RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(textInput.isEmpty ? Color.inkFaint : Color.lessonAccent)
             )
         }
         .disabled(textInput.isEmpty)
+        .accessibilityHint(textInput.isEmpty ? "Type an answer first" : "Double tap to check your answer")
 
         Button {
           viewModel.revealAnswer(for: section.id)
         } label: {
           Text("Show Answer")
-            .font(.system(size: 16, weight: .medium))
+            .font(.callout.weight(.medium))
             .foregroundStyle(Color.lessonAccent)
             .frame(maxWidth: .infinity)
-            .frame(height: 44)
+            .frame(minHeight: 44)
             .background(
               RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(Color.lessonAccent, lineWidth: 1.5)
             )
         }
+        .accessibilityHint("Double tap to reveal the correct answer")
       }
     }
   }
@@ -522,7 +594,7 @@ struct MathPlaceholderView: View {
     VStack(spacing: 12) {
       // Text input area with math hint.
       TextEditor(text: $textInput)
-        .font(.system(size: 17, design: .default))
+        .font(.body)
         .foregroundStyle(Color.ink)
         .frame(minHeight: 100)
         .padding(12)
@@ -538,7 +610,7 @@ struct MathPlaceholderView: View {
           Group {
             if textInput.isEmpty {
               Text("Type your equation...")
-                .font(.system(size: 17))
+                .font(.body)
                 .foregroundStyle(Color.inkFaint)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 20)
@@ -547,15 +619,18 @@ struct MathPlaceholderView: View {
           },
           alignment: .topLeading
         )
+        .accessibilityLabel("Math answer input")
+        .accessibilityHint("Enter your equation")
 
       // Math mode hint.
       HStack {
         Image(systemName: "function")
-          .font(.system(size: 14))
+          .font(.caption)
         Text("Math handwriting recognition coming soon")
-          .font(.system(size: 13))
+          .font(.caption)
       }
       .foregroundStyle(Color.inkFaint)
+      .accessibilityHidden(true)
 
       // Action buttons.
       HStack(spacing: 16) {
@@ -568,30 +643,32 @@ struct MathPlaceholderView: View {
           }
         } label: {
           Text("Check")
-            .font(.system(size: 16, weight: .semibold))
+            .font(.callout.weight(.semibold))
             .foregroundStyle(Color.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 44)
+            .frame(minHeight: 44)
             .background(
               RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(textInput.isEmpty ? Color.inkFaint : Color.lessonAccent)
             )
         }
         .disabled(textInput.isEmpty)
+        .accessibilityHint(textInput.isEmpty ? "Type an equation first" : "Double tap to check your answer")
 
         Button {
           viewModel.revealAnswer(for: section.id)
         } label: {
           Text("Show Answer")
-            .font(.system(size: 16, weight: .medium))
+            .font(.callout.weight(.medium))
             .foregroundStyle(Color.lessonAccent)
             .frame(maxWidth: .infinity)
-            .frame(height: 44)
+            .frame(minHeight: 44)
             .background(
               RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(Color.lessonAccent, lineWidth: 1.5)
             )
         }
+        .accessibilityHint("Double tap to reveal the correct answer")
       }
     }
   }

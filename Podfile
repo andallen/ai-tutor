@@ -7,6 +7,7 @@ target 'InkOS' do
 
   # Pods for InkOS
   pod 'MyScriptInteractiveInk-Runtime', '4.2.1'
+  pod 'iosMath', :modular_headers => true
 end
 
 # Test target needs access to the same pods for compilation.

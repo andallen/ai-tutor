@@ -29,11 +29,8 @@ final class LessonViewController: BaseEditorViewController {
   // Tracks which drawing areas are visible for tool palette visibility.
   private var visibleDrawingAreaIDs: Set<String> = []
 
-  // The currently active canvas ID for tool commands ("notes" or sectionID).
+  // The currently active canvas ID for tool commands.
   private var activeCanvasID: String?
-
-  // Coordinator for the notes overlay.
-  private var notesOverlayCoordinator: NotesOverlayCoordinator?
 
   // Manager for question answer canvases.
   private var questionCanvasManager: QuestionCanvasManager?
@@ -81,7 +78,7 @@ final class LessonViewController: BaseEditorViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    view.backgroundColor = .white
+    view.backgroundColor = LessonTypography.Color.background
 
     // Create view model on main thread (it's @MainActor isolated).
     viewModel = LessonViewModel()
@@ -92,19 +89,8 @@ final class LessonViewController: BaseEditorViewController {
 
     setupCollectionView()
     setupDataSource()
-    setupNotesOverlay()
     setupQuestionCanvasManager()
     loadLesson()
-  }
-
-  // MARK: - Notes Overlay Setup
-
-  private func setupNotesOverlay() {
-    let coordinator = NotesOverlayCoordinator(lessonID: lessonID)
-    coordinator.delegate = self
-    coordinator.attach(to: self)
-    coordinator.showButton(animated: false)
-    notesOverlayCoordinator = coordinator
   }
 
   // MARK: - Question Canvas Manager Setup
@@ -149,54 +135,42 @@ final class LessonViewController: BaseEditorViewController {
 
   override func handleToolSelectionChanged(_ tool: ToolPaletteView.ToolSelection) {
     // Forward tool selection to active canvas.
-    if activeCanvasID == "notes" {
-      notesOverlayCoordinator?.setTool(tool)
-    } else if activeCanvasID != nil {
+    if activeCanvasID != nil {
       questionCanvasManager?.setTool(tool)
     }
   }
 
   override func handleToolColorChanged(tool: ToolPaletteView.ToolSelection, hex: String) {
     // Forward color change to active canvas.
-    if activeCanvasID == "notes" {
-      notesOverlayCoordinator?.setToolColor(hex: hex, tool: tool)
-    } else if activeCanvasID != nil {
+    if activeCanvasID != nil {
       questionCanvasManager?.setToolColor(hex: hex, tool: tool)
     }
   }
 
   override func handleToolThicknessChanged(tool: ToolPaletteView.ToolSelection, width: CGFloat) {
     // Forward thickness change to active canvas.
-    if activeCanvasID == "notes" {
-      notesOverlayCoordinator?.setToolThickness(width: width, tool: tool)
-    } else if activeCanvasID != nil {
+    if activeCanvasID != nil {
       questionCanvasManager?.setToolThickness(width: width, tool: tool)
     }
   }
 
   override func handleUndoTapped() {
     // Forward undo to active canvas.
-    if activeCanvasID == "notes" {
-      notesOverlayCoordinator?.undo()
-    } else if activeCanvasID != nil {
+    if activeCanvasID != nil {
       questionCanvasManager?.undo()
     }
   }
 
   override func handleRedoTapped() {
     // Forward redo to active canvas.
-    if activeCanvasID == "notes" {
-      notesOverlayCoordinator?.redo()
-    } else if activeCanvasID != nil {
+    if activeCanvasID != nil {
       questionCanvasManager?.redo()
     }
   }
 
   override func handleClearTapped() {
     // Forward clear to active canvas.
-    if activeCanvasID == "notes" {
-      notesOverlayCoordinator?.clearNotes()
-    } else if activeCanvasID != nil {
+    if activeCanvasID != nil {
       questionCanvasManager?.clear()
     }
   }
@@ -210,6 +184,7 @@ final class LessonViewController: BaseEditorViewController {
     collectionView.backgroundColor = .clear
     collectionView.delegate = self
     collectionView.contentInsetAdjustmentBehavior = .always
+    collectionView.accessibilityIdentifier = "lessonCollectionView"
 
     // Add bottom inset for tool palette.
     collectionView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 100, right: 0)
@@ -250,18 +225,28 @@ final class LessonViewController: BaseEditorViewController {
     // Full-width header with estimated height.
     let itemSize = NSCollectionLayoutSize(
       widthDimension: .fractionalWidth(1.0),
-      heightDimension: .estimated(100)
+      heightDimension: .estimated(120)
     )
     let item = NSCollectionLayoutItem(layoutSize: itemSize)
 
     let groupSize = NSCollectionLayoutSize(
       widthDimension: .fractionalWidth(1.0),
-      heightDimension: .estimated(100)
+      heightDimension: .estimated(120)
     )
     let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
 
     let section = NSCollectionLayoutSection(group: group)
-    section.contentInsets = NSDirectionalEdgeInsets(top: 80, leading: 24, bottom: 24, trailing: 24)
+
+    // Center content with max width for header.
+    let maxWidth: CGFloat = 680
+    let availableWidth = environment.container.contentSize.width
+    let horizontalInset = max(LessonTypography.Spacing.lg, (availableWidth - maxWidth) / 2)
+    section.contentInsets = NSDirectionalEdgeInsets(
+      top: 80,
+      leading: horizontalInset,
+      bottom: LessonTypography.Spacing.xl,
+      trailing: horizontalInset
+    )
 
     return section
   }
@@ -282,11 +267,16 @@ final class LessonViewController: BaseEditorViewController {
 
     let section = NSCollectionLayoutSection(group: group)
 
-    // Center content with max width.
+    // Center content with max width for optimal reading.
     let maxWidth: CGFloat = 680
     let availableWidth = environment.container.contentSize.width
-    let horizontalInset = max(24, (availableWidth - maxWidth) / 2)
-    section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: horizontalInset, bottom: 16, trailing: horizontalInset)
+    let horizontalInset = max(LessonTypography.Spacing.lg, (availableWidth - maxWidth) / 2)
+    section.contentInsets = NSDirectionalEdgeInsets(
+      top: 0,
+      leading: horizontalInset,
+      bottom: LessonTypography.Spacing.md,
+      trailing: horizontalInset
+    )
 
     return section
   }
@@ -419,9 +409,6 @@ final class LessonViewController: BaseEditorViewController {
   // MARK: - Ink Persistence
 
   private func saveAllInk() async {
-    // Save notes overlay ink.
-    await notesOverlayCoordinator?.saveNotes()
-
     // Save question canvas ink.
     await questionCanvasManager?.saveAllInk()
   }
@@ -457,30 +444,6 @@ extension LessonViewController: UICollectionViewDelegate {
     Task {
       await viewModel.markSectionViewed(sectionID)
     }
-  }
-}
-
-// MARK: - NotesOverlayCoordinatorDelegate
-
-extension LessonViewController: NotesOverlayCoordinatorDelegate {
-
-  func notesOverlayDidExpand(_ coordinator: NotesOverlayCoordinator) {
-    // Set notes as the active canvas for tool commands.
-    activeCanvasID = "notes"
-
-    // Show tool palette when notes overlay is expanded.
-    setToolPaletteVisible(true, animated: true)
-    setEditingToolbarVisible(true, animated: true)
-  }
-
-  func notesOverlayDidCollapse(_ coordinator: NotesOverlayCoordinator) {
-    // Clear active canvas if it was notes.
-    if activeCanvasID == "notes" {
-      activeCanvasID = nil
-    }
-
-    // Update tool palette visibility based on other visible drawing areas.
-    updateToolPaletteVisibility()
   }
 }
 

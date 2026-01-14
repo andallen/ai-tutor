@@ -52,10 +52,8 @@ struct LessonGenerationOverlay: View {
       withAnimation(.spring(response: 0.42, dampingFraction: 0.85)) {
         isPresented = true
       }
-      // Focus text field after a short delay.
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-        isTextFieldFocused = true
-      }
+      // Focus text field immediately to show keyboard right away.
+      isTextFieldFocused = true
     }
   }
 

@@ -1,10 +1,11 @@
 // SummarySectionCell.swift
 // UICollectionViewCell displaying summary sections.
+// Uses LessonTypography for consistent visual design.
 
 import UIKit
 
 // Cell displaying a summary section with key takeaways.
-// Styled with a distinct background to stand out.
+// Styled with a distinct background to stand out from regular content.
 final class SummarySectionCell: UICollectionViewCell {
 
   static let reuseIdentifier = "SummarySectionCell"
@@ -13,9 +14,17 @@ final class SummarySectionCell: UICollectionViewCell {
 
   private let containerView: UIView = {
     let view = UIView()
-    view.backgroundColor = UIColor(red: 0.95, green: 0.97, blue: 1.0, alpha: 1.0)
-    view.layer.cornerRadius = 12
+    view.backgroundColor = LessonTypography.Color.summaryBackground
+    view.layer.cornerRadius = LessonTypography.CornerRadius.medium
     view.clipsToBounds = true
+    view.translatesAutoresizingMaskIntoConstraints = false
+    return view
+  }()
+
+  // Left accent bar for visual distinction.
+  private let accentBar: UIView = {
+    let view = UIView()
+    view.backgroundColor = LessonTypography.Color.accent
     view.translatesAutoresizingMaskIntoConstraints = false
     return view
   }()
@@ -23,7 +32,7 @@ final class SummarySectionCell: UICollectionViewCell {
   private let headerStack: UIStackView = {
     let stack = UIStackView()
     stack.axis = .horizontal
-    stack.spacing = 8
+    stack.spacing = LessonTypography.Spacing.xs
     stack.alignment = .center
     stack.translatesAutoresizingMaskIntoConstraints = false
     return stack
@@ -32,7 +41,7 @@ final class SummarySectionCell: UICollectionViewCell {
   private let iconView: UIImageView = {
     let imageView = UIImageView()
     imageView.image = UIImage(systemName: "lightbulb.fill")
-    imageView.tintColor = UIColor(red: 0.3, green: 0.5, blue: 0.9, alpha: 1.0)
+    imageView.tintColor = LessonTypography.Color.accent
     imageView.contentMode = .scaleAspectFit
     imageView.translatesAutoresizingMaskIntoConstraints = false
     return imageView
@@ -40,18 +49,15 @@ final class SummarySectionCell: UICollectionViewCell {
 
   private let titleLabel: UILabel = {
     let label = UILabel()
-    label.text = "Key Takeaways"
-    label.font = .systemFont(ofSize: 16, weight: .semibold)
-    label.textColor = UIColor(red: 0.3, green: 0.5, blue: 0.9, alpha: 1.0)
     label.translatesAutoresizingMaskIntoConstraints = false
     return label
   }()
 
-  private let contentLabel: UILabel = {
-    let label = UILabel()
-    label.numberOfLines = 0
-    label.translatesAutoresizingMaskIntoConstraints = false
-    return label
+  private let mathContentView: MathContentView = {
+    let view = MathContentView()
+    view.fontSize = LessonTypography.Size.body
+    view.translatesAutoresizingMaskIntoConstraints = false
+    return view
   }()
 
   // MARK: - Initialization
@@ -69,76 +75,57 @@ final class SummarySectionCell: UICollectionViewCell {
 
   private func setupViews() {
     contentView.addSubview(containerView)
+    containerView.addSubview(accentBar)
     containerView.addSubview(headerStack)
-    containerView.addSubview(contentLabel)
+    containerView.addSubview(mathContentView)
 
     headerStack.addArrangedSubview(iconView)
     headerStack.addArrangedSubview(titleLabel)
 
+    // Configure title with letter spacing.
+    let titleAttributes: [NSAttributedString.Key: Any] = [
+      .font: LessonTypography.font(size: LessonTypography.Size.caption, weight: .semibold),
+      .foregroundColor: LessonTypography.Color.accent,
+      .kern: 0.5
+    ]
+    titleLabel.attributedText = NSAttributedString(string: "Key Takeaways", attributes: titleAttributes)
+
     NSLayoutConstraint.activate([
-      containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
+      containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: LessonTypography.Spacing.lg),
       containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
       containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-      containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
+      containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -LessonTypography.Spacing.sm),
 
-      headerStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
-      headerStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-      headerStack.trailingAnchor.constraint(lessThanOrEqualTo: containerView.trailingAnchor, constant: -16),
+      accentBar.topAnchor.constraint(equalTo: containerView.topAnchor),
+      accentBar.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+      accentBar.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+      accentBar.widthAnchor.constraint(equalToConstant: 4),
+
+      headerStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: LessonTypography.Spacing.lg),
+      headerStack.leadingAnchor.constraint(equalTo: accentBar.trailingAnchor, constant: LessonTypography.Spacing.lg),
+      headerStack.trailingAnchor.constraint(lessThanOrEqualTo: containerView.trailingAnchor, constant: -LessonTypography.Spacing.lg),
 
       iconView.widthAnchor.constraint(equalToConstant: 20),
       iconView.heightAnchor.constraint(equalToConstant: 20),
 
-      contentLabel.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: 12),
-      contentLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-      contentLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-      contentLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16)
+      mathContentView.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: LessonTypography.Spacing.md),
+      mathContentView.leadingAnchor.constraint(equalTo: accentBar.trailingAnchor, constant: LessonTypography.Spacing.lg),
+      mathContentView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -LessonTypography.Spacing.lg),
+      mathContentView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -LessonTypography.Spacing.lg)
     ])
   }
 
   // MARK: - Configuration
 
   func configure(with section: SummarySection) {
-    contentLabel.attributedText = renderSummaryContent(section.content)
-  }
-
-  // Renders summary content with bullet point styling.
-  private func renderSummaryContent(_ text: String) -> NSAttributedString {
-    let result = NSMutableAttributedString()
-
-    let paragraphStyle = NSMutableParagraphStyle()
-    paragraphStyle.lineSpacing = 4
-    paragraphStyle.paragraphSpacing = 8
-
-    let textColor = UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)
-    let baseAttributes: [NSAttributedString.Key: Any] = [
-      .font: UIFont.systemFont(ofSize: 15, weight: .regular),
-      .foregroundColor: textColor,
-      .paragraphStyle: paragraphStyle
-    ]
-
-    let lines = text.components(separatedBy: "\n")
-    for (index, line) in lines.enumerated() {
-      var processedLine = line
-
-      // Convert bullet markers.
-      if line.hasPrefix("- ") || line.hasPrefix("* ") {
-        processedLine = "•  " + String(line.dropFirst(2))
-      }
-
-      result.append(NSAttributedString(string: processedLine, attributes: baseAttributes))
-
-      if index < lines.count - 1 {
-        result.append(NSAttributedString(string: "\n", attributes: baseAttributes))
-      }
-    }
-
-    return result
+    mathContentView.textColor = LessonTypography.Color.primary
+    mathContentView.configure(with: section.content)
   }
 
   // MARK: - Reuse
 
   override func prepareForReuse() {
     super.prepareForReuse()
-    contentLabel.attributedText = nil
+    mathContentView.clear()
   }
 }

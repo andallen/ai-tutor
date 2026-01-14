@@ -20,15 +20,18 @@ struct SummarySectionView: View {
         // Header.
         HStack(spacing: 10) {
           Image(systemName: "lightbulb.fill")
-            .font(.system(size: 18))
+            .font(.headline)
             .foregroundStyle(Color.lessonAccent)
+            .accessibilityHidden(true)
 
           Text("Key Takeaways")
-            .font(.system(size: 18, weight: .semibold))
+            .font(.headline)
             .foregroundStyle(Color.ink)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
 
         // Divider.
         Rectangle()

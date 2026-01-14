@@ -19,7 +19,7 @@ struct DashboardHostView: View {
   @State private var activePDFSession: PDFDocumentSession?
 
   // Lesson session state (passed to lesson view when opening a lesson).
-  @State private var activeLessonID: String?
+  @State private var activeLessonSession: LessonSession?
 
   var body: some View {
     DashboardViewControllerRepresentable(
@@ -34,7 +34,7 @@ struct DashboardHostView: View {
         }
       },
       onLessonSelected: { lesson in
-        activeLessonID = lesson.id
+        activeLessonSession = LessonSession(id: lesson.id)
       }
     )
     .ignoresSafeArea()
@@ -49,6 +49,13 @@ struct DashboardHostView: View {
       PDFEditorHostView(session: session, onDismiss: {
         activePDFSession = nil
       })
+    }
+    // Lesson viewer presentation.
+    .fullScreenCover(item: $activeLessonSession) { session in
+      LessonHostView(lessonID: session.id, onDismiss: {
+        activeLessonSession = nil
+      })
+      .ignoresSafeArea()
     }
   }
 

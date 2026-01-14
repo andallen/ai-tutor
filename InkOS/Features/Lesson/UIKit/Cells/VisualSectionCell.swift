@@ -1,5 +1,6 @@
 // VisualSectionCell.swift
 // UICollectionViewCell displaying visual content sections.
+// Uses LessonTypography for consistent visual design.
 
 import UIKit
 
@@ -13,8 +14,10 @@ final class VisualSectionCell: UICollectionViewCell {
 
   private let containerView: UIView = {
     let view = UIView()
-    view.backgroundColor = UIColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1.0)
-    view.layer.cornerRadius = 12
+    view.backgroundColor = LessonTypography.Color.cardBackground
+    view.layer.cornerRadius = LessonTypography.CornerRadius.medium
+    view.layer.borderWidth = 1
+    view.layer.borderColor = LessonTypography.Color.border.cgColor
     view.clipsToBounds = true
     view.translatesAutoresizingMaskIntoConstraints = false
     return view
@@ -23,7 +26,7 @@ final class VisualSectionCell: UICollectionViewCell {
   private let iconView: UIImageView = {
     let imageView = UIImageView()
     imageView.image = UIImage(systemName: "photo")
-    imageView.tintColor = UIColor(red: 0.6, green: 0.6, blue: 0.6, alpha: 1.0)
+    imageView.tintColor = LessonTypography.Color.tertiary
     imageView.contentMode = .scaleAspectFit
     imageView.translatesAutoresizingMaskIntoConstraints = false
     return imageView
@@ -31,8 +34,8 @@ final class VisualSectionCell: UICollectionViewCell {
 
   private let descriptionLabel: UILabel = {
     let label = UILabel()
-    label.font = .systemFont(ofSize: 14, weight: .medium)
-    label.textColor = UIColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 1.0)
+    label.font = LessonTypography.font(size: LessonTypography.Size.caption, weight: .medium)
+    label.textColor = LessonTypography.Color.secondary
     label.textAlignment = .center
     label.numberOfLines = 0
     label.translatesAutoresizingMaskIntoConstraints = false
@@ -41,8 +44,6 @@ final class VisualSectionCell: UICollectionViewCell {
 
   private let typeLabel: UILabel = {
     let label = UILabel()
-    label.font = .systemFont(ofSize: 11, weight: .semibold)
-    label.textColor = UIColor(red: 0.7, green: 0.7, blue: 0.7, alpha: 1.0)
     label.textAlignment = .center
     label.translatesAutoresizingMaskIntoConstraints = false
     return label
@@ -73,22 +74,22 @@ final class VisualSectionCell: UICollectionViewCell {
     containerHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: 200)
 
     NSLayoutConstraint.activate([
-      containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+      containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: LessonTypography.Spacing.sm),
       containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
       containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-      containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
+      containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -LessonTypography.Spacing.sm),
       containerHeightConstraint,
 
       iconView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-      iconView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor, constant: -24),
+      iconView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor, constant: -LessonTypography.Spacing.lg),
       iconView.widthAnchor.constraint(equalToConstant: 48),
       iconView.heightAnchor.constraint(equalToConstant: 48),
 
-      descriptionLabel.topAnchor.constraint(equalTo: iconView.bottomAnchor, constant: 12),
-      descriptionLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 24),
-      descriptionLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -24),
+      descriptionLabel.topAnchor.constraint(equalTo: iconView.bottomAnchor, constant: LessonTypography.Spacing.md),
+      descriptionLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: LessonTypography.Spacing.lg),
+      descriptionLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -LessonTypography.Spacing.lg),
 
-      typeLabel.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 8),
+      typeLabel.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: LessonTypography.Spacing.xs),
       typeLabel.centerXAnchor.constraint(equalTo: containerView.centerXAnchor)
     ])
   }
@@ -105,15 +106,27 @@ final class VisualSectionCell: UICollectionViewCell {
       descriptionLabel.text = "Visual content"
     }
 
-    // Set type label.
+    // Set type label with overline styling.
+    let typeText: String
+    let icon: String
+
     switch section.visualType {
     case .generated:
-      typeLabel.text = "GENERATED IMAGE"
-      iconView.image = UIImage(systemName: "photo")
+      typeText = "GENERATED IMAGE"
+      icon = "photo"
     case .interactive:
-      typeLabel.text = "INTERACTIVE"
-      iconView.image = UIImage(systemName: "hand.tap")
+      typeText = "INTERACTIVE"
+      icon = "hand.tap"
     }
+
+    iconView.image = UIImage(systemName: icon)
+
+    let typeAttributes: [NSAttributedString.Key: Any] = [
+      .font: LessonTypography.font(size: LessonTypography.Size.overline, weight: .semibold),
+      .foregroundColor: LessonTypography.Color.tertiary,
+      .kern: 1.0
+    ]
+    typeLabel.attributedText = NSAttributedString(string: typeText, attributes: typeAttributes)
   }
 
   // MARK: - Reuse
@@ -121,7 +134,7 @@ final class VisualSectionCell: UICollectionViewCell {
   override func prepareForReuse() {
     super.prepareForReuse()
     descriptionLabel.text = nil
-    typeLabel.text = nil
+    typeLabel.attributedText = nil
     iconView.image = UIImage(systemName: "photo")
   }
 }

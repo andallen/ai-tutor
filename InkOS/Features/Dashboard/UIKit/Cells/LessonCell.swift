@@ -53,6 +53,11 @@ class LessonCell: UICollectionViewCell {
   func configure(with lesson: LessonMetadata) {
     self.lesson = lesson
     cardView.configure(with: lesson)
+
+    // Set accessibility identifier for UI testing.
+    accessibilityIdentifier = "lessonCard_\(lesson.id)"
+    isAccessibilityElement = true
+    accessibilityLabel = "Lesson: \(lesson.displayName)"
   }
 
   // Returns the card view for snapshot during drag.

@@ -91,6 +91,20 @@ final class LessonViewModel: ObservableObject {
     lesson?.sections.count ?? 0
   }
 
+  // The index of the current section (furthest viewed).
+  var currentSectionIndex: Int {
+    guard let lesson, let progress else { return 0 }
+
+    // Find the highest viewed section index.
+    var maxIndex = 0
+    for (index, section) in lesson.sections.enumerated() {
+      if progress.sections[section.id]?.completed == true {
+        maxIndex = max(maxIndex, index)
+      }
+    }
+    return maxIndex
+  }
+
   // Loads a lesson by ID.
   func loadLesson(lessonID: String) async {
     self.lessonID = lessonID
@@ -194,13 +208,22 @@ final class LessonViewModel: ObservableObject {
 
   // Checks the selected answer for a question section.
   func checkAnswer(for sectionID: String) async {
-    guard let lesson else { return }
-    guard let section = lesson.sections.first(where: { $0.id == sectionID }) else { return }
+    guard let lesson else {
+      return
+    }
 
-    guard case .question(let questionSection) = section else { return }
+    guard let section = lesson.sections.first(where: { $0.id == sectionID }) else {
+      return
+    }
+
+    guard case .question(let questionSection) = section else {
+      return
+    }
 
     // Get the selected answer.
-    guard let selectedAnswer = selectedAnswers[sectionID] else { return }
+    guard let selectedAnswer = selectedAnswers[sectionID] else {
+      return
+    }
 
     answerStates[sectionID] = .checking
 
@@ -238,6 +261,29 @@ final class LessonViewModel: ObservableObject {
   // Reveals the correct answer for a question.
   func revealAnswer(for sectionID: String) {
     answerStates[sectionID] = .revealed
+  }
+
+  // Resets a question to its initial unanswered state.
+  // Clears selection and answer state so the user can try again.
+  func resetQuestion(for sectionID: String) async {
+    answerStates[sectionID] = .unanswered
+    selectedAnswers.removeValue(forKey: sectionID)
+
+    // Clear the saved progress for this section.
+    guard let lessonID else { return }
+
+    var updatedProgress = progress ?? LessonProgress(lessonID: lessonID)
+    if var sectionProgress = updatedProgress.sections[sectionID] {
+      sectionProgress.userAnswer = nil
+      sectionProgress.feedback = nil
+      sectionProgress.wasCorrect = nil
+      sectionProgress.completed = false
+      sectionProgress.completedAt = nil
+      updatedProgress.sections[sectionID] = sectionProgress
+      progress = updatedProgress
+
+      try? await bundleManager.saveLessonProgress(lessonID: lessonID, progress: updatedProgress)
+    }
   }
 
   // Gets the correct answer for a question section.

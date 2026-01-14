@@ -1,5 +1,6 @@
 // QuestionSectionCell.swift
 // UICollectionViewCell displaying question sections with answer input.
+// Uses LessonTypography for consistent visual design.
 
 import UIKit
 
@@ -30,57 +31,45 @@ final class QuestionSectionCell: UICollectionViewCell {
 
   private let containerView: UIView = {
     let view = UIView()
-    view.backgroundColor = UIColor(red: 0.98, green: 0.98, blue: 0.98, alpha: 1.0)
-    view.layer.cornerRadius = 12
+    view.backgroundColor = LessonTypography.Color.questionBackground
+    view.layer.cornerRadius = LessonTypography.CornerRadius.medium
     view.layer.borderWidth = 1
-    view.layer.borderColor = UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1.0).cgColor
+    view.layer.borderColor = LessonTypography.Color.border.cgColor
     view.clipsToBounds = true
     view.translatesAutoresizingMaskIntoConstraints = false
     return view
   }()
 
-  private let questionLabel: UILabel = {
+  // Overline label indicating question number.
+  private let questionOverline: UILabel = {
     let label = UILabel()
-    label.font = .systemFont(ofSize: 17, weight: .medium)
-    label.textColor = UIColor(red: 0.13, green: 0.13, blue: 0.13, alpha: 1.0)
-    label.numberOfLines = 0
     label.translatesAutoresizingMaskIntoConstraints = false
     return label
+  }()
+
+  private let questionContentView: MathContentView = {
+    let view = MathContentView()
+    view.fontSize = LessonTypography.Size.body
+    view.translatesAutoresizingMaskIntoConstraints = false
+    return view
   }()
 
   private let optionsStack: UIStackView = {
     let stack = UIStackView()
     stack.axis = .vertical
-    stack.spacing = 10
+    stack.spacing = LessonTypography.Spacing.sm
     stack.translatesAutoresizingMaskIntoConstraints = false
     return stack
   }()
 
-  private let feedbackContainer: UIView = {
-    let view = UIView()
-    view.layer.cornerRadius = 8
-    view.clipsToBounds = true
-    view.isHidden = true
-    view.translatesAutoresizingMaskIntoConstraints = false
-    return view
-  }()
-
-  private let feedbackLabel: UILabel = {
-    let label = UILabel()
-    label.font = .systemFont(ofSize: 14, weight: .medium)
-    label.numberOfLines = 0
-    label.translatesAutoresizingMaskIntoConstraints = false
-    return label
-  }()
-
   private let checkAnswerButton: UIButton = {
     let button = UIButton(type: .system)
-    button.setTitle("Check Answer", for: .normal)
-    button.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
-    button.backgroundColor = UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)
+    button.titleLabel?.font = LessonTypography.font(size: LessonTypography.Size.body, weight: .semibold)
+    button.backgroundColor = LessonTypography.Color.primary
     button.setTitleColor(.white, for: .normal)
     button.setTitleColor(UIColor.white.withAlphaComponent(0.5), for: .disabled)
-    button.layer.cornerRadius = 10
+    button.layer.cornerRadius = LessonTypography.CornerRadius.small
+    button.clipsToBounds = true
     button.isEnabled = false
     button.translatesAutoresizingMaskIntoConstraints = false
     return button
@@ -91,9 +80,9 @@ final class QuestionSectionCell: UICollectionViewCell {
   let canvasContainer: UIView = {
     let view = UIView()
     view.backgroundColor = .white
-    view.layer.cornerRadius = 8
+    view.layer.cornerRadius = LessonTypography.CornerRadius.small
     view.layer.borderWidth = 1
-    view.layer.borderColor = UIColor(red: 0.85, green: 0.85, blue: 0.85, alpha: 1.0).cgColor
+    view.layer.borderColor = LessonTypography.Color.border.cgColor
     view.isHidden = true
     view.clipsToBounds = true
     view.translatesAutoresizingMaskIntoConstraints = false
@@ -103,17 +92,34 @@ final class QuestionSectionCell: UICollectionViewCell {
   private let canvasLabel: UILabel = {
     let label = UILabel()
     label.text = "Handwriting input area"
-    label.font = .systemFont(ofSize: 14, weight: .medium)
-    label.textColor = UIColor(red: 0.6, green: 0.6, blue: 0.6, alpha: 1.0)
+    label.font = LessonTypography.font(size: LessonTypography.Size.caption, weight: .medium)
+    label.textColor = LessonTypography.Color.tertiary
     label.textAlignment = .center
     label.translatesAutoresizingMaskIntoConstraints = false
     return label
   }()
 
+  // Reload button to reset question state and try again.
+  private let reloadButton: UIButton = {
+    let button = UIButton(type: .system)
+    let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+    let image = UIImage(systemName: "arrow.counterclockwise", withConfiguration: config)
+    button.setImage(image, for: .normal)
+    button.tintColor = LessonTypography.Color.secondary
+    button.backgroundColor = LessonTypography.Color.cardBackground
+    button.layer.cornerRadius = 16
+    button.clipsToBounds = true
+    button.isHidden = true
+    button.translatesAutoresizingMaskIntoConstraints = false
+    button.accessibilityLabel = "Reset question"
+    button.accessibilityHint = "Double tap to reset and try again"
+    return button
+  }()
+
   private let canvasIcon: UIImageView = {
     let imageView = UIImageView()
     imageView.image = UIImage(systemName: "pencil.tip")
-    imageView.tintColor = UIColor(red: 0.6, green: 0.6, blue: 0.6, alpha: 1.0)
+    imageView.tintColor = LessonTypography.Color.tertiary
     imageView.contentMode = .scaleAspectFit
     imageView.translatesAutoresizingMaskIntoConstraints = false
     return imageView
@@ -138,36 +144,44 @@ final class QuestionSectionCell: UICollectionViewCell {
 
   private func setupViews() {
     contentView.addSubview(containerView)
-    containerView.addSubview(questionLabel)
+    containerView.addSubview(questionOverline)
+    containerView.addSubview(reloadButton)
+    containerView.addSubview(questionContentView)
     containerView.addSubview(optionsStack)
     containerView.addSubview(canvasContainer)
-    containerView.addSubview(feedbackContainer)
     containerView.addSubview(checkAnswerButton)
 
     canvasContainer.addSubview(canvasIcon)
     canvasContainer.addSubview(canvasLabel)
 
-    feedbackContainer.addSubview(feedbackLabel)
-
     canvasHeightConstraint = canvasContainer.heightAnchor.constraint(equalToConstant: 150)
 
     NSLayoutConstraint.activate([
-      containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+      containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: LessonTypography.Spacing.md),
       containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
       containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-      containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12),
+      containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -LessonTypography.Spacing.sm),
 
-      questionLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
-      questionLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-      questionLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+      questionOverline.topAnchor.constraint(equalTo: containerView.topAnchor, constant: LessonTypography.Spacing.lg),
+      questionOverline.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: LessonTypography.Spacing.lg),
+      questionOverline.trailingAnchor.constraint(lessThanOrEqualTo: reloadButton.leadingAnchor, constant: -LessonTypography.Spacing.sm),
 
-      optionsStack.topAnchor.constraint(equalTo: questionLabel.bottomAnchor, constant: 16),
-      optionsStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-      optionsStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+      reloadButton.centerYAnchor.constraint(equalTo: questionOverline.centerYAnchor),
+      reloadButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -LessonTypography.Spacing.lg),
+      reloadButton.widthAnchor.constraint(equalToConstant: 32),
+      reloadButton.heightAnchor.constraint(equalToConstant: 32),
 
-      canvasContainer.topAnchor.constraint(equalTo: questionLabel.bottomAnchor, constant: 16),
-      canvasContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-      canvasContainer.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+      questionContentView.topAnchor.constraint(equalTo: questionOverline.bottomAnchor, constant: LessonTypography.Spacing.xs),
+      questionContentView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: LessonTypography.Spacing.lg),
+      questionContentView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -LessonTypography.Spacing.lg),
+
+      optionsStack.topAnchor.constraint(equalTo: questionContentView.bottomAnchor, constant: LessonTypography.Spacing.lg),
+      optionsStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: LessonTypography.Spacing.lg),
+      optionsStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -LessonTypography.Spacing.lg),
+
+      canvasContainer.topAnchor.constraint(equalTo: questionContentView.bottomAnchor, constant: LessonTypography.Spacing.lg),
+      canvasContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: LessonTypography.Spacing.lg),
+      canvasContainer.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -LessonTypography.Spacing.lg),
       canvasHeightConstraint,
 
       canvasIcon.centerXAnchor.constraint(equalTo: canvasContainer.centerXAnchor),
@@ -175,28 +189,23 @@ final class QuestionSectionCell: UICollectionViewCell {
       canvasIcon.widthAnchor.constraint(equalToConstant: 32),
       canvasIcon.heightAnchor.constraint(equalToConstant: 32),
 
-      canvasLabel.topAnchor.constraint(equalTo: canvasIcon.bottomAnchor, constant: 8),
+      canvasLabel.topAnchor.constraint(equalTo: canvasIcon.bottomAnchor, constant: LessonTypography.Spacing.xs),
       canvasLabel.centerXAnchor.constraint(equalTo: canvasContainer.centerXAnchor),
 
-      feedbackContainer.topAnchor.constraint(equalTo: optionsStack.bottomAnchor, constant: 12),
-      feedbackContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-      feedbackContainer.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-
-      feedbackLabel.topAnchor.constraint(equalTo: feedbackContainer.topAnchor, constant: 12),
-      feedbackLabel.leadingAnchor.constraint(equalTo: feedbackContainer.leadingAnchor, constant: 12),
-      feedbackLabel.trailingAnchor.constraint(equalTo: feedbackContainer.trailingAnchor, constant: -12),
-      feedbackLabel.bottomAnchor.constraint(equalTo: feedbackContainer.bottomAnchor, constant: -12),
-
-      checkAnswerButton.topAnchor.constraint(equalTo: feedbackContainer.bottomAnchor, constant: 12),
-      checkAnswerButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-      checkAnswerButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-      checkAnswerButton.heightAnchor.constraint(equalToConstant: 48),
-      checkAnswerButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16)
+      checkAnswerButton.topAnchor.constraint(equalTo: optionsStack.bottomAnchor, constant: LessonTypography.Spacing.lg),
+      checkAnswerButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: LessonTypography.Spacing.lg),
+      checkAnswerButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -LessonTypography.Spacing.lg),
+      checkAnswerButton.heightAnchor.constraint(equalToConstant: 52),
+      checkAnswerButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -LessonTypography.Spacing.lg)
     ])
+
+    // Configure button title with proper letter spacing for uppercase text.
+    updateButtonTitle("CHECK ANSWER", enabled: false)
   }
 
   private func setupActions() {
     checkAnswerButton.addTarget(self, action: #selector(checkAnswerTapped), for: .touchUpInside)
+    reloadButton.addTarget(self, action: #selector(reloadButtonTapped), for: .touchUpInside)
 
     // Add tap gesture to canvas container to activate it for tool commands.
     let canvasTap = UITapGestureRecognizer(target: self, action: #selector(canvasContainerTapped))
@@ -208,13 +217,69 @@ final class QuestionSectionCell: UICollectionViewCell {
     delegate?.questionCell(self, didActivateCanvas: sectionID)
   }
 
+  @objc private func reloadButtonTapped() {
+    guard let section = section, let viewModel = viewModel else { return }
+
+    // Haptic feedback.
+    let haptic = UIImpactFeedbackGenerator(style: .light)
+    haptic.impactOccurred()
+
+    // Animate button rotation.
+    UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut) { [weak self] in
+      self?.reloadButton.transform = CGAffineTransform(rotationAngle: -.pi)
+    } completion: { [weak self] _ in
+      self?.reloadButton.transform = .identity
+    }
+
+    // Reset the question in the view model.
+    Task {
+      await viewModel.resetQuestion(for: section.id)
+
+      // Reset the cell's visual state.
+      await MainActor.run { [weak self] in
+        self?.resetVisualState()
+      }
+    }
+  }
+
+  // Resets the cell's visual state to unanswered.
+  private func resetVisualState() {
+    // Clear option selection.
+    if let previousIndex = selectedOptionIndex,
+       previousIndex < optionsStack.arrangedSubviews.count {
+      let previousView = optionsStack.arrangedSubviews[previousIndex]
+      updateOptionView(previousView, isSelected: false)
+    }
+    selectedOptionIndex = nil
+
+    // Reset button state.
+    checkAnswerButton.isEnabled = false
+    updateButtonTitle("CHECK ANSWER", enabled: false)
+
+    // Hide reload button since question is now unanswered.
+    reloadButton.isHidden = true
+  }
+
   // MARK: - Configuration
 
   func configure(with section: QuestionSection, viewModel: LessonViewModel) {
     self.section = section
     self.viewModel = viewModel
 
-    questionLabel.text = section.prompt
+    // Set accessibility identifier for UI testing.
+    accessibilityIdentifier = "questionSection_\(section.id)"
+    checkAnswerButton.accessibilityIdentifier = "checkAnswerButton_\(section.id)"
+    containerView.accessibilityIdentifier = "questionContainer_\(section.id)"
+
+    // Configure overline.
+    let overlineAttributes: [NSAttributedString.Key: Any] = [
+      .font: LessonTypography.font(size: LessonTypography.Size.overline, weight: .semibold),
+      .foregroundColor: LessonTypography.Color.accent,
+      .kern: 1.2
+    ]
+    questionOverline.attributedText = NSAttributedString(string: "QUESTION", attributes: overlineAttributes)
+
+    questionContentView.configure(with: section.prompt)
 
     // Configure based on question type.
     switch section.questionType {
@@ -249,33 +314,74 @@ final class QuestionSectionCell: UICollectionViewCell {
     optionsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
     selectedOptionIndex = nil
 
-    // Add option buttons.
+    // Add option views.
     for (index, option) in options.enumerated() {
-      let button = createOptionButton(text: option, index: index)
-      optionsStack.addArrangedSubview(button)
+      let optionView = createOptionView(text: option, index: index)
+      optionsStack.addArrangedSubview(optionView)
     }
   }
 
-  private func createOptionButton(text: String, index: Int) -> UIButton {
-    let button = UIButton(type: .system)
-    button.tag = index
+  private func createOptionView(text: String, index: Int) -> UIView {
+    let container = UIView()
+    container.tag = index
+    container.backgroundColor = .white
+    container.layer.cornerRadius = LessonTypography.CornerRadius.small
+    container.layer.borderWidth = 1
+    container.layer.borderColor = LessonTypography.Color.border.cgColor
 
-    // Configure button appearance.
-    var config = UIButton.Configuration.plain()
-    config.title = text
-    config.baseForegroundColor = UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)
-    config.background.backgroundColor = .white
-    config.background.cornerRadius = 8
-    config.background.strokeColor = UIColor(red: 0.85, green: 0.85, blue: 0.85, alpha: 1.0)
-    config.background.strokeWidth = 1
-    config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
-    config.titleAlignment = .leading
+    // Set accessibility identifier for option.
+    let optionLetterForID = ["A", "B", "C", "D", "E", "F"]
+    let letterID = index < optionLetterForID.count ? optionLetterForID[index] : "\(index + 1)"
+    container.accessibilityIdentifier = "option_\(letterID)"
+    container.isAccessibilityElement = true
+    container.accessibilityLabel = "Option \(letterID)"
 
-    button.configuration = config
-    button.contentHorizontalAlignment = .leading
-    button.addTarget(self, action: #selector(optionTapped(_:)), for: .touchUpInside)
+    // Option label (A, B, C, D).
+    let optionLetters = ["A", "B", "C", "D", "E", "F"]
+    let letterLabel = UILabel()
+    letterLabel.text = index < optionLetters.count ? optionLetters[index] : "\(index + 1)"
+    letterLabel.font = LessonTypography.font(size: LessonTypography.Size.caption, weight: .semibold)
+    letterLabel.textColor = LessonTypography.Color.secondary
+    letterLabel.textAlignment = .center
+    letterLabel.translatesAutoresizingMaskIntoConstraints = false
 
-    return button
+    let letterContainer = UIView()
+    letterContainer.backgroundColor = LessonTypography.Color.cardBackground
+    letterContainer.layer.cornerRadius = 14
+    letterContainer.translatesAutoresizingMaskIntoConstraints = false
+
+    letterContainer.addSubview(letterLabel)
+
+    let mathContent = MathContentView()
+    mathContent.fontSize = LessonTypography.Size.body
+    mathContent.configure(with: text)
+    mathContent.translatesAutoresizingMaskIntoConstraints = false
+    mathContent.isUserInteractionEnabled = false
+
+    container.addSubview(letterContainer)
+    container.addSubview(mathContent)
+
+    NSLayoutConstraint.activate([
+      letterContainer.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: LessonTypography.Spacing.md),
+      letterContainer.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+      letterContainer.widthAnchor.constraint(equalToConstant: 28),
+      letterContainer.heightAnchor.constraint(equalToConstant: 28),
+
+      letterLabel.centerXAnchor.constraint(equalTo: letterContainer.centerXAnchor),
+      letterLabel.centerYAnchor.constraint(equalTo: letterContainer.centerYAnchor),
+
+      mathContent.topAnchor.constraint(equalTo: container.topAnchor, constant: LessonTypography.Spacing.md),
+      mathContent.leadingAnchor.constraint(equalTo: letterContainer.trailingAnchor, constant: LessonTypography.Spacing.sm),
+      mathContent.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -LessonTypography.Spacing.md),
+      mathContent.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -LessonTypography.Spacing.md)
+    ])
+
+    // Add tap gesture.
+    let tap = UITapGestureRecognizer(target: self, action: #selector(optionViewTapped(_:)))
+    container.addGestureRecognizer(tap)
+    container.isUserInteractionEnabled = true
+
+    return container
   }
 
   private func configureFreeResponse() {
@@ -295,7 +401,7 @@ final class QuestionSectionCell: UICollectionViewCell {
     if let answerState = viewModel.answerStates[sectionID] {
       switch answerState {
       case .unanswered:
-        break
+        reloadButton.isHidden = true
 
       case .selected(let answer):
         // Find and select the option.
@@ -303,31 +409,51 @@ final class QuestionSectionCell: UICollectionViewCell {
            let index = options.firstIndex(of: answer) {
           selectOption(at: index)
         }
+        reloadButton.isHidden = true
+
+      case .correct:
+        // Restore correct answer visual state.
+        if let options = section?.options,
+           let selectedAnswer = viewModel.selectedAnswers[sectionID],
+           let index = options.firstIndex(of: selectedAnswer) {
+          selectOption(at: index)
+        }
+        updateButtonTitle("CORRECT!", enabled: true)
+        checkAnswerButton.isEnabled = false
+        // Show reload button so user can try again.
+        reloadButton.isHidden = false
 
       case .checking:
-        checkAnswerButton.isEnabled = false
-        checkAnswerButton.setTitle("Checking...", for: .normal)
-
-      case .correct(let feedback):
-        showFeedback(feedback, isCorrect: true)
-        disableInteraction()
-
-      case .incorrect(let feedback):
-        showFeedback(feedback, isCorrect: false)
-
-      case .revealed:
-        if let answer = section?.answer {
-          showFeedback("The correct answer is: \(answer)", isCorrect: false)
+        // Restore selected option for checking state.
+        if let options = section?.options,
+           let selectedAnswer = viewModel.selectedAnswers[sectionID],
+           let index = options.firstIndex(of: selectedAnswer) {
+          selectOption(at: index)
         }
-        disableInteraction()
+        reloadButton.isHidden = true
+
+      case .incorrect, .revealed:
+        // Restore selected option for these states.
+        if let options = section?.options,
+           let selectedAnswer = viewModel.selectedAnswers[sectionID],
+           let index = options.firstIndex(of: selectedAnswer) {
+          selectOption(at: index)
+        }
+        // Show reload button so user can try again.
+        reloadButton.isHidden = false
       }
+    } else {
+      reloadButton.isHidden = true
     }
   }
 
   // MARK: - Actions
 
-  @objc private func optionTapped(_ sender: UIButton) {
-    let index = sender.tag
+  @objc private func optionViewTapped(_ gesture: UITapGestureRecognizer) {
+    guard let view = gesture.view else {
+      return
+    }
+    let index = view.tag
     selectOption(at: index)
 
     // Update view model.
@@ -343,90 +469,84 @@ final class QuestionSectionCell: UICollectionViewCell {
   private func selectOption(at index: Int) {
     // Deselect previous.
     if let previousIndex = selectedOptionIndex,
-       previousIndex < optionsStack.arrangedSubviews.count,
-       let previousButton = optionsStack.arrangedSubviews[previousIndex] as? UIButton {
-      updateOptionButton(previousButton, isSelected: false)
+       previousIndex < optionsStack.arrangedSubviews.count {
+      let previousView = optionsStack.arrangedSubviews[previousIndex]
+      updateOptionView(previousView, isSelected: false)
     }
 
     // Select new.
     selectedOptionIndex = index
-    if index < optionsStack.arrangedSubviews.count,
-       let button = optionsStack.arrangedSubviews[index] as? UIButton {
-      updateOptionButton(button, isSelected: true)
+    if index < optionsStack.arrangedSubviews.count {
+      let view = optionsStack.arrangedSubviews[index]
+      updateOptionView(view, isSelected: true)
     }
 
     checkAnswerButton.isEnabled = true
+    updateButtonTitle("CHECK ANSWER", enabled: true)
   }
 
-  private func updateOptionButton(_ button: UIButton, isSelected: Bool) {
-    guard var config = button.configuration else { return }
+  private func updateOptionView(_ view: UIView, isSelected: Bool) {
+    // Find the letter container (first subview that is a container with background).
+    let letterContainer = view.subviews.first { $0.layer.cornerRadius == 14 }
 
     if isSelected {
-      config.background.backgroundColor = UIColor(red: 0.95, green: 0.97, blue: 1.0, alpha: 1.0)
-      config.background.strokeColor = UIColor(red: 0.3, green: 0.5, blue: 0.9, alpha: 1.0)
-      config.background.strokeWidth = 2
+      view.backgroundColor = LessonTypography.Color.summaryBackground
+      view.layer.borderColor = LessonTypography.Color.borderSelected.cgColor
+      view.layer.borderWidth = 2
+      letterContainer?.backgroundColor = LessonTypography.Color.accent
+      if let letterLabel = letterContainer?.subviews.first as? UILabel {
+        letterLabel.textColor = .white
+      }
     } else {
-      config.background.backgroundColor = .white
-      config.background.strokeColor = UIColor(red: 0.85, green: 0.85, blue: 0.85, alpha: 1.0)
-      config.background.strokeWidth = 1
+      view.backgroundColor = .white
+      view.layer.borderColor = LessonTypography.Color.border.cgColor
+      view.layer.borderWidth = 1
+      letterContainer?.backgroundColor = LessonTypography.Color.cardBackground
+      if let letterLabel = letterContainer?.subviews.first as? UILabel {
+        letterLabel.textColor = LessonTypography.Color.secondary
+      }
     }
-
-    button.configuration = config
   }
 
   @objc private func checkAnswerTapped() {
-    guard let section = section else { return }
+    guard let section = section, let viewModel = viewModel else {
+      return
+    }
 
+    // Disable button during check.
     checkAnswerButton.isEnabled = false
-    checkAnswerButton.setTitle("Checking...", for: .normal)
 
+    // Record the answer in the view model and check result.
     Task {
-      await viewModel?.checkAnswer(for: section.id)
+      await viewModel.checkAnswer(for: section.id)
 
-      // Update UI based on result.
-      await MainActor.run {
-        if let answerState = viewModel?.answerStates[section.id] {
-          switch answerState {
-          case .correct(let feedback):
-            showFeedback(feedback, isCorrect: true)
-            disableInteraction()
-          case .incorrect(let feedback):
-            showFeedback(feedback, isCorrect: false)
-            checkAnswerButton.isEnabled = true
-            checkAnswerButton.setTitle("Try Again", for: .normal)
-          default:
-            checkAnswerButton.isEnabled = true
-            checkAnswerButton.setTitle("Check Answer", for: .normal)
-          }
+      // Check the answer state after the check completes.
+      let answerState = viewModel.answerStates[section.id]
+
+      if case .correct? = answerState {
+        await MainActor.run {
+          updateButtonTitle("CORRECT!", enabled: true)
+        }
+      } else {
+        // Re-enable the button for another attempt.
+        await MainActor.run {
+          checkAnswerButton.isEnabled = true
+          updateButtonTitle("CHECK ANSWER", enabled: true)
         }
       }
     }
   }
 
-  private func showFeedback(_ message: String, isCorrect: Bool) {
-    feedbackContainer.isHidden = false
-    feedbackLabel.text = message
-
-    if isCorrect {
-      feedbackContainer.backgroundColor = UIColor(red: 0.9, green: 1.0, blue: 0.9, alpha: 1.0)
-      feedbackLabel.textColor = UIColor(red: 0.2, green: 0.6, blue: 0.2, alpha: 1.0)
-    } else {
-      feedbackContainer.backgroundColor = UIColor(red: 1.0, green: 0.95, blue: 0.9, alpha: 1.0)
-      feedbackLabel.textColor = UIColor(red: 0.8, green: 0.3, blue: 0.2, alpha: 1.0)
-    }
-
-    // Update layout.
-    setNeedsLayout()
-    layoutIfNeeded()
-  }
-
-  private func disableInteraction() {
-    checkAnswerButton.isHidden = true
-
-    // Disable all option buttons.
-    for case let button as UIButton in optionsStack.arrangedSubviews {
-      button.isEnabled = false
-    }
+  private func updateButtonTitle(_ title: String, enabled: Bool) {
+    // Apply letter spacing for uppercase button text.
+    let attributes: [NSAttributedString.Key: Any] = [
+      .font: LessonTypography.font(size: LessonTypography.Size.body, weight: .semibold),
+      .foregroundColor: enabled ? UIColor.white : UIColor.white.withAlphaComponent(0.5),
+      .kern: 1.0
+    ]
+    let attributedTitle = NSAttributedString(string: title, attributes: attributes)
+    checkAnswerButton.setAttributedTitle(attributedTitle, for: .normal)
+    checkAnswerButton.setAttributedTitle(attributedTitle, for: .disabled)
   }
 
   // MARK: - Reuse
@@ -437,14 +557,16 @@ final class QuestionSectionCell: UICollectionViewCell {
     viewModel = nil
     selectedOptionIndex = nil
 
-    questionLabel.text = nil
+    questionContentView.clear()
     optionsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-    feedbackContainer.isHidden = true
-    feedbackLabel.text = nil
-    checkAnswerButton.isHidden = false
     checkAnswerButton.isEnabled = false
-    checkAnswerButton.setTitle("Check Answer", for: .normal)
+    checkAnswerButton.backgroundColor = LessonTypography.Color.primary
+    updateButtonTitle("CHECK ANSWER", enabled: false)
     canvasContainer.isHidden = true
     optionsStack.isHidden = false
+
+    // Reset reload button.
+    reloadButton.isHidden = true
+    reloadButton.transform = .identity
   }
 }
