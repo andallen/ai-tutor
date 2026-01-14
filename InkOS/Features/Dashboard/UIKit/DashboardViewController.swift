@@ -306,7 +306,7 @@ class DashboardViewController: UIViewController {
   private func generateLesson(prompt: String, pdfURL: URL?) async throws {
     // Create generator if needed.
     if lessonGenerator == nil {
-      lessonGenerator = LessonGenerator.createDefault(projectID: "inkos-a8de9")
+      lessonGenerator = LessonGenerator.createDefault(projectID: "inkos-f58f1")
     }
 
     guard let generator = lessonGenerator else {

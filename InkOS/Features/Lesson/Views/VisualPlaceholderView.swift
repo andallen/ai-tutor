@@ -23,19 +23,20 @@ struct VisualPlaceholderView: View {
         VStack(spacing: 16) {
           // Image icon.
           Image(systemName: "photo")
-            .font(.system(size: 32, weight: .light))
+            .font(.title.weight(.light))
             .foregroundStyle(Color.inkFaint)
+            .accessibilityHidden(true)
 
           // Image prompt text.
           if let imagePrompt = section.imagePrompt {
             Text("\"\(imagePrompt)\"")
-              .font(.system(size: 15).italic())
+              .font(.subheadline.italic())
               .foregroundStyle(Color.inkSubtle)
               .multilineTextAlignment(.center)
               .padding(.horizontal, 24)
           } else if let fallbackDescription = section.fallbackDescription {
             Text(fallbackDescription)
-              .font(.system(size: 15))
+              .font(.subheadline)
               .foregroundStyle(Color.inkSubtle)
               .multilineTextAlignment(.center)
               .padding(.horizontal, 24)
@@ -43,8 +44,20 @@ struct VisualPlaceholderView: View {
         }
         .padding(.vertical, 24)
       }
-      .frame(height: 160)
+      .frame(minHeight: 160)
+      .accessibilityElement(children: .combine)
+      .accessibilityLabel(accessibilityDescription)
     }
+  }
+
+  // Provides a meaningful description for VoiceOver.
+  private var accessibilityDescription: String {
+    if let imagePrompt = section.imagePrompt {
+      return "Visual illustration: \(imagePrompt)"
+    } else if let fallbackDescription = section.fallbackDescription {
+      return "Visual illustration: \(fallbackDescription)"
+    }
+    return "Visual illustration placeholder"
   }
 }
 

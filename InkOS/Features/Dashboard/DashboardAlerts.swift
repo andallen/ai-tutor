@@ -13,8 +13,6 @@ struct AlertModifiers: ViewModifier {
   @Binding var deletingLesson: LessonMetadata?
   @Binding var renamingFolder: FolderMetadata?
   @Binding var deletingFolder: FolderMetadata?
-  @Binding var renamingLesson: LessonMetadata?
-  @Binding var deletingLesson: LessonMetadata?
   @Binding var showCreateFolderAlert: Bool
   @Binding var newFolderName: String
   @Binding var openErrorMessage: String?
@@ -72,19 +70,6 @@ struct AlertModifiers: ViewModifier {
       .modifier(
         DeleteFolderAlert(
           deletingFolder: $deletingFolder,
-          library: library
-        )
-      )
-      .modifier(
-        RenameLessonAlert(
-          renamingLesson: $renamingLesson,
-          renameText: $renameText,
-          library: library
-        )
-      )
-      .modifier(
-        DeleteLessonAlert(
-          deletingLesson: $deletingLesson,
           library: library
         )
       )

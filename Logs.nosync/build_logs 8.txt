@@ -1,0 +1,108 @@
+
+----- xcbeautify -----
+Version: 3.1.2
+----------------------
+
+note: Building targets in dependency order
+note: Target dependency graph (3 targets)
+note: Run script build phase 'Copy Recognition Assets' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'InkOS' from project 'InkOS')
+[InkOS] Compiling LessonCardView.swift
+[InkOS] Compiling UIComponents.swift
+[InkOS] Compiling LessonView.swift
+[InkOS] Compiling ContentSectionView.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:168:40: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(boldContent)).bold()
+                                       ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:168:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(boldContent)).bold()
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:180:40: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(italicContent)).italic()
+                                       ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:180:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(italicContent)).italic()
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:193:11: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+          + Text(String(codeContent))
+          ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:192:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before)
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:201:23: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+      result = result + Text(remaining)
+                      ^
+[InkOS] Compiling QuestionSectionView.swift
+[InkOS] Compiling SummarySectionView.swift
+[InkOS] Compiling FolderOverlay.swift
+[InkOS] Compiling VisualPlaceholderView.swift
+[InkOS] Compiling MoveToFolderSheet.swift
+[InkOS] Compiling LessonGenerationSheet.swift
+[InkOS] Compiling DashboardView.swift
+[InkOS] Compiling FolderCard.swift
+[InkOS] Compiling ContextMenuOverlay.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Dashboard/ContextMenuOverlay.swift:116:33: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenBounds = UIScreen.main.bounds
+                                ^
+[InkOS] Compiling DashboardComponents.swift
+[InkOS] Linking InkOS.debug.dylib
+[!] ld: ignoring duplicate libraries: '-lc++'
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Copy x86_64-apple-ios-simulator.swiftmodule -> InkOS.swiftmodule
+[InkOS] Copy x86_64-apple-ios-simulator.abi.json -> InkOS.abi.json
+[InkOS] Copy arm64-apple-ios-simulator.swiftmodule -> InkOS.swiftmodule
+[InkOS] Copy arm64-apple-ios-simulator.abi.json -> InkOS.abi.json
+[InkOS] Copy x86_64-apple-ios-simulator.swiftsourceinfo -> InkOS.swiftsourceinfo
+[InkOS] Copy arm64-apple-ios-simulator.swiftsourceinfo -> InkOS.swiftsourceinfo
+[InkOS] Compiling LessonView.swift
+[InkOS] Compiling UIComponents.swift
+[InkOS] Compiling LessonCardView.swift
+[InkOS] Compiling SummarySectionView.swift
+[InkOS] Compiling ContextMenuOverlay.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Dashboard/ContextMenuOverlay.swift:116:33: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenBounds = UIScreen.main.bounds
+                                ^
+[InkOS] Compiling DashboardComponents.swift
+[InkOS] Compiling VisualPlaceholderView.swift
+[InkOS] Compiling FolderOverlay.swift
+[InkOS] Compiling QuestionSectionView.swift
+[InkOS] Compiling DashboardView.swift
+[InkOS] Compiling FolderCard.swift
+note: Using stub executor library with Swift entry point. (in target 'InkOS' from project 'InkOS')
+[InkOS] Compiling MoveToFolderSheet.swift
+[InkOS] Compiling ContentSectionView.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:168:40: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(boldContent)).bold()
+                                       ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:168:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(boldContent)).bold()
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:180:40: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(italicContent)).italic()
+                                       ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:180:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(italicContent)).italic()
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:193:11: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+          + Text(String(codeContent))
+          ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:192:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before)
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-lessons/InkOS/Features/Lesson/Views/ContentSectionView.swift:201:23: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+      result = result + Text(remaining)
+                      ^
+[InkOS] Linking InkOS
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Compiling LessonGenerationSheet.swift
+[InkOS] Linking InkOS.debug.dylib
+[!] ld: ignoring duplicate libraries: '-lc++'
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+note: Using stub executor library with Swift entry point. (in target 'InkOS' from project 'InkOS')
+[InkOS] Create Universal Binary InkOS.debug.dylib
+[InkOS] Linking InkOS
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Create Universal Binary InkOS
+[InkOS] Running script Copy Recognition Assets
+[InkOS] Extract App Intents Metadata
+[InkOS] Processing Info.plist
+Build Succeeded

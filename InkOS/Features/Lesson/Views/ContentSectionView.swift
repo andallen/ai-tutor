@@ -89,60 +89,67 @@ struct MarkdownTextView: View {
   }
 
   // Renders a single line based on its type.
+  // Uses semantic text styles for Dynamic Type support.
   @ViewBuilder
   private func renderLine(_ line: MarkdownLine) -> some View {
     switch line {
     case .h1(let text):
       formattedText(text)
-        .font(.system(size: 24, weight: .bold))
+        .font(.title2.bold())
         .foregroundStyle(Color.ink)
         .padding(.top, 8)
+        .accessibilityAddTraits(.isHeader)
 
     case .h2(let text):
       formattedText(text)
-        .font(.system(size: 22, weight: .bold))
+        .font(.title3.bold())
         .foregroundStyle(Color.ink)
         .padding(.top, 4)
+        .accessibilityAddTraits(.isHeader)
 
     case .h3(let text):
       formattedText(text)
-        .font(.system(size: 18, weight: .semibold))
+        .font(.headline)
         .foregroundStyle(Color.ink)
+        .accessibilityAddTraits(.isHeader)
 
     case .paragraph(let text):
       formattedText(text)
-        .font(.system(size: 17))
+        .font(.body)
         .foregroundStyle(Color.ink)
         .lineSpacing(4)
 
     case .bullet(let text):
       HStack(alignment: .top, spacing: 12) {
         Text("•")
-          .font(.system(size: 17))
+          .font(.body)
           .foregroundStyle(Color.inkSubtle)
+          .accessibilityHidden(true)
 
         formattedText(text)
-          .font(.system(size: 17))
+          .font(.body)
           .foregroundStyle(Color.ink)
           .lineSpacing(4)
       }
       .padding(.leading, 8)
+      .accessibilityElement(children: .combine)
 
     case .numbered(let text):
       formattedText(text)
-        .font(.system(size: 17))
+        .font(.body)
         .foregroundStyle(Color.ink)
         .lineSpacing(4)
         .padding(.leading, 8)
 
     case .codeBlock(let code):
       Text(code)
-        .font(.system(size: 15, design: .monospaced))
+        .font(.footnote.monospaced())
         .foregroundStyle(Color.ink)
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.rule)
         .clipShape(RoundedRectangle(cornerRadius: 8))
+        .accessibilityLabel("Code: \(code)")
     }
   }
 
@@ -191,7 +198,7 @@ struct MarkdownTextView: View {
 
         result = result + Text(before)
           + Text(String(codeContent))
-          .font(.system(size: 15, design: .monospaced))
+          .font(.callout.monospaced())
           .foregroundColor(Color.lessonAccent)
         remaining = String(remaining[codeMatch.upperBound...])
         continue

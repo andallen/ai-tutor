@@ -288,9 +288,6 @@ struct DashboardView: View {
           activeLessonID: $activeLessonID,
           renamingFolder: $renamingFolder,
           deletingFolder: $deletingFolder,
-          renamingLesson: $renamingLesson,
-          deletingLesson: $deletingLesson,
-          activeLessonID: $activeLessonID,
           showCreateFolderAlert: $showCreateFolderAlert,
           newFolderName: $newFolderName,
           openErrorMessage: $openErrorMessage,
@@ -2458,9 +2455,6 @@ struct DashboardViewModifiers: ViewModifier {
   @Binding var activeLessonID: String?
   @Binding var renamingFolder: FolderMetadata?
   @Binding var deletingFolder: FolderMetadata?
-  @Binding var renamingLesson: LessonMetadata?
-  @Binding var deletingLesson: LessonMetadata?
-  @Binding var activeLessonID: String?
   @Binding var showCreateFolderAlert: Bool
   @Binding var newFolderName: String
   @Binding var openErrorMessage: String?
@@ -2523,8 +2517,6 @@ struct DashboardViewModifiers: ViewModifier {
       deletingLesson: $deletingLesson,
       renamingFolder: $renamingFolder,
       deletingFolder: $deletingFolder,
-      renamingLesson: $renamingLesson,
-      deletingLesson: $deletingLesson,
       showCreateFolderAlert: $showCreateFolderAlert,
       newFolderName: $newFolderName,
       openErrorMessage: $openErrorMessage,
@@ -2900,13 +2892,6 @@ struct PDFCardFramePreferenceKey: PreferenceKey {
   static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
     value.merge(nextValue()) { _, new in new }
   }
-}
-
-// MARK: - Lesson Session
-
-// Session model for lesson navigation.
-struct LessonSession: Identifiable {
-  let id: String
 }
 
 #if DEBUG
