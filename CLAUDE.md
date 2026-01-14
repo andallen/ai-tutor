@@ -44,12 +44,16 @@ InkOS/
 │   │   │   ├── Models/                   # Chat data models
 │   │   │   │   ├── AttachmentContract.swift     # Attachment handling contract
 │   │   │   │   ├── ChatContract.swift           # Chat message contracts
-│   │   │   │   └── MultimodalMessageContract.swift  # Multimodal message support
+│   │   │   │   ├── MultimodalMessageContract.swift  # Multimodal message support
+│   │   │   │   └── TokenManagement/             # Token management for AI requests
 │   │   │   └── Services/                 # Chat services and clients
+│   │   │       ├── AttachmentServiceContract.swift  # Attachment service interface
 │   │   │       ├── ChatService.swift            # Core chat service
 │   │   │       ├── ChatStorage.swift            # Chat persistence
 │   │   │       ├── ContextGatherer.swift        # Context extraction for AI
-│   │   │       └── FirebaseChatClient.swift     # Firebase integration
+│   │   │       ├── FirebaseChatClient.swift     # Firebase integration
+│   │   │       ├── FirebaseTokenCounting/       # Token counting via Firebase
+│   │   │       └── TokenAwareMessaging/         # Token-aware message handling
 │   │   │
 │   │   ├── Dashboard/                    # Notebook library and management UI (UIKit-based)
 │   │   │   ├── CardFoundation.swift      # Card layout constants and base styles
@@ -58,6 +62,7 @@ InkOS/
 │   │   │   ├── DashboardCardView.swift   # Card view wrapper for dashboard items
 │   │   │   ├── DashboardItem.swift       # Dashboard item model (enum for notebooks/folders/PDFs/lessons)
 │   │   │   ├── DashboardModels.swift     # Centralized model definitions
+│   │   │   ├── DebugDataPopulator.swift  # Debug helper for populating test data
 │   │   │   ├── NotebookLibrary.swift     # Notebook data source and state management
 │   │   │   ├── SearchOverlayRootView.swift  # Search overlay UI
 │   │   │   ├── SearchOverlayState.swift  # Search state management
@@ -77,6 +82,7 @@ InkOS/
 │   │   │           └── FolderTransitionAnimator.swift     # Folder open/close animations
 │   │   │
 │   │   ├── Lesson/                       # Lesson generation and display
+│   │   │   ├── LessonHostView.swift      # SwiftUI/UIKit bridge for lessons
 │   │   │   ├── Components/               # Lesson UI components
 │   │   │   │   └── LessonCardView.swift         # Lesson card for dashboard
 │   │   │   ├── Generation/               # Lesson content generation
@@ -92,15 +98,22 @@ InkOS/
 │   │   │   ├── Views/                    # SwiftUI lesson views
 │   │   │   │   ├── LessonView.swift             # Main lesson view
 │   │   │   │   ├── ContentSectionView.swift     # Content display
+│   │   │   │   ├── LessonGenerationOverlay.swift # Overlay during generation
 │   │   │   │   ├── QuestionSectionView.swift    # Question display
 │   │   │   │   ├── SummarySectionView.swift     # Summary display
 │   │   │   │   └── VisualPlaceholderView.swift  # Visual placeholders
 │   │   │   └── UIKit/                    # UIKit lesson implementation
 │   │   │       ├── LessonViewController.swift   # Main UIKit controller
+│   │   │       ├── LessonTypography.swift       # Typography constants for lessons
+│   │   │       ├── MarkdownRenderer.swift       # Markdown to NSAttributedString
+│   │   │       ├── MathContentView.swift        # Math content display
+│   │   │       ├── NotesButtonView.swift        # Notes toggle button
 │   │   │       ├── NotesOverlayCoordinator.swift # Notes overlay logic
+│   │   │       ├── NotesOverlayView.swift       # Notes overlay UI
 │   │   │       ├── QuestionCanvasManager.swift  # Handwriting input
 │   │   │       └── Cells/                       # Section cells
 │   │   │           ├── ContentSectionCell.swift
+│   │   │           ├── LessonHeaderCell.swift   # Lesson header
 │   │   │           ├── QuestionSectionCell.swift
 │   │   │           ├── SummarySectionCell.swift
 │   │   │           └── VisualSectionCell.swift
@@ -127,18 +140,23 @@ InkOS/
 │   │   │   │   ├── SearchIndex.swift     # Core search index implementation
 │   │   │   │   └── SearchIndexTriggers.swift  # Event triggers for indexing
 │   │   │   ├── Service/                  # Search service layer
+│   │   │   │   ├── BundleManagerFolderLookup.swift  # Folder lookup for search
+│   │   │   │   ├── LibraryPreviewLookup.swift   # Preview lookup for search results
 │   │   │   │   ├── SearchService.swift   # Search service implementation
 │   │   │   │   └── SearchServiceContract.swift  # Service contract/interface
 │   │   │   └── UI/                       # Search UI components
 │   │   │       └── Dashboard/            # Dashboard search integration
 │   │   │           ├── DashboardSearchBar.swift     # Search bar component
-│   │   │           └── DashboardSearchResults.swift # Search results view
+│   │   │           ├── DashboardSearchResults.swift # Search results view
+│   │   │           └── SnippetContentView.swift     # Search result snippet display
 │   │   │
 │   │   ├── Skills/                       # AI-powered skills system
 │   │   │   ├── Core/                     # Skill infrastructure
 │   │   │   │   ├── SkillExecutor.swift          # Skill execution engine
+│   │   │   │   ├── SkillRegistration.swift      # Skill registration helper
 │   │   │   │   ├── SkillRegistry.swift          # Skill registration
 │   │   │   │   └── SkillsContract.swift         # Core contracts
+│   │   │   ├── Icons/                    # Skill icon assets
 │   │   │   ├── Graph/                    # Graphing calculator skill
 │   │   │   │   ├── EquationRenderer.swift       # Equation rendering
 │   │   │   │   ├── GraphImageRenderer.swift     # Graph image generation
@@ -316,9 +334,7 @@ InkOS/
 │
 ├── Podfile                               # CocoaPods dependency specification
 ├── Podfile.lock                          # Locked dependency versions
-├── Pods/                                 # CocoaPods dependencies (generated)
-│
-└── Logs/                                 # Build artifacts & logs
+└── Pods/                                 # CocoaPods dependencies (generated)
 ```
 
 ## Project Rules
