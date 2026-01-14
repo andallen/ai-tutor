@@ -117,15 +117,23 @@ interface StreamTokenMetadata extends TokenMetadata {
   messagesIncluded: number;
 }
 
-// Counts tokens using Gemini's countTokens API.
-// Returns null if counting fails (allows graceful degradation).
+/**
+ * Counts tokens using Gemini's countTokens API.
+ * Returns null if counting fails (allows graceful degradation).
+ * @param {Array} contents - Array of content objects with role and parts.
+ * @param {string} apiKey - The Google GenAI API key.
+ * @return {Promise<number | null>} Token count or null on failure.
+ */
 async function countTokens(
   contents: Array<{role: string; parts: Array<{text: string}>}>,
   apiKey: string
 ): Promise<number | null> {
   try {
+    const modelUrl =
+      "https://generativelanguage.googleapis.com/v1beta/models/" +
+      `gemini-3.0-flash-preview:countTokens?key=${apiKey}`;
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:countTokens?key=${apiKey}`,
+      modelUrl,
       {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -146,19 +154,32 @@ async function countTokens(
   }
 }
 
-// Type guards for message format detection
+/**
+ * Type guard for legacy message format detection.
+ * @param {FlexibleMessage} msg - The message to check.
+ * @return {boolean} True if message is in legacy format.
+ */
 function isLegacyMessage(msg: FlexibleMessage): msg is LegacyMessage {
   return "content" in msg;
 }
 
+/**
+ * Type guard for text part detection.
+ * @param {MessagePart} part - The message part to check.
+ * @return {boolean} True if part is a text part.
+ */
 function isTextPart(part: MessagePart): part is TextPart {
   return "text" in part;
 }
 
-// Transform messages from app format to Gemini API format.
-// - Converts "assistant" role to "model"
-// - Converts camelCase fileData to snake_case file_data
-// - Handles both legacy {role, content} and multimodal {role, parts} formats
+/**
+ * Transform messages from app format to Gemini API format.
+ * - Converts "assistant" role to "model"
+ * - Converts camelCase fileData to snake_case file_data
+ * - Handles both legacy {role, content} and multimodal {role, parts} formats
+ * @param {FlexibleMessage[]} messages - Messages to transform.
+ * @return {GeminiContent[]} Transformed messages for Gemini API.
+ */
 function toGeminiContents(messages: FlexibleMessage[]): GeminiContent[] {
   return messages.map((msg) => {
     const role = msg.role === "assistant" ? "model" : "user";
@@ -189,8 +210,12 @@ function toGeminiContents(messages: FlexibleMessage[]): GeminiContent[] {
   });
 }
 
-// Extract text-only contents for token counting.
-// File parts don't contribute to text token count (billed separately by Gemini).
+/**
+ * Extract text-only contents for token counting.
+ * File parts don't contribute to text token count (billed separately).
+ * @param {GeminiContent[]} contents - Contents to extract text from.
+ * @return {Array} Text-only contents for token counting.
+ */
 function toTextOnlyContents(
   contents: GeminiContent[]
 ): Array<{role: string; parts: Array<{text: string}>}> {
@@ -204,13 +229,18 @@ function toTextOnlyContents(
     .filter((content) => content.parts.length > 0);
 }
 
-// Estimate tokens for a GeminiContent message.
-// Text uses character heuristic, file parts use fixed estimate.
+/**
+ * Estimate tokens for a GeminiContent message.
+ * Text uses character heuristic, file parts use fixed estimate.
+ * @param {GeminiContent} content - The content to estimate tokens for.
+ * @return {number} Estimated token count.
+ */
 function estimateTokensFromContent(content: GeminiContent): number {
   let tokens = 0;
   for (const part of content.parts) {
     if ("text" in part) {
-      tokens += Math.ceil(part.text.length / TOKEN_CONSTANTS.charsPerToken);
+      const textLen = part.text.length;
+      tokens += Math.ceil(textLen / TOKEN_CONSTANTS.charsPerToken);
     }
     // File parts: estimate ~258 tokens for images, ~750/page for PDFs
     // Use conservative fixed estimate since actual count varies by content
@@ -221,8 +251,13 @@ function estimateTokensFromContent(content: GeminiContent): number {
   return tokens;
 }
 
-// Truncates GeminiContent messages to fit within token limit.
-// Always keeps the newest message, removes oldest first.
+/**
+ * Truncates GeminiContent messages to fit within token limit.
+ * Always keeps the newest message, removes oldest first.
+ * @param {GeminiContent[]} contents - Contents to truncate.
+ * @param {number} maxTokens - Maximum tokens allowed.
+ * @return {Object} Truncated contents and truncation status.
+ */
 function truncateGeminiContents(
   contents: GeminiContent[],
   maxTokens: number
@@ -293,7 +328,8 @@ export const sendMessage = onRequest({cors: true}, async (req, res) => {
   // Transform messages to Gemini format (handles both legacy and multimodal)
   let contents = toGeminiContents(messages as FlexibleMessage[]);
 
-  // Extract text-only contents for token counting (file parts billed separately)
+  // Extract text-only contents for token counting
+  // (file parts billed separately)
   const textOnlyContents = toTextOnlyContents(contents);
 
   // Count tokens and validate
@@ -302,19 +338,26 @@ export const sendMessage = onRequest({cors: true}, async (req, res) => {
 
   // Check if the newest message alone exceeds the absolute maximum
   if (contents.length > 0) {
-    const newestTextOnly = toTextOnlyContents([contents[contents.length - 1]]);
+    const lastContent = contents[contents.length - 1];
+    const newestTextOnly = toTextOnlyContents([lastContent]);
     const newestTokenCount = newestTextOnly.length > 0 ?
       await countTokens(newestTextOnly, apiKey) : 0;
 
-    if (newestTokenCount && newestTokenCount > TOKEN_CONSTANTS.geminiMaxTokens) {
+    const exceedsMax =
+      newestTokenCount && newestTokenCount > TOKEN_CONSTANTS.geminiMaxTokens;
+    if (exceedsMax) {
       logger.warn("Single message exceeds token limit", {
         tokenCount: newestTokenCount,
         maxTokens: TOKEN_CONSTANTS.geminiMaxTokens,
       });
+      const errorDetails =
+        `This message contains ${newestTokenCount} tokens, ` +
+        `but the maximum is ${TOKEN_CONSTANTS.geminiMaxTokens} tokens. ` +
+        "Please reduce the amount of context or split into multiple messages.";
       res.status(400).send({
         error: "Message is too large",
         errorCode: "MESSAGE_TOO_LARGE",
-        details: `This message contains ${newestTokenCount} tokens, but the maximum is ${TOKEN_CONSTANTS.geminiMaxTokens} tokens. Please reduce the amount of context or split into multiple messages.`,
+        details: errorDetails,
         tokenCount: newestTokenCount,
         maxTokens: TOKEN_CONSTANTS.geminiMaxTokens,
       });
@@ -339,8 +382,11 @@ export const sendMessage = onRequest({cors: true}, async (req, res) => {
   const messagesIncluded = contents.length;
 
   try {
+    const generateUrl =
+      "https://generativelanguage.googleapis.com/v1beta/models/" +
+      `gemini-3.0-flash-preview:generateContent?key=${apiKey}`;
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,
+      generateUrl,
       {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -433,7 +479,9 @@ export const streamMessage = onRequest({cors: true}, async (req, res) => {
   }
 
   const {messages} = parseResult.data;
-  logger.info("Received streaming chat request", {messageCount: messages.length});
+  logger.info("Received streaming chat request", {
+    messageCount: messages.length,
+  });
 
   // Get API key from environment
   const apiKey = process.env.GOOGLE_GENAI_API_KEY;
@@ -446,7 +494,8 @@ export const streamMessage = onRequest({cors: true}, async (req, res) => {
   // Transform messages to Gemini format (handles both legacy and multimodal)
   let contents = toGeminiContents(messages as FlexibleMessage[]);
 
-  // Extract text-only contents for token counting (file parts billed separately)
+  // Extract text-only contents for token counting
+  // (file parts billed separately)
   const textOnlyContents = toTextOnlyContents(contents);
 
   // Count tokens and validate
@@ -455,19 +504,26 @@ export const streamMessage = onRequest({cors: true}, async (req, res) => {
 
   // Check if the newest message alone exceeds the absolute maximum
   if (contents.length > 0) {
-    const newestTextOnly = toTextOnlyContents([contents[contents.length - 1]]);
+    const lastContent = contents[contents.length - 1];
+    const newestTextOnly = toTextOnlyContents([lastContent]);
     const newestTokenCount = newestTextOnly.length > 0 ?
       await countTokens(newestTextOnly, apiKey) : 0;
 
-    if (newestTokenCount && newestTokenCount > TOKEN_CONSTANTS.geminiMaxTokens) {
+    const exceedsMax =
+      newestTokenCount && newestTokenCount > TOKEN_CONSTANTS.geminiMaxTokens;
+    if (exceedsMax) {
       logger.warn("Single message exceeds token limit (streaming)", {
         tokenCount: newestTokenCount,
         maxTokens: TOKEN_CONSTANTS.geminiMaxTokens,
       });
+      const errorDetails =
+        `This message contains ${newestTokenCount} tokens, ` +
+        `but the maximum is ${TOKEN_CONSTANTS.geminiMaxTokens} tokens. ` +
+        "Please reduce the amount of context or split into multiple messages.";
       res.status(400).send({
         error: "Message is too large",
         errorCode: "MESSAGE_TOO_LARGE",
-        details: `This message contains ${newestTokenCount} tokens, but the maximum is ${TOKEN_CONSTANTS.geminiMaxTokens} tokens. Please reduce the amount of context or split into multiple messages.`,
+        details: errorDetails,
         tokenCount: newestTokenCount,
         maxTokens: TOKEN_CONSTANTS.geminiMaxTokens,
       });
@@ -497,8 +553,11 @@ export const streamMessage = onRequest({cors: true}, async (req, res) => {
   res.setHeader("Connection", "keep-alive");
 
   try {
+    const streamUrl =
+      "https://generativelanguage.googleapis.com/v1beta/models/" +
+      `gemini-3.0-flash-preview:streamGenerateContent?alt=sse&key=${apiKey}`;
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:streamGenerateContent?alt=sse&key=${apiKey}`,
+      streamUrl,
       {
         method: "POST",
         headers: {"Content-Type": "application/json"},

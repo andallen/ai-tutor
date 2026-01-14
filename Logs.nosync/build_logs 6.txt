@@ -1,0 +1,589 @@
+
+----- xcbeautify -----
+Version: 3.1.2
+----------------------
+
+note: Building targets in dependency order
+note: Target dependency graph (3 targets)
+[Pods-InkOS] Write Auxiliary File Pods-InkOS.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS-project-headers.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS-own-target-headers.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS.DependencyMetadataFileList
+[Pods-InkOS] Write Auxiliary File Pods-InkOS-generated-files.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS.DependencyStaticMetadataFileList
+[Pods-InkOS] Write Auxiliary File Pods-InkOS-all-target-headers.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS-all-non-framework-target-headers.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS.LinkFileList
+[Pods-InkOS] Write Auxiliary File e6072d4f65d7061329687fe24e3d63a7-common-args.resp
+[Pods-InkOS] Write Auxiliary File e6072d4f65d7061329687fe24e3d63a7-common-args.resp
+[Pods-InkOS] Write Auxiliary File Pods-InkOS.LinkFileList
+[InkOS] Write Auxiliary File Script-89BBA18F5E78F49FCF8CC369.sh
+[InkOS] Write Auxiliary File Script-AEA6BC5A2EF8654800D18138.sh
+[InkOS] Write Auxiliary File af3fcb34312c57c0f52879cdce924b91-common-args.resp
+[InkOS] Write Auxiliary File InkOS_const_extract_protocols.json
+[InkOS] Write Auxiliary File InkOS.SwiftFileList
+[InkOS] Write Auxiliary File InkOS.SwiftConstValuesFileList
+[InkOS] Write Auxiliary File InkOS.LinkFileList
+[InkOS] Write Auxiliary File InkOS-OutputFileMap.json
+[InkOS] Write Auxiliary File 7187679823f38a2a940e0043cdf9d637-common-args.resp
+[InkOS] Write Auxiliary File af3fcb34312c57c0f52879cdce924b91-common-args.resp
+[InkOS] Write Auxiliary File InkOS_const_extract_protocols.json
+[InkOS] Write Auxiliary File InkOS.SwiftFileList
+[InkOS] Write Auxiliary File InkOS.SwiftConstValuesFileList
+[InkOS] Write Auxiliary File InkOS.LinkFileList
+[InkOS] Write Auxiliary File InkOS-OutputFileMap.json
+[InkOS] Write Auxiliary File 7187679823f38a2a940e0043cdf9d637-common-args.resp
+[InkOS] Write Auxiliary File InkOS.hmap
+[InkOS] Write Auxiliary File InkOS.DependencyStaticMetadataFileList
+[InkOS] Write Auxiliary File InkOS.DependencyMetadataFileList
+[InkOS] Write Auxiliary File InkOS-project-headers.hmap
+[InkOS] Write Auxiliary File InkOS-own-target-headers.hmap
+[InkOS] Write Auxiliary File InkOS-generated-files.hmap
+[InkOS] Write Auxiliary File InkOS-all-target-headers.hmap
+[InkOS] Write Auxiliary File InkOS-all-non-framework-target-headers.hmap
+[InkOS] Write Auxiliary File InkOS-DebugDylibPath-normal-x86_64.txt
+[InkOS] Write Auxiliary File InkOS-DebugDylibPath-normal-arm64.txt
+[InkOS] Write Auxiliary File InkOS-DebugDylibInstallName-normal-x86_64.txt
+[InkOS] Write Auxiliary File InkOS-DebugDylibInstallName-normal-arm64.txt
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File Script-4A7B4ECFEDB50C2F025F224FD29FFEA9.sh
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File Script-39CDEF633587C8ABCC20EB5BD6520245.sh
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File OutputFileList-39CDEF633587C8ABCC20EB5BD6520245-MyScriptInteractiveInk-Runtime-xcframeworks-output-files-aab102a4d5e5829098d2bbbc3df913b6-resolved.xcfilelist
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime_const_extract_protocols.json
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File e6072d4f65d7061329687fe24e3d63a7-common-args.resp
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.SwiftFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.SwiftConstValuesFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.LinkFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-OutputFileMap.json
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime_const_extract_protocols.json
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File e6072d4f65d7061329687fe24e3d63a7-common-args.resp
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.SwiftFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.SwiftConstValuesFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.LinkFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-OutputFileMap.json
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.DependencyStaticMetadataFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.DependencyMetadataFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-project-headers.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-own-target-headers.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-generated-files.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-all-target-headers.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-all-non-framework-target-headers.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File InputFileList-39CDEF633587C8ABCC20EB5BD6520245-MyScriptInteractiveInk-Runtime-xcframeworks-input-files-9ab70d0d9ce9ec3a8246cf68c9767f65-resolved.xcfilelist
+[MyScriptInteractiveInk-Runtime] Running script [CP] Copy XCFrameworks
+[MyScriptInteractiveInk-Runtime] Compiling IINK.swift
+[MyScriptInteractiveInk-Runtime] Compiling IINK.swift
+[MyScriptInteractiveInk-Runtime] Compiling IINK.swift
+[MyScriptInteractiveInk-Runtime] Compiling IINK.swift
+[MyScriptInteractiveInk-Runtime] Copy x86_64-apple-ios-simulator.swiftdoc -> MyScriptInteractiveInk_Runtime.swiftdoc
+[MyScriptInteractiveInk-Runtime] Copy x86_64-apple-ios-simulator.abi.json -> MyScriptInteractiveInk_Runtime.abi.json
+[MyScriptInteractiveInk-Runtime] Copy x86_64-apple-ios-simulator.swiftsourceinfo -> MyScriptInteractiveInk_Runtime.swiftsourceinfo
+[MyScriptInteractiveInk-Runtime] Copy x86_64-apple-ios-simulator.swiftmodule -> MyScriptInteractiveInk_Runtime.swiftmodule
+[MyScriptInteractiveInk-Runtime] Copy arm64-apple-ios-simulator.swiftmodule -> MyScriptInteractiveInk_Runtime.swiftmodule
+[MyScriptInteractiveInk-Runtime] Copy arm64-apple-ios-simulator.swiftdoc -> MyScriptInteractiveInk_Runtime.swiftdoc
+[MyScriptInteractiveInk-Runtime] Copy arm64-apple-ios-simulator.abi.json -> MyScriptInteractiveInk_Runtime.abi.json
+[MyScriptInteractiveInk-Runtime] Copy arm64-apple-ios-simulator.swiftsourceinfo -> MyScriptInteractiveInk_Runtime.swiftsourceinfo
+[MyScriptInteractiveInk-Runtime] Compiling MyScriptInteractiveInk-Runtime-dummy.m
+[MyScriptInteractiveInk-Runtime] Compiling MyScriptInteractiveInk-Runtime-dummy.m
+[MyScriptInteractiveInk-Runtime] Building library libMyScriptInteractiveInk-Runtime.a
+[MyScriptInteractiveInk-Runtime] Building library libMyScriptInteractiveInk-Runtime.a
+[MyScriptInteractiveInk-Runtime] Create Universal Binary libMyScriptInteractiveInk-Runtime.a
+[MyScriptInteractiveInk-Runtime] Running script Copy generated compatibility header
+[MyScriptInteractiveInk-Runtime] Extract App Intents Metadata
+[Pods-InkOS] Compiling Pods-InkOS-dummy.m
+[Pods-InkOS] Building library libPods-InkOS.a
+[Pods-InkOS] Compiling Pods-InkOS-dummy.m
+[Pods-InkOS] Building library libPods-InkOS.a
+[Pods-InkOS] Create Universal Binary libPods-InkOS.a
+[InkOS] Running script [CP] Check Pods Manifest.lock
+[InkOS] Linking __preview.dylib
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Linking __preview.dylib
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Copying theme.css
+[InkOS] Copying TokenManagementContract.swift.bak
+[InkOS] Generate Asset Symbols Assets.xcassets
+[InkOS] Copying CONTRACT.md
+[InkOS] Copying CLAUDE.md
+[InkOS] Create Universal Binary __preview.dylib
+[InkOS] Processing Info.plist
+[InkOS] Compiling MoveToFolderSheet.swift
+[InkOS] Compiling NotebookLibrary.swift
+[InkOS] Compiling SearchOverlayRootView.swift
+[InkOS] Compiling SearchOverlayState.swift
+[InkOS] Compiling UIKitDragWrapper.swift
+[InkOS] Compiling LessonCardView.swift
+[InkOS] Compiling AnswerComparisonService.swift
+[InkOS] Compiling LessonGenerationService.swift
+[InkOS] Compiling LessonGenerator.swift
+[InkOS] Compiling LessonPreviewGenerator.swift
+[InkOS] Compiling LessonModel.swift
+[InkOS] Compiling LessonProgress.swift
+[InkOS] Compiling ContentSectionCell.swift
+[InkOS] Compiling LessonHeaderCell.swift
+[InkOS] Compiling QuestionSectionCell.swift
+[InkOS] Compiling SummarySectionCell.swift
+[InkOS] Compiling VisualSectionCell.swift
+[InkOS] Compiling LessonViewController.swift
+[InkOS] Compiling NotesButtonView.swift
+[InkOS] Compiling NotesOverlayCoordinator.swift
+[InkOS] Compiling NotesOverlayView.swift
+[InkOS] Compiling QuestionCanvasManager.swift
+[InkOS] Compiling NSAttributedString+Helper.swift
+[InkOS] Compiling NSFileManager+Additions.swift
+[InkOS] Compiling Path.swift
+[InkOS] Compiling SynchronizedSwift.swift
+[InkOS] Compiling TextFormatHelper.swift
+[InkOS] Compiling UIFont+Helper.swift
+[InkOS] Compiling IINKEditorExportExtension.swift
+[InkOS] Compiling JIIXPersistenceService.swift
+[InkOS] Compiling JIIXPersistenceTypes.swift
+[InkOS] Compiling BundleManager.swift
+[InkOS] Compiling BundleManager+Lessons.swift
+[InkOS] Compiling BundleStorage.swift
+[InkOS] Compiling DocumentHandle.swift
+[InkOS] Compiling FolderManifest.swift
+[InkOS] Compiling LessonManifest.swift
+[InkOS] Compiling LessonStorage.swift
+[InkOS] Compiling Manifest.swift
+[InkOS] Compiling PDFDocumentHandle.swift
+[InkOS] Compiling SDKProtocols.swift
+[InkOS] Compiling InkOSApp.swift
+[InkOS] Compiling GeneratedAssetSymbols.swift
+[InkOS] Compiling LessonViewModel.swift
+[InkOS] Compiling ContentSectionView.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Lesson/Views/ContentSectionView.swift:168:40: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(boldContent)).bold()
+                                       ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Lesson/Views/ContentSectionView.swift:168:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(boldContent)).bold()
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Lesson/Views/ContentSectionView.swift:180:40: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(italicContent)).italic()
+                                       ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Lesson/Views/ContentSectionView.swift:180:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(italicContent)).italic()
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Lesson/Views/ContentSectionView.swift:193:11: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+          + Text(String(codeContent))
+          ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Lesson/Views/ContentSectionView.swift:192:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before)
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Lesson/Views/ContentSectionView.swift:201:23: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+      result = result + Text(remaining)
+                      ^
+[InkOS] Compiling LessonGenerationContent.swift
+[InkOS] Compiling LessonGenerationOverlay.swift
+[InkOS] Compiling LessonView.swift
+[InkOS] Compiling QuestionSectionView.swift
+[InkOS] Compiling SummarySectionView.swift
+[InkOS] Compiling VisualPlaceholderView.swift
+[InkOS] Compiling NotebookModel.swift
+[InkOS] Compiling DottedGridView.swift
+[InkOS] Compiling PDFBackgroundRenderer.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/PDFDisplay/PDFBackgroundRenderer.swift:101:32: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenScale = UIScreen.main.scale
+                               ^
+[InkOS] Compiling PDFEditorHostView.swift
+[InkOS] Compiling PDFEditorViewController.swift
+[InkOS] Compiling PDFEditorViewModel.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/PDFDisplay/PDFEditorViewModel.swift:45:32: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenWidth = UIScreen.main.bounds.width
+                               ^
+[InkOS] Compiling PDFPageLayout.swift
+[InkOS] Compiling PDFStubs.swift
+[InkOS] Compiling PDFDataModel.swift
+[InkOS] Compiling PDFImport.swift
+[InkOS] Compiling Contract.swift
+[InkOS] Compiling SearchIndex.swift
+[InkOS] Compiling SearchIndexTriggers.swift
+[InkOS] Compiling BundleManagerFolderLookup.swift
+[InkOS] Compiling NotebookCell.swift
+[InkOS] Compiling PDFDocumentCell.swift
+[InkOS] Compiling FolderOverlayCell.swift
+[InkOS] Compiling FolderOverlayViewController.swift
+[InkOS] Compiling FolderPresentationController.swift
+[InkOS] Compiling FolderTransitionAnimator.swift
+[InkOS] Compiling DashboardHostView.swift
+[InkOS] Compiling DashboardLayout.swift
+[InkOS] Compiling DashboardViewController.swift
+[InkOS] Compiling CardFoundation.swift
+[InkOS] Compiling CardUIComponents.swift
+[InkOS] Compiling ContextMenuOverlay.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Dashboard/ContextMenuOverlay.swift:116:33: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenBounds = UIScreen.main.bounds
+                                ^
+[InkOS] Compiling DashboardAlerts.swift
+[InkOS] Compiling DashboardCardRepresentable.swift
+[InkOS] Compiling DashboardCardView.swift
+[InkOS] Compiling DashboardComponents.swift
+[InkOS] Compiling DashboardItem.swift
+[InkOS] Compiling DashboardView.swift
+[InkOS] Compiling FolderCard.swift
+[InkOS] Compiling FolderDropDelegate.swift
+[InkOS] Compiling FolderOverlay.swift
+[InkOS] Compiling GenericCardButton.swift
+[InkOS] Compiling SearchService.swift
+[InkOS] Compiling SearchServiceContract.swift
+[InkOS] Compiling DashboardSearchBar.swift
+[InkOS] Compiling DashboardSearchResults.swift
+[InkOS] Compiling ContextMenuView.swift
+[InkOS] Compiling NotebookNotifications.swift
+[InkOS] Compiling UIComponents.swift
+[InkOS] Compiling SkillExecutor.swift
+[InkOS] Compiling SkillRegistry.swift
+[InkOS] Compiling SkillsContract.swift
+[InkOS] Compiling EquationRenderer.swift
+[InkOS] Compiling EquationRendererContract.swift
+[InkOS] Compiling GraphImageRenderer.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Skills/Graph/GraphImageRenderer.swift:97:9: no 'async' operations occur within 'await' expression
+    try await self.validateConfiguration(configuration)
+        ^
+[InkOS] Compiling GraphImageRendererContract.swift
+[InkOS] Compiling GraphInsertionService.swift
+[InkOS] Compiling GraphInsertionServiceContract.swift
+[InkOS] Compiling GraphSpecificationContract.swift
+[InkOS] Compiling GraphView.swift
+[InkOS] Compiling GraphViewContract.swift
+[InkOS] Compiling GraphViewModel.swift
+[InkOS] Compiling GraphViewModelContract.swift
+[InkOS] Compiling EditorNavigationController.swift
+[InkOS] Compiling NotebookDismissAnimator.swift
+[InkOS] Compiling NotebookPresentAnimator.swift
+[InkOS] Compiling NotebookTransitionCoordinator.swift
+[InkOS] Compiling AppRootView.swift
+[InkOS] Compiling EditorHostView.swift
+[InkOS] Compiling AIOverlayContextProvider.swift
+[InkOS] Compiling AIOverlayCoordinator.swift
+[InkOS] Compiling RawContentConfiguration.swift
+[InkOS] Compiling AIButtonView.swift
+[InkOS] Compiling AIChatHistoryView.swift
+[InkOS] Compiling AIChatInputBar.swift
+[InkOS] Compiling AIChatOverlayContent.swift
+[InkOS] Compiling AIOverlayView.swift
+[InkOS] Compiling BaseEditorViewController.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Editor/BaseEditorViewController.swift:63:48: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let containerView = UIView(frame: UIScreen.main.bounds)
+                                               ^
+[InkOS] Compiling ColorThicknessPillView.swift
+[InkOS] Compiling EditingToolbarView.swift
+[InkOS] Compiling EditorViewController.swift
+[InkOS] Compiling EditorViewModel.swift
+[InkOS] Compiling EngineProvider.swift
+[InkOS] Compiling HomeButtonView.swift
+[InkOS] Compiling ToolPaletteView.swift
+[InkOS] Compiling MathExpressionParser.swift
+[InkOS] Compiling MathExpressionParserContract.swift
+[InkOS] Compiling AISkillInvocationService.swift
+[InkOS] Compiling InvocationContract.swift
+[InkOS] Compiling SkillCloudClient.swift
+[InkOS] Compiling GraphingCalculatorSkill.swift
+[InkOS] Compiling InputViewController.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Frameworks/Ink/Input/InputViewController.swift:141:30: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let scale = min(UIScreen.main.scale, maxPixelDimension / maxDimension)
+                             ^
+[InkOS] Compiling InputViewModel.swift
+[InkOS] Compiling DisplayViewController.swift
+[InkOS] Compiling DisplayViewModel.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Frameworks/Ink/Rendering/DisplayViewModel.swift:132:27: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return Float(UIScreen.main.scale)
+                          ^
+[InkOS] Compiling Canvas.swift
+[InkOS] Compiling InputView.swift
+[InkOS] Compiling OffscreenRenderSurfaces.swift
+[InkOS] Compiling RenderView.swift
+[InkOS] Compiling ContextualActionsHelper.swift
+[InkOS] Compiling CTRun+Metrics.swift
+[InkOS] Compiling FontMetricsProvider.swift
+[InkOS] Compiling Helper.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Frameworks/Ink/Utils/Helper.swift:38:68: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return UIDevice.current.userInterfaceIdiom == .pad && UIScreen.main.scale > 1
+                                                                   ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Frameworks/Ink/Utils/Helper.swift:50:70: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return UIDevice.current.userInterfaceIdiom == .phone && UIScreen.main.scale > 2
+                                                                     ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Frameworks/Ink/Utils/Helper.swift:76:42: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return Helper.dpi() / Float(UIScreen.main.scale)
+                                         ^
+[InkOS] Compiling IInkUIRefImplUtils.swift
+[InkOS] Compiling ImageLoader.swift
+[InkOS] Compiling ImagePainter.swift
+[InkOS] Compiling AttachmentContract.swift
+[InkOS] Compiling ChatContract.swift
+[InkOS] Compiling MultimodalMessageContract.swift
+[InkOS] Compiling FirebaseTokenCountingContract.swift
+[InkOS] Compiling TokenMetadataConverter.swift
+[InkOS] Compiling TokenResponseParser.swift
+[InkOS] Compiling AttachmentServiceContract.swift
+[InkOS] Compiling ChatService.swift
+[InkOS] Compiling ChatStorage.swift
+[InkOS] Compiling ContextGatherer.swift
+[InkOS] Compiling FirebaseChatClient.swift
+[InkOS] Compiling ChunkingService.swift
+[InkOS] Compiling ContentExtractor.swift
+[InkOS] Compiling ExtractionModels.swift
+[InkOS] Compiling IndexingCoordinator.swift
+[InkOS] Compiling IndexingModels.swift
+[InkOS] Compiling IndexingQueue.swift
+[InkOS] Compiling EmbeddingService.swift
+[InkOS] Compiling VectorStoreClient.swift
+[InkOS] Compiling VectorStoreModels.swift
+[InkOS] Compiling FolderCell.swift
+[InkOS] Compiling LessonCell.swift
+[InkOS] Compiling SearchService.swift
+[InkOS] Compiling SearchServiceContract.swift
+[InkOS] Compiling DashboardSearchBar.swift
+[InkOS] Compiling DashboardSearchResults.swift
+[InkOS] Compiling ContextMenuView.swift
+[InkOS] Compiling NotebookNotifications.swift
+[InkOS] Compiling UIComponents.swift
+[InkOS] Compiling SkillExecutor.swift
+[InkOS] Compiling SkillRegistry.swift
+[InkOS] Compiling SkillsContract.swift
+[InkOS] Compiling EquationRenderer.swift
+[InkOS] Compiling EquationRendererContract.swift
+[InkOS] Compiling GraphImageRenderer.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Skills/Graph/GraphImageRenderer.swift:97:9: no 'async' operations occur within 'await' expression
+    try await self.validateConfiguration(configuration)
+        ^
+[InkOS] Compiling GraphImageRendererContract.swift
+[InkOS] Compiling GraphInsertionService.swift
+[InkOS] Compiling GraphInsertionServiceContract.swift
+[InkOS] Compiling GraphSpecificationContract.swift
+[InkOS] Compiling GraphView.swift
+[InkOS] Compiling GraphViewContract.swift
+[InkOS] Compiling GraphViewModel.swift
+[InkOS] Compiling GraphViewModelContract.swift
+[InkOS] Copy x86_64-apple-ios-simulator.swiftmodule -> InkOS.swiftmodule
+[InkOS] Copy x86_64-apple-ios-simulator.swiftdoc -> InkOS.swiftdoc
+[InkOS] Copy x86_64-apple-ios-simulator.abi.json -> InkOS.abi.json
+[InkOS] Copy x86_64-apple-ios-simulator.swiftsourceinfo -> InkOS.swiftsourceinfo
+[InkOS] Compiling MoveToFolderSheet.swift
+[InkOS] Compiling NotebookLibrary.swift
+[InkOS] Compiling SearchOverlayRootView.swift
+[InkOS] Compiling SearchOverlayState.swift
+[InkOS] Compiling UIKitDragWrapper.swift
+[InkOS] Compiling LessonCardView.swift
+[InkOS] Compiling AnswerComparisonService.swift
+[InkOS] Compiling LessonGenerationService.swift
+[InkOS] Compiling LessonGenerator.swift
+[InkOS] Compiling LessonPreviewGenerator.swift
+[InkOS] Compiling LessonModel.swift
+[InkOS] Compiling LessonProgress.swift
+[InkOS] Compiling ContentSectionCell.swift
+[InkOS] Compiling LessonHeaderCell.swift
+[InkOS] Compiling QuestionSectionCell.swift
+[InkOS] Compiling SummarySectionCell.swift
+[InkOS] Compiling VisualSectionCell.swift
+[InkOS] Compiling LessonViewController.swift
+[InkOS] Compiling NotesButtonView.swift
+[InkOS] Compiling NotesOverlayCoordinator.swift
+[InkOS] Compiling NotesOverlayView.swift
+[InkOS] Compiling QuestionCanvasManager.swift
+[InkOS] Compiling LessonViewModel.swift
+[InkOS] Compiling ContentSectionView.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Lesson/Views/ContentSectionView.swift:168:40: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(boldContent)).bold()
+                                       ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Lesson/Views/ContentSectionView.swift:168:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(boldContent)).bold()
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Lesson/Views/ContentSectionView.swift:180:40: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(italicContent)).italic()
+                                       ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Lesson/Views/ContentSectionView.swift:180:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before) + Text(String(italicContent)).italic()
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Lesson/Views/ContentSectionView.swift:193:11: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+          + Text(String(codeContent))
+          ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Lesson/Views/ContentSectionView.swift:192:25: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+        result = result + Text(before)
+                        ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Lesson/Views/ContentSectionView.swift:201:23: '+' was deprecated in iOS 26.0: Use string interpolation on `Text` instead: `Text("Hello \(name)")`
+      result = result + Text(remaining)
+                      ^
+[InkOS] Compiling LessonGenerationContent.swift
+[InkOS] Compiling LessonGenerationOverlay.swift
+[InkOS] Compiling LessonView.swift
+[InkOS] Compiling QuestionSectionView.swift
+[InkOS] Compiling SummarySectionView.swift
+[InkOS] Compiling VisualPlaceholderView.swift
+[InkOS] Compiling NotebookModel.swift
+[InkOS] Compiling DottedGridView.swift
+[InkOS] Compiling PDFBackgroundRenderer.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/PDFDisplay/PDFBackgroundRenderer.swift:101:32: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenScale = UIScreen.main.scale
+                               ^
+[InkOS] Compiling PDFEditorHostView.swift
+[InkOS] Compiling PDFEditorViewController.swift
+[InkOS] Compiling PDFEditorViewModel.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/PDFDisplay/PDFEditorViewModel.swift:45:32: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenWidth = UIScreen.main.bounds.width
+                               ^
+[InkOS] Compiling PDFPageLayout.swift
+[InkOS] Compiling PDFStubs.swift
+[InkOS] Compiling PDFDataModel.swift
+[InkOS] Compiling PDFImport.swift
+[InkOS] Compiling Contract.swift
+[InkOS] Compiling SearchIndex.swift
+[InkOS] Compiling SearchIndexTriggers.swift
+[InkOS] Compiling BundleManagerFolderLookup.swift
+[InkOS] Compiling MathExpressionParser.swift
+[InkOS] Compiling MathExpressionParserContract.swift
+[InkOS] Compiling AISkillInvocationService.swift
+[InkOS] Compiling InvocationContract.swift
+[InkOS] Compiling SkillCloudClient.swift
+[InkOS] Compiling GraphingCalculatorSkill.swift
+[InkOS] Compiling InputViewController.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Frameworks/Ink/Input/InputViewController.swift:141:30: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let scale = min(UIScreen.main.scale, maxPixelDimension / maxDimension)
+                             ^
+[InkOS] Compiling InputViewModel.swift
+[InkOS] Compiling DisplayViewController.swift
+[InkOS] Compiling DisplayViewModel.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Frameworks/Ink/Rendering/DisplayViewModel.swift:132:27: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return Float(UIScreen.main.scale)
+                          ^
+[InkOS] Compiling Canvas.swift
+[InkOS] Compiling InputView.swift
+[InkOS] Compiling OffscreenRenderSurfaces.swift
+[InkOS] Compiling RenderView.swift
+[InkOS] Compiling ContextualActionsHelper.swift
+[InkOS] Compiling CTRun+Metrics.swift
+[InkOS] Compiling FontMetricsProvider.swift
+[InkOS] Compiling Helper.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Frameworks/Ink/Utils/Helper.swift:38:68: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return UIDevice.current.userInterfaceIdiom == .pad && UIScreen.main.scale > 1
+                                                                   ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Frameworks/Ink/Utils/Helper.swift:50:70: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return UIDevice.current.userInterfaceIdiom == .phone && UIScreen.main.scale > 2
+                                                                     ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Frameworks/Ink/Utils/Helper.swift:76:42: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return Helper.dpi() / Float(UIScreen.main.scale)
+                                         ^
+[InkOS] Compiling IInkUIRefImplUtils.swift
+[InkOS] Compiling ImageLoader.swift
+[InkOS] Compiling ImagePainter.swift
+[InkOS] Copy arm64-apple-ios-simulator.swiftmodule -> InkOS.swiftmodule
+[InkOS] Copy arm64-apple-ios-simulator.swiftdoc -> InkOS.swiftdoc
+[InkOS] Copy arm64-apple-ios-simulator.abi.json -> InkOS.abi.json
+[InkOS] Copy arm64-apple-ios-simulator.swiftsourceinfo -> InkOS.swiftsourceinfo
+[InkOS] Compiling NotebookCell.swift
+[InkOS] Compiling PDFDocumentCell.swift
+[InkOS] Compiling FolderOverlayCell.swift
+[InkOS] Compiling FolderOverlayViewController.swift
+[InkOS] Compiling FolderPresentationController.swift
+[InkOS] Compiling FolderTransitionAnimator.swift
+[InkOS] Compiling DashboardHostView.swift
+[InkOS] Compiling DashboardLayout.swift
+[InkOS] Compiling DashboardViewController.swift
+[InkOS] Compiling CardFoundation.swift
+[InkOS] Compiling CardUIComponents.swift
+[InkOS] Compiling ContextMenuOverlay.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Features/Dashboard/ContextMenuOverlay.swift:116:33: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenBounds = UIScreen.main.bounds
+                                ^
+[InkOS] Compiling DashboardAlerts.swift
+[InkOS] Compiling DashboardCardRepresentable.swift
+[InkOS] Compiling DashboardCardView.swift
+[InkOS] Compiling DashboardComponents.swift
+[InkOS] Compiling DashboardItem.swift
+[InkOS] Compiling DashboardView.swift
+[InkOS] Compiling FolderCard.swift
+[InkOS] Compiling FolderDropDelegate.swift
+[InkOS] Compiling FolderOverlay.swift
+[InkOS] Compiling GenericCardButton.swift
+[InkOS] Compiling EditorNavigationController.swift
+[InkOS] Compiling NotebookDismissAnimator.swift
+[InkOS] Compiling NotebookPresentAnimator.swift
+[InkOS] Compiling NotebookTransitionCoordinator.swift
+[InkOS] Compiling AppRootView.swift
+[InkOS] Compiling EditorHostView.swift
+[InkOS] Compiling AIOverlayContextProvider.swift
+[InkOS] Compiling AIOverlayCoordinator.swift
+[InkOS] Compiling RawContentConfiguration.swift
+[InkOS] Compiling AIButtonView.swift
+[InkOS] Compiling AIChatHistoryView.swift
+[InkOS] Compiling AIChatInputBar.swift
+[InkOS] Compiling AIChatOverlayContent.swift
+[InkOS] Compiling AIOverlayView.swift
+[InkOS] Compiling BaseEditorViewController.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-ai/InkOS/Editor/BaseEditorViewController.swift:63:48: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let containerView = UIView(frame: UIScreen.main.bounds)
+                                               ^
+[InkOS] Compiling ColorThicknessPillView.swift
+[InkOS] Compiling EditingToolbarView.swift
+[InkOS] Compiling EditorViewController.swift
+[InkOS] Compiling EditorViewModel.swift
+[InkOS] Compiling EngineProvider.swift
+[InkOS] Compiling HomeButtonView.swift
+[InkOS] Compiling ToolPaletteView.swift
+[InkOS] Compiling NSAttributedString+Helper.swift
+[InkOS] Compiling NSFileManager+Additions.swift
+[InkOS] Compiling Path.swift
+[InkOS] Compiling SynchronizedSwift.swift
+[InkOS] Compiling TextFormatHelper.swift
+[InkOS] Compiling UIFont+Helper.swift
+[InkOS] Compiling IINKEditorExportExtension.swift
+[InkOS] Compiling JIIXPersistenceService.swift
+[InkOS] Compiling JIIXPersistenceTypes.swift
+[InkOS] Compiling BundleManager.swift
+[InkOS] Compiling BundleManager+Lessons.swift
+[InkOS] Compiling BundleStorage.swift
+[InkOS] Compiling DocumentHandle.swift
+[InkOS] Compiling FolderManifest.swift
+[InkOS] Compiling LessonManifest.swift
+[InkOS] Compiling LessonStorage.swift
+[InkOS] Compiling Manifest.swift
+[InkOS] Compiling PDFDocumentHandle.swift
+[InkOS] Compiling SDKProtocols.swift
+[InkOS] Compiling InkOSApp.swift
+[InkOS] Compiling GeneratedAssetSymbols.swift
+[InkOS] Compiling AttachmentContract.swift
+[InkOS] Compiling ChatContract.swift
+[InkOS] Compiling MultimodalMessageContract.swift
+[InkOS] Compiling FirebaseTokenCountingContract.swift
+[InkOS] Compiling TokenMetadataConverter.swift
+[InkOS] Compiling TokenResponseParser.swift
+[InkOS] Compiling AttachmentServiceContract.swift
+[InkOS] Compiling ChatService.swift
+[InkOS] Compiling ChatStorage.swift
+[InkOS] Compiling ContextGatherer.swift
+[InkOS] Compiling FirebaseChatClient.swift
+[InkOS] Compiling ChunkingService.swift
+[InkOS] Compiling ContentExtractor.swift
+[InkOS] Compiling ExtractionModels.swift
+[InkOS] Compiling IndexingCoordinator.swift
+[InkOS] Compiling IndexingModels.swift
+[InkOS] Compiling IndexingQueue.swift
+[InkOS] Compiling EmbeddingService.swift
+[InkOS] Compiling VectorStoreClient.swift
+[InkOS] Compiling VectorStoreModels.swift
+[InkOS] Compiling FolderCell.swift
+[InkOS] Compiling LessonCell.swift
+[InkOS] Compiling SmartGuideViewController.mm
+[InkOS] Compiling SmartGuideViewController.mm
+[InkOS] Compiling me.andy.allen.Trivial.c
+[InkOS] Compiling me.andy.allen.Trivial.c
+[InkOS] Linking InkOS.debug.dylib
+[!] ld: ignoring duplicate libraries: '-lc++'
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+note: Using stub executor library with Swift entry point. (in target 'InkOS' from project 'InkOS')
+[InkOS] Linking InkOS
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Linking InkOS.debug.dylib
+[!] ld: ignoring duplicate libraries: '-lc++'
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+note: Using stub executor library with Swift entry point. (in target 'InkOS' from project 'InkOS')
+[InkOS] Create Universal Binary InkOS.debug.dylib
+[InkOS] Linking InkOS
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Create Universal Binary InkOS
+[InkOS] Running script Copy Recognition Assets
+[InkOS] Extract App Intents Metadata
+[InkOS] RegisterExecutionPolicyException InkOS.app
+[InkOS] Validate InkOS.app
+[InkOS] Touching InkOS.app
+note: Run script build phase 'Copy Recognition Assets' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'InkOS' from project 'InkOS')
+Build Succeeded

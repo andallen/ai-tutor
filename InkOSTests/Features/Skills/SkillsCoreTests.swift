@@ -890,7 +890,6 @@ struct MessageRoleTests {
   func allRolesExist() {
     #expect(MessageRole.user.rawValue == "user")
     #expect(MessageRole.assistant.rawValue == "assistant")
-    #expect(MessageRole.system.rawValue == "system")
   }
 
   @Test("is codable")

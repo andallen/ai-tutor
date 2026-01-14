@@ -33,7 +33,7 @@ final class AIOverlayCoordinator {
     // Default configuration for most view controllers.
     static let `default` = Configuration(
       buttonTrailingInset: 24,
-      buttonBottomInset: 24,
+      buttonBottomInset: 0,
       overlayWidth: 468,
       overlayHeight: 560,
       overlayCornerRadius: 24
@@ -42,7 +42,7 @@ final class AIOverlayCoordinator {
     // Dashboard-specific configuration (same dimensions, may diverge later).
     static let dashboard = Configuration(
       buttonTrailingInset: 24,
-      buttonBottomInset: 24,
+      buttonBottomInset: 0,
       overlayWidth: 468,
       overlayHeight: 560,
       overlayCornerRadius: 24
@@ -83,6 +83,10 @@ final class AIOverlayCoordinator {
 
   // Bottom constraint for keyboard-aware positioning.
   private var overlayBottomConstraint: NSLayoutConstraint?
+
+  // Horizontal constraints for keyboard-aware centering.
+  private var overlayTrailingConstraint: NSLayoutConstraint?
+  private var overlayCenterXConstraint: NSLayoutConstraint?
 
   // MARK: - Initialization
 
@@ -260,17 +264,28 @@ final class AIOverlayCoordinator {
       constant: -configuration.buttonBottomInset
     )
 
+    // Trailing constraint for normal position (bottom-right).
+    let trailingConstraint = overlayView.trailingAnchor.constraint(
+      equalTo: vc.view.safeAreaLayoutGuide.trailingAnchor,
+      constant: -configuration.buttonTrailingInset
+    )
+
+    // Center constraint for keyboard-active position (inactive by default).
+    let centerXConstraint = overlayView.centerXAnchor.constraint(
+      equalTo: vc.view.centerXAnchor
+    )
+    centerXConstraint.isActive = false
+
     NSLayoutConstraint.activate([
       overlayView.widthAnchor.constraint(equalToConstant: configuration.overlayWidth),
       overlayView.heightAnchor.constraint(equalToConstant: configuration.overlayHeight),
-      overlayView.trailingAnchor.constraint(
-        equalTo: vc.view.safeAreaLayoutGuide.trailingAnchor,
-        constant: -configuration.buttonTrailingInset
-      ),
+      trailingConstraint,
       bottomConstraint
     ])
 
     overlayBottomConstraint = bottomConstraint
+    overlayTrailingConstraint = trailingConstraint
+    overlayCenterXConstraint = centerXConstraint
 
     // Start hidden below screen.
     let slideDistance = configuration.overlayHeight + 100
@@ -414,9 +429,16 @@ final class AIOverlayCoordinator {
   // MARK: - Actions
 
   @objc private func handleDismissTap() {
-    if isExpanded {
-      toggleOverlay(animated: true)
+    guard isExpanded else { return }
+
+    // If keyboard is visible, dismiss it first (overlay stays open).
+    if keyboardHeight > 0 {
+      viewController?.view.endEditing(true)
+      return
     }
+
+    // Keyboard not visible, collapse the overlay.
+    toggleOverlay(animated: true)
   }
 
   // MARK: - Keyboard Handling
@@ -454,6 +476,10 @@ final class AIOverlayCoordinator {
     let keyboardPadding: CGFloat = 12
     overlayBottomConstraint?.constant = -(keyboardHeight + keyboardPadding)
 
+    // Center overlay horizontally.
+    overlayTrailingConstraint?.isActive = false
+    overlayCenterXConstraint?.isActive = true
+
     let options = UIView.AnimationOptions(rawValue: curveValue << 16)
     UIView.animate(withDuration: duration, delay: 0, options: options) {
       self.viewController?.view.layoutIfNeeded()
@@ -471,6 +497,10 @@ final class AIOverlayCoordinator {
 
     // Return overlay to original position.
     overlayBottomConstraint?.constant = -configuration.buttonBottomInset
+
+    // Return overlay to bottom-right.
+    overlayCenterXConstraint?.isActive = false
+    overlayTrailingConstraint?.isActive = true
 
     let options = UIView.AnimationOptions(rawValue: curveValue << 16)
     UIView.animate(withDuration: duration, delay: 0, options: options) {

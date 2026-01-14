@@ -8,7 +8,7 @@ import SwiftUI
 
 // Available AI models for the chat.
 enum AIModel: String, CaseIterable, Identifiable {
-  case gemini25Flash = "Gemini 2.5 Flash"
+  case gemini30FlashPreview = "Gemini 3.0 Flash Preview"
 
   var id: String { rawValue }
 }
@@ -45,20 +45,65 @@ enum AIOverlayLocation {
   case note
 }
 
-// MARK: - Liquid Glass Modifier
+// MARK: - Skills Box Background Modifier
 
-// Applies liquid glass effect on iOS 26+, falls back to ultraThinMaterial on earlier versions.
-private struct LiquidGlassModifier: ViewModifier {
+// Applies a light semi-transparent background for the skills box.
+// Since the skills box is inside a glass overlay, using another glass effect
+// creates a dark/grey stacking effect. Instead, use a light background.
+private struct SkillsBoxBackgroundModifier: ViewModifier {
+  let cornerRadius: CGFloat = 16
+
   func body(content: Content) -> some View {
-    if #available(iOS 26.0, *) {
-      content
-        .glassEffect(
-          .regular.interactive(false), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-    } else {
-      content
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    content
+      .background(
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+          .fill(Color.white.opacity(0.5))
+      )
+      .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+  }
+}
+
+// MARK: - Helper Functions
+
+// Loads a custom skill icon from Assets or bundle.
+// Looks for files named {skillID}.png, {skillID}.jpg, or {skillID}.jpeg.
+private func loadCustomSkillIcon(for skillID: String) -> UIImage? {
+  // Try UIImage(named:) first - this searches the main bundle and Assets.
+  if let image = UIImage(named: skillID) {
+    return image
+  }
+
+  // Try different subdirectory paths.
+  let possiblePaths: [String?] = [
+    "Skills/Icons",
+    "Icons",
+    nil  // No subdirectory, file might be at bundle root.
+  ]
+
+  for subdirectory in possiblePaths {
+    // Try PNG.
+    if let url = Bundle.main.url(
+      forResource: skillID, withExtension: "png", subdirectory: subdirectory),
+      let image = UIImage(contentsOfFile: url.path) {
+      return image
+    }
+
+    // Try JPG.
+    if let url = Bundle.main.url(
+      forResource: skillID, withExtension: "jpg", subdirectory: subdirectory),
+      let image = UIImage(contentsOfFile: url.path) {
+      return image
+    }
+
+    // Try JPEG.
+    if let url = Bundle.main.url(
+      forResource: skillID, withExtension: "jpeg", subdirectory: subdirectory),
+      let image = UIImage(contentsOfFile: url.path) {
+      return image
     }
   }
+
+  return nil
 }
 
 // MARK: - Skill Item View
@@ -68,15 +113,30 @@ private struct SkillItemView: View {
   let skill: SkillMetadata
   let onTap: () -> Void
 
+  // Track press state for tap animation.
+  @State private var isPressed = false
+
   var body: some View {
     Button(action: onTap) {
       HStack(spacing: 12) {
-        // Skill icon in a circular background.
-        Image(systemName: skill.iconName)
-          .font(.system(size: 16, weight: .medium))
-          .foregroundColor(.black)
-          .frame(width: 32, height: 32)
-          .background(Color.black.opacity(0.08), in: Circle())
+        // Skill icon - loads from custom image or shows placeholder circle.
+        // Custom images should be placed in Assets.xcassets with imageset name matching skill.id.
+        Group {
+          if let iconImage = loadCustomSkillIcon(for: skill.id) {
+            // Make the image larger than the circle to zoom in, then clip to circle bounds.
+            Image(uiImage: iconImage)
+              .resizable()
+              .aspectRatio(contentMode: .fill)
+              .frame(width: 90, height: 90)
+              .clipShape(Circle())
+              .frame(width: 56, height: 56)
+          } else {
+            // Placeholder circle when no custom icon exists.
+            Circle()
+              .fill(Color.black.opacity(0.08))
+              .frame(width: 56, height: 56)
+          }
+        }
 
         // Skill name and description.
         VStack(alignment: .leading, spacing: 2) {
@@ -95,8 +155,23 @@ private struct SkillItemView: View {
       .padding(.horizontal, 12)
       .padding(.vertical, 10)
       .contentShape(Rectangle())
+      // Apply press animation: scale and opacity reduce on tap.
+      .scaleEffect(isPressed ? 0.95 : 1.0)
+      .opacity(isPressed ? 0.9 : 1.0)
+      .animation(.spring(response: 0.3, dampingFraction: 0.75), value: isPressed)
     }
     .buttonStyle(.plain)
+    .accessibilityIdentifier("skillItem_\(skill.id)")
+    // Track press state for visual feedback.
+    .simultaneousGesture(
+      DragGesture(minimumDistance: 0)
+        .onChanged { _ in
+          isPressed = true
+        }
+        .onEnded { _ in
+          isPressed = false
+        }
+    )
   }
 }
 
@@ -240,6 +315,7 @@ private struct LightbulbButton: View {
           .background(.ultraThinMaterial, in: Circle())
       }
     )
+    .accessibilityIdentifier("skillsLightbulbButton")
     .opacity(isLightbulbVisible ? 1 : 0)
     .offset(x: isSkillsBoxVisible ? 60 : 0)
     .animation(.easeOut(duration: 0.15), value: isSkillsBoxVisible)
@@ -273,11 +349,14 @@ struct AIChatOverlayContent: View {
   // Available skills loaded from SkillRegistry.
   @State private var availableSkills: [SkillMetadata] = []
 
+  // Currently active skill (shown in top left corner).
+  @State private var activeSkill: SkillMetadata?
+
   // Internal focus state to detect when input bar gains focus.
   @FocusState private var internalInputFocused: Bool
 
   // Currently selected AI model.
-  @State private var selectedModel: AIModel = .gemini25Flash
+  @State private var selectedModel: AIModel = .gemini30FlashPreview
   // Currently selected context scope for dashboard/folder.
   @State private var selectedDashboardContext: DashboardContextScope = .allNotes
   // Currently selected context scope for notes.
@@ -321,9 +400,17 @@ struct AIChatOverlayContent: View {
         // Header with hamburger menu button and dropdown selectors.
         headerView
 
-        // Lightbulb button row aligned to the right.
+        // Active skill icon and lightbulb button row.
         HStack {
+          // Active skill icon (pops in when skill is selected) - positioned at left.
+          if let skill = activeSkill {
+            activeSkillIcon(for: skill)
+              .transition(.scale.combined(with: .opacity))
+              .padding(.leading, 24)
+          }
+
           Spacer()
+
           LightbulbButton(
             isSkillsBoxVisible: $isSkillsBoxVisible,
             isLightbulbVisible: $isLightbulbVisible
@@ -349,22 +436,8 @@ struct AIChatOverlayContent: View {
           }
         }
       }
-      // Skills box overlay - positioned relative to the main content, clipped to bounds.
       .overlay(alignment: .top) {
-        // Invisible tap-catching layer to dismiss skills box when tapping outside it.
-        // Excludes bottom 80pt (chat input bar area) so input bar taps pass through.
-        if isSkillsBoxVisible {
-          GeometryReader { geometry in
-            Color.clear
-              .contentShape(Rectangle())
-              .frame(height: geometry.size.height - 80)
-              .onTapGesture {
-                withAnimation(.easeOut(duration: 0.15)) {
-                  isSkillsBoxVisible = false
-                }
-              }
-          }
-        }
+        skillsDismissOverlay
       }
       .overlay(alignment: .topTrailing) {
         skillsBox
@@ -372,29 +445,10 @@ struct AIChatOverlayContent: View {
       .clipped()
 
       // Chat history sidebar (slides in from left).
-      AIChatHistorySidebar(
-        isVisible: $isChatHistoryVisible,
-        chatItems: chatHistoryItems,
-        onNewChat: {
-          // Clear current chat to start new one.
-          text = ""
-        },
-        onSelectChat: { _ in
-          // Load selected chat (placeholder for now).
-        }
-      )
-      .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+      chatHistorySidebar
     }
     .onAppear {
-      // Set default context based on location.
-      switch location {
-      case .dashboard:
-        selectedDashboardContext = .allNotes
-      case .folder:
-        selectedDashboardContext = .specificFolder
-      case .note:
-        selectedNoteContext = .thisPage
-      }
+      configureDefaultContext()
     }
     .task {
       // Load available skills from SkillRegistry.
@@ -402,6 +456,23 @@ struct AIChatOverlayContent: View {
     }
   }
 
+  // Initializer with optional focus binding and location for context options.
+  init(
+    text: Binding<String>,
+    isFocused: FocusState<Bool>.Binding? = nil,
+    location: AIOverlayLocation = .note,
+    onSend: @escaping () -> Void
+  ) {
+    self._text = text
+    self.isFocused = isFocused
+    self.location = location
+    self.onSend = onSend
+  }
+}
+
+// MARK: - View Components Extension
+
+extension AIChatOverlayContent {
   // Header containing hamburger menu and dropdown selectors.
   private var headerView: some View {
     HStack(alignment: .center, spacing: 0) {
@@ -435,10 +506,61 @@ struct AIChatOverlayContent: View {
     .padding(.top, 8)
   }
 
+  // Active skill icon displayed in the top left below the header.
+  @ViewBuilder
+  private func activeSkillIcon(for skill: SkillMetadata) -> some View {
+    Button(
+      action: {
+        // Tapping the active skill icon deactivates it.
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+          activeSkill = nil
+        }
+      },
+      label: {
+        Group {
+          if let iconImage = loadCustomSkillIcon(for: skill.id) {
+            // 32pt circle with minimal zoom so icon fills the circle.
+            Image(uiImage: iconImage)
+              .resizable()
+              .aspectRatio(contentMode: .fill)
+              .frame(width: 38, height: 38)
+              .clipShape(Circle())
+              .frame(width: 32, height: 32)
+          } else {
+            // Placeholder circle when no custom icon exists.
+            Circle()
+              .fill(Color.black.opacity(0.08))
+              .frame(width: 32, height: 32)
+          }
+        }
+      }
+    )
+    .buttonStyle(.plain)
+    .accessibilityIdentifier("activeSkillIcon_\(skill.id)")
+  }
+
+  // Invisible tap-catching layer to dismiss skills box when tapping outside it.
+  // Excludes bottom 80pt (chat input bar area) so input bar taps pass through.
+  @ViewBuilder
+  private var skillsDismissOverlay: some View {
+    if isSkillsBoxVisible {
+      GeometryReader { geometry in
+        Color.clear
+          .contentShape(Rectangle())
+          .frame(height: geometry.size.height - 80)
+          .onTapGesture {
+            withAnimation(.easeOut(duration: 0.15)) {
+              isSkillsBoxVisible = false
+            }
+          }
+      }
+    }
+  }
+
   // Skills box that slides in from the right side of the overlay with blurred edge.
   private var skillsBox: some View {
-    let boxWidth: CGFloat = 260
-    let boxHeight: CGFloat = 240
+    let boxWidth: CGFloat = 320
+    let boxHeight: CGFloat = 340
     let blurWidth: CGFloat = 20
     // Offset to fully hide the box off-screen.
     let hideOffset: CGFloat = boxWidth + 32
@@ -462,10 +584,11 @@ struct AIChatOverlayContent: View {
           }
         }
       }
+      .scrollContentBackground(.hidden)
     }
     .frame(width: boxWidth, height: boxHeight)
-    .modifier(LiquidGlassModifier())
-    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    .modifier(SkillsBoxBackgroundModifier())
+    .accessibilityIdentifier("skillsBox")
     .mask(
       // Create a gradient mask that fades out the trailing edge.
       LinearGradient(
@@ -486,6 +609,22 @@ struct AIChatOverlayContent: View {
     .offset(x: isSkillsBoxVisible ? 0 : hideOffset)
     .animation(.easeOut(duration: 0.15), value: isSkillsBoxVisible)
     .allowsHitTesting(isSkillsBoxVisible)
+  }
+
+  // Chat history sidebar (slides in from left).
+  private var chatHistorySidebar: some View {
+    AIChatHistorySidebar(
+      isVisible: $isChatHistoryVisible,
+      chatItems: chatHistoryItems,
+      onNewChat: {
+        // Clear current chat to start new one.
+        text = ""
+      },
+      onSelectChat: { _ in
+        // Load selected chat (placeholder for now).
+      }
+    )
+    .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
   }
 
   // Context menu options based on current location.
@@ -532,19 +671,22 @@ struct AIChatOverlayContent: View {
       }
     }
   }
+}
 
-  // Handle skill tap: insert skill prompt into chat, close skills box, and focus input.
+// MARK: - Helper Methods Extension
+
+extension AIChatOverlayContent {
+  // Handle skill tap: activate skill, show icon in top left, and close skills box.
   private func handleSkillTapped(_ skill: SkillMetadata) {
-    // Insert skill-specific prompt into chat input.
-    text = "/\(skill.id) "
+    // Set the active skill (shown in top left with pop animation).
+    withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+      activeSkill = skill
+    }
 
     // Close the skills box.
     withAnimation(.easeOut(duration: 0.15)) {
       isSkillsBoxVisible = false
     }
-
-    // Focus the input bar so user can continue typing.
-    internalInputFocused = true
   }
 
   // Load skills from SkillRegistry asynchronously.
@@ -555,17 +697,16 @@ struct AIChatOverlayContent: View {
     }
   }
 
-  // Initializer with optional focus binding and location for context options.
-  init(
-    text: Binding<String>,
-    isFocused: FocusState<Bool>.Binding? = nil,
-    location: AIOverlayLocation = .note,
-    onSend: @escaping () -> Void
-  ) {
-    self._text = text
-    self.isFocused = isFocused
-    self.location = location
-    self.onSend = onSend
+  // Set default context based on location.
+  private func configureDefaultContext() {
+    switch location {
+    case .dashboard:
+      selectedDashboardContext = .allNotes
+    case .folder:
+      selectedDashboardContext = .specificFolder
+    case .note:
+      selectedNoteContext = .thisPage
+    }
   }
 }
 

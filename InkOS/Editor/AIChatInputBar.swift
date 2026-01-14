@@ -8,9 +8,9 @@ final class AIChatInputViewModel: ObservableObject {
 }
 
 // Chat input bar for the AI overlay.
-// Rounded rectangle with multiline text editor and send button.
+// Rounded rectangle with multiline text field and send button.
 // Supports external focus control via FocusState binding.
-// Text input grows up to 8 lines, then becomes scrollable.
+// Text input grows automatically up to 8 lines, then becomes scrollable.
 struct AIChatInputBar: View {
   // Text entered by the user.
   @Binding var text: String
@@ -22,78 +22,28 @@ struct AIChatInputBar: View {
   // Internal focus state used when no external binding is provided.
   @FocusState private var internalFocus: Bool
 
-  // Line height for the text editor (17pt font + line spacing).
-  private let lineHeight: CGFloat = 22
-  // Maximum number of visible lines before scrolling.
-  private let maxLines: Int = 8
-  // Minimum height for single line (includes padding).
-  private let minHeight: CGFloat = 48
-  // Vertical padding inside the text editor area.
-  private let verticalPadding: CGFloat = 14
   // Corner radius for the rounded rectangle background.
   private let cornerRadius: CGFloat = 24
 
   // Whether the send button is enabled (has non-whitespace text).
   private var isSendEnabled: Bool {
-    !text.trimmingCharacters(in: .whitespaces).isEmpty
-  }
-
-  // Calculates the number of lines in the current text.
-  private var lineCount: Int {
-    let lines = text.components(separatedBy: .newlines)
-    // Count wrapped lines by estimating characters per line.
-    // Approximate width available for text (minus padding and button).
-    let estimatedCharsPerLine = 35
-    var totalLines = 0
-    for line in lines {
-      if line.isEmpty {
-        totalLines += 1
-      } else {
-        // Each line wraps based on character count.
-        totalLines += max(1, Int(ceil(Double(line.count) / Double(estimatedCharsPerLine))))
-      }
-    }
-    return max(1, totalLines)
-  }
-
-  // Dynamic height based on content, capped at maxLines.
-  private var dynamicHeight: CGFloat {
-    let contentLines = min(lineCount, maxLines)
-    let contentHeight = CGFloat(contentLines) * lineHeight + verticalPadding * 2
-    return max(minHeight, contentHeight)
+    !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
   }
 
   var body: some View {
     HStack(alignment: .bottom, spacing: 0) {
-      // Multiline text editor with placeholder.
-      ZStack(alignment: .topLeading) {
-        // Placeholder text shown when empty.
-        if text.isEmpty {
-          Text("Ask anything")
-            .font(.system(size: 17))
-            .foregroundColor(Color(white: 0.5))
-            .padding(.leading, 20)
-            .padding(.top, verticalPadding)
-            .allowsHitTesting(false)
-        }
-
-        // Multiline text editor.
-        // Keyboard dismissal via scroll is disabled so fast scrolling doesn't hide it.
-        TextEditor(text: $text)
-          .font(.system(size: 17))
-          .foregroundColor(.primary)
-          .scrollContentBackground(.hidden)
-          .background(Color.clear)
-          .scrollDismissesKeyboard(.never)
-          .padding(.leading, 16)
-          .padding(.trailing, 8)
-          .padding(.vertical, verticalPadding - 8)
-          .focused(isFocused ?? $internalFocus)
-          .frame(height: dynamicHeight)
-      }
+      // Multiline text field that expands automatically.
+      TextField("Ask anything", text: $text, axis: .vertical)
+        .font(.system(size: 17))
+        .foregroundColor(.primary)
+        .lineLimit(1...8)
+        .textFieldStyle(.plain)
+        .padding(.leading, 20)
+        .padding(.trailing, 8)
+        .padding(.vertical, 14)
+        .focused(isFocused ?? $internalFocus)
 
       // Send button - circular, enabled state depends on text content.
-      // Anchored to bottom of the bar.
       Button(action: {
         if isSendEnabled {
           onSend()
@@ -113,12 +63,11 @@ struct AIChatInputBar: View {
       .padding(.trailing, 6)
       .padding(.bottom, 6)
     }
-    .frame(height: dynamicHeight)
     .background(
       RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         .fill(Color(white: 0.93))
     )
-    .animation(.easeInOut(duration: 0.15), value: dynamicHeight)
+    .animation(.easeInOut(duration: 0.15), value: text)
   }
 
   // Initializer with optional focus binding for backward compatibility.

@@ -23,7 +23,7 @@ struct GraphingCalculatorSkill: Skill, SkillCreatable {
     SkillMetadata(
       id: "graphing-calculator",
       displayName: "Graphing Calculator",
-      description: "Creates interactive mathematical graphs from handwritten equations or descriptions",
+      description: "Generate interactive graphs",
       iconName: "function",
       parameters: [
         SkillParameter(

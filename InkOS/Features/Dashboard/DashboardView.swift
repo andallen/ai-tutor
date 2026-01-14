@@ -542,7 +542,7 @@ struct DashboardView: View {
 
       // Button center position - bottom right, horizontally aligned with plus button column.
       let buttonX = geometry.size.width - geometry.safeAreaInsets.trailing - 24 - buttonRadius
-      let buttonY = geometry.size.height - geometry.safeAreaInsets.bottom - buttonRadius - 24
+      let buttonY = geometry.size.height - geometry.safeAreaInsets.bottom - buttonRadius
 
       // Button's bottom-right corner (anchor point for overlay animation).
       let buttonBottomRightX = buttonX + buttonRadius

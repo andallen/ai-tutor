@@ -98,6 +98,7 @@ final class AIButtonView: UIView {
       for: [.touchUpInside, .touchUpOutside, .touchCancel]
     )
     button.accessibilityLabel = "AI"
+    button.accessibilityIdentifier = "aiButton"
 
     glassView.contentView.addSubview(button)
 
