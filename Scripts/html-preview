@@ -1,0 +1,284 @@
+#!/bin/bash
+# HTML Preview Tool - Open, screenshot, and verify HTML design files
+
+set -e
+
+SCREENSHOT_DIR="/tmp/html-preview-screenshots"
+mkdir -p "$SCREENSHOT_DIR"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+print_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[OK]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+show_help() {
+    echo "HTML Preview Tool (using Playwright)"
+    echo ""
+    echo "Commands:"
+    echo "  capture <file>[#id] [name] [w] [h]  Capture viewport, optionally scroll to #id"
+    echo "  fullcapture <file> [name] [w]       Capture full page height"
+    echo "  open <file.html>                    Open HTML in Safari for manual inspection"
+    echo "  list                                List captured screenshots"
+    echo "  view <screenshot.png>               Open screenshot in Preview"
+    echo "  clean                               Delete all screenshots"
+    echo ""
+    echo "Examples:"
+    echo "  html-preview capture design-system.html top"
+    echo "  html-preview capture design-system.html#progress-bar progress"
+    echo "  html-preview capture design-system.html#block-components blocks"
+    echo "  html-preview fullcapture design-system.html full-page"
+    echo "  html-preview list"
+    echo ""
+    echo "Screenshots saved to: $SCREENSHOT_DIR"
+    echo ""
+    echo "Note: Uses Playwright for headless capture (no screen access needed)"
+    echo "Scroll support requires: cd /tmp && mkdir html-capture && cd html-capture && npm init -y && npm install playwright"
+}
+
+cmd_open() {
+    local file="$1"
+
+    if [ -z "$file" ]; then
+        print_error "Usage: html-preview open <file.html>"
+        exit 1
+    fi
+
+    # Resolve to absolute path if relative
+    if [[ ! "$file" = /* ]]; then
+        file="$(pwd)/$file"
+    fi
+
+    if [ ! -f "$file" ]; then
+        print_error "File not found: $file"
+        exit 1
+    fi
+
+    print_info "Opening in Safari: $file"
+    open -a Safari "$file"
+    print_success "Opened in Safari"
+    echo ""
+    echo "Tips:"
+    echo "  - Use Cmd+Option+I to open Web Inspector"
+    echo "  - Check console for JavaScript errors"
+    echo "  - Test theme toggle if present"
+}
+
+cmd_capture() {
+    # Playwright-based capture - no screen access needed
+    # Supports scroll to element ID with #id syntax
+    local file="$1"
+    local name="${2:-capture}"
+    local width="${3:-1470}"
+    local height="${4:-900}"
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local output="$SCREENSHOT_DIR/${name}_${timestamp}.png"
+
+    if [ -z "$file" ]; then
+        print_error "Usage: html-preview capture <file.html>[#element-id] [name] [width] [height]"
+        echo "  Examples:"
+        echo "    capture page.html top               # Capture top of page"
+        echo "    capture page.html#progress-bar mid  # Scroll to #progress-bar"
+        exit 1
+    fi
+
+    # Parse scroll target from file path
+    local scroll_to=""
+    if [[ "$file" == *"#"* ]]; then
+        scroll_to="${file##*#}"
+        file="${file%%#*}"
+    fi
+
+    # Resolve to absolute path if relative
+    if [[ ! "$file" = /* ]]; then
+        file="$(pwd)/$file"
+    fi
+
+    if [ ! -f "$file" ]; then
+        print_error "File not found: $file"
+        exit 1
+    fi
+
+    # Check if we have the capture script with scroll support
+    local capture_script="/tmp/html-capture/html-capture.mjs"
+    if [ -n "$scroll_to" ] && [ -f "$capture_script" ]; then
+        print_info "Capturing with scroll to #${scroll_to} (${width}x${height})..."
+        node "$capture_script" "$file" "$output" "--scroll=$scroll_to" "--width=$width" "--height=$height" 2>/dev/null
+    else
+        if [ -n "$scroll_to" ]; then
+            print_info "Capturing with Playwright (${width}x${height})..."
+            print_info "(Note: scroll requires /tmp/html-capture setup - run: cd /tmp && mkdir html-capture && cd html-capture && npm init -y && npm install playwright)"
+        else
+            print_info "Capturing with Playwright (${width}x${height})..."
+        fi
+
+        # Use Playwright CLI for basic capture
+        npx playwright screenshot \
+            --viewport-size="${width},${height}" \
+            "file://$file" \
+            "$output" 2>/dev/null
+    fi
+
+    if [ -f "$output" ]; then
+        local size=$(stat -f%z "$output" 2>/dev/null || echo "0")
+        if [ "$size" -lt 1000 ]; then
+            print_error "Screenshot appears to be empty"
+            rm -f "$output"
+            exit 1
+        fi
+
+        print_success "Screenshot saved: $output"
+        echo ""
+        echo "View with Read tool: $output"
+    else
+        print_error "Screenshot failed"
+        exit 1
+    fi
+}
+
+cmd_fullpage_capture() {
+    # Capture full page height using Playwright
+    local file="$1"
+    local name="${2:-fullpage}"
+    local width="${3:-1470}"
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local output="$SCREENSHOT_DIR/${name}_${timestamp}.png"
+
+    if [ -z "$file" ]; then
+        print_error "Usage: html-preview fullcapture <file.html> [name] [width]"
+        exit 1
+    fi
+
+    # Resolve to absolute path if relative
+    if [[ ! "$file" = /* ]]; then
+        file="$(pwd)/$file"
+    fi
+
+    if [ ! -f "$file" ]; then
+        print_error "File not found: $file"
+        exit 1
+    fi
+
+    print_info "Capturing full page with Playwright (width: ${width})..."
+
+    # Use Playwright with --full-page for complete capture
+    npx playwright screenshot \
+        --viewport-size="${width},900" \
+        --full-page \
+        "file://$file" \
+        "$output" 2>/dev/null
+
+    if [ -f "$output" ]; then
+        local size=$(stat -f%z "$output" 2>/dev/null || echo "0")
+        if [ "$size" -lt 1000 ]; then
+            print_error "Screenshot appears to be empty"
+            rm -f "$output"
+            exit 1
+        fi
+
+        print_success "Full page screenshot saved: $output"
+        echo ""
+        echo "View with Read tool: $output"
+    else
+        print_error "Screenshot failed. Is Playwright installed?"
+        exit 1
+    fi
+}
+
+
+cmd_list() {
+    echo "Screenshots in $SCREENSHOT_DIR:"
+    echo ""
+
+    local count=$(ls -1 "$SCREENSHOT_DIR"/*.png 2>/dev/null | wc -l | tr -d ' ')
+
+    if [ "$count" -eq 0 ]; then
+        echo "  (no screenshots found)"
+    else
+        ls -la "$SCREENSHOT_DIR"/*.png 2>/dev/null | while read line; do
+            echo "  $line"
+        done
+        echo ""
+        echo "View with Read tool:"
+        ls -1 "$SCREENSHOT_DIR"/*.png 2>/dev/null | head -3 | while read f; do
+            echo "  $f"
+        done
+    fi
+}
+
+cmd_view() {
+    local file="$1"
+
+    if [ -z "$file" ]; then
+        print_error "Usage: html-preview view <screenshot.png>"
+        exit 1
+    fi
+
+    # Check if it's just a filename or full path
+    if [[ ! "$file" = /* ]]; then
+        file="$SCREENSHOT_DIR/$file"
+    fi
+
+    if [ ! -f "$file" ]; then
+        print_error "File not found: $file"
+        exit 1
+    fi
+
+    print_info "Opening in Preview: $file"
+    open -a Preview "$file"
+}
+
+cmd_clean() {
+    local count=$(ls -1 "$SCREENSHOT_DIR"/*.png 2>/dev/null | wc -l | tr -d ' ')
+
+    if [ "$count" -eq 0 ]; then
+        print_info "No screenshots to clean"
+    else
+        rm -f "$SCREENSHOT_DIR"/*.png
+        print_success "Deleted $count screenshot(s)"
+    fi
+}
+
+# Main command dispatch
+case "${1:-help}" in
+    open)
+        cmd_open "$2"
+        ;;
+    capture|cap)
+        cmd_capture "$2" "$3" "$4" "$5"
+        ;;
+    fullcapture|fullcap|fc)
+        cmd_fullpage_capture "$2" "$3" "$4"
+        ;;
+    list|ls)
+        cmd_list
+        ;;
+    view)
+        cmd_view "$2"
+        ;;
+    clean)
+        cmd_clean
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        print_error "Unknown command: $1"
+        echo ""
+        show_help
+        exit 1
+        ;;
+esac

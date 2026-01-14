@@ -1,305 +1,117 @@
-import Foundation
-import PDFKit
 import UIKit
 
-// MARK: - ContentPartProtocol
+// Protocol for PDF background rendering.
+// Used by the display chain to draw PDF pages behind ink strokes.
+protocol PDFBackgroundRendererProtocol: AnyObject {
+    // Draw the PDF pages in the given context.
+    func draw(in context: CGContext, rect: CGRect, scale: CGFloat)
 
-// Protocol abstracting IINKContentPart for testability.
-// Allows dependency injection of mock content parts in tests.
-protocol ContentPartProtocol: AnyObject {
-  // Unique identifier for this part within the package.
-  var identifier: String { get }
+    // Return which pages are visible in the given viewport rect (in content coordinates).
+    // Returns array of (pageIndex, pageFrame) tuples.
+    func visiblePages(in viewportRect: CGRect) -> [(Int, CGRect)]
+
+    // Render a specific page at the given scale.
+    // Returns nil if the page cannot be rendered.
+    func renderPage(at pageIndex: Int, scale: CGFloat) -> CGImage?
 }
 
-// Makes the real IINKContentPart conform to the protocol.
-// IINKContentPart already has an identifier property.
-extension IINKContentPart: ContentPartProtocol {}
+// MARK: - IINKEditor Extensions
 
-// MARK: - ContentPackageProtocol
+// Extensions for IINKEditor to provide convenience wrapper methods.
+// These match the wrapper methods previously defined for the EditorProtocol.
+extension IINKEditor {
+    var editorRenderer: IINKRenderer {
+        return self.renderer
+    }
 
-// Protocol abstracting IINKContentPackage for testability.
-// Covers the methods used by DocumentHandle.
-protocol ContentPackageProtocol: AnyObject {
-  func getPartCount() -> Int
-  func getPart(at index: Int) throws -> any ContentPartProtocol
-  func createNewPart(with type: String) throws -> any ContentPartProtocol
-  func createNewPart(with type: String, fixedSize: CGSize) throws -> any ContentPartProtocol
-  func savePackage() throws
-  func savePackageToTemp() throws
+    var editorConfiguration: IINKConfiguration {
+        return self.configuration
+    }
+
+    var editorToolController: IINKToolController {
+        return self.toolController
+    }
+
+    func setEditorViewSize(_ size: CGSize) throws {
+        try self.set(viewSize: size)
+    }
+
+    func clampEditorViewOffset(_ offset: inout CGPoint) {
+        self.clampViewOffset(&offset)
+    }
+
+    func setEditorPart(_ part: IINKContentPart?) throws {
+        try self.set(part: part)
+    }
+
+    func setEditorTheme(_ theme: String) throws {
+        try self.set(theme: theme)
+    }
+
+    func setEditorFontMetricsProvider(_ provider: IINKIFontMetricsProvider) {
+        self.set(fontMetricsProvider: provider)
+    }
+
+    func addEditorDelegate(_ delegate: IINKEditorDelegate) {
+        self.addDelegate(delegate)
+    }
+
+    func performClear() throws {
+        try self.clear()
+    }
+
+    func performUndo() {
+        self.undo()
+    }
+
+    func performRedo() {
+        self.redo()
+    }
 }
 
-// Makes the real IINKContentPackage conform to the protocol.
-// Uses distinct method names to avoid ambiguity with SDK methods.
-extension IINKContentPackage: ContentPackageProtocol {
-  func getPartCount() -> Int {
-    return self.partCount()
-  }
+// MARK: - IINKToolController Extensions
 
-  func getPart(at index: Int) throws -> any ContentPartProtocol {
-    return try self.part(at: index)
-  }
+// Extensions for IINKToolController to provide convenience wrapper methods.
+extension IINKToolController {
+    func setToolForPointerType(tool: IINKPointerTool, pointerType: IINKPointerType) throws {
+        try self.set(tool: tool, forType: pointerType)
+    }
 
-  func createNewPart(with type: String) throws -> any ContentPartProtocol {
-    return try self.createPart(with: type)
-  }
+    func setStyleForTool(style: String, tool: IINKPointerTool) throws {
+        try self.set(style: style, forTool: tool)
+    }
 
-  func createNewPart(with type: String, fixedSize: CGSize) throws -> any ContentPartProtocol {
-    return try self.createPart(with: type, fixedSize: fixedSize)
-  }
-
-  func savePackage() throws {
-    try self.save()
-  }
-
-  func savePackageToTemp() throws {
-    try self.saveToTemp()
-  }
+    func styleForTool(tool: IINKPointerTool) throws -> String {
+        return try self.style(forTool: tool)
+    }
 }
 
-// MARK: - EngineProtocol
+// MARK: - IINKConfiguration Extensions
 
-// Protocol abstracting IINKEngine for testability.
-// Covers the package operations used by DocumentHandle and ImportCoordinator.
-protocol EngineProtocol: AnyObject {
-  func openContentPackage(_ path: String, openOption: IINKPackageOpenOption) throws
-    -> any ContentPackageProtocol
-  func createContentPackage(_ path: String) throws -> any ContentPackageProtocol
+// Extensions for IINKConfiguration to provide convenience wrapper methods.
+extension IINKConfiguration {
+    func setConfigNumber(_ value: Double, forKey key: String) throws {
+        try self.set(number: value, forKey: key)
+    }
+
+    func setConfigBoolean(_ value: Bool, forKey key: String) throws {
+        try self.set(boolean: value, forKey: key)
+    }
+
+    func setConfigString(_ value: String, forKey key: String) throws {
+        try self.set(string: value, forKey: key)
+    }
+
+    func setConfigStringArray(_ value: [String], forKey key: String) throws {
+        try self.set(stringArray: value, forKey: key)
+    }
 }
 
-// Makes the real IINKEngine conform to the protocol.
-// Uses distinct method names to avoid ambiguity with SDK methods.
-extension IINKEngine: EngineProtocol {
-  func openContentPackage(_ path: String, openOption: IINKPackageOpenOption) throws
-    -> any ContentPackageProtocol {
-    return try self.openPackage(path, openOption: openOption)
-  }
+// MARK: - IINKRenderer Extensions
 
-  func createContentPackage(_ path: String) throws -> any ContentPackageProtocol {
-    return try self.createPackage(path)
-  }
+// Extensions for IINKRenderer to provide convenience wrapper methods.
+extension IINKRenderer {
+    func performZoom(at point: CGPoint, by factor: Float) throws {
+        try self.zoom(at: point, factor: factor)
+    }
 }
-
-// MARK: - EngineProviderProtocol
-
-// Protocol abstracting EngineProvider for testability.
-// Allows dependency injection of mock engine providers in tests.
-@MainActor
-protocol EngineProviderProtocol: AnyObject {
-  var engineInstance: (any EngineProtocol)? { get }
-}
-
-// Makes the real EngineProvider conform to the protocol.
-// Uses a distinct property name to avoid ambiguity.
-extension EngineProvider: EngineProviderProtocol {
-  var engineInstance: (any EngineProtocol)? {
-    return self.engine
-  }
-}
-
-// MARK: - RendererProtocol
-
-// Protocol abstracting IINKRenderer for testability.
-// Covers the properties and methods used by InputViewModel for scrolling and zooming.
-protocol RendererProtocol: AnyObject {
-  var viewOffset: CGPoint { get set }
-  var viewScale: Float { get set }
-  func performZoom(at point: CGPoint, by factor: Float) throws
-}
-
-// Makes the real IINKRenderer conform to the protocol.
-extension IINKRenderer: RendererProtocol {
-  func performZoom(at point: CGPoint, by factor: Float) throws {
-    try self.zoom(at: point, factor: factor)
-  }
-}
-
-// MARK: - ConfigurationProtocol
-
-// Protocol abstracting IINKConfiguration for testability.
-// Covers the methods used by InputViewModel for margin configuration.
-protocol ConfigurationProtocol: AnyObject {
-  func setConfigNumber(_ value: Double, forKey key: String) throws
-  func setConfigBoolean(_ value: Bool, forKey key: String) throws
-}
-
-// Makes the real IINKConfiguration conform to the protocol.
-extension IINKConfiguration: ConfigurationProtocol {
-  func setConfigNumber(_ value: Double, forKey key: String) throws {
-    try self.set(number: value, forKey: key)
-  }
-
-  func setConfigBoolean(_ value: Bool, forKey key: String) throws {
-    try self.set(boolean: value, forKey: key)
-  }
-}
-
-// MARK: - ExtendedConfigurationProtocol
-
-// Protocol extending ConfigurationProtocol to support string and string array operations.
-// These additional methods are required for Raw Content configuration beyond the existing
-// boolean and number setters already defined in ConfigurationProtocol.
-protocol ExtendedConfigurationProtocol: ConfigurationProtocol {
-  func setConfigString(_ value: String, forKey key: String) throws
-  func setConfigStringArray(_ value: [String], forKey key: String) throws
-}
-
-// Makes the real IINKConfiguration conform to ExtendedConfigurationProtocol.
-extension IINKConfiguration: ExtendedConfigurationProtocol {
-  func setConfigString(_ value: String, forKey key: String) throws {
-    try self.set(string: value, forKey: key)
-  }
-
-  func setConfigStringArray(_ value: [String], forKey key: String) throws {
-    try self.set(stringArray: value, forKey: key)
-  }
-}
-
-// MARK: - ToolControllerProtocol
-
-// Protocol abstracting IINKToolController for testability.
-// Covers the methods used by InputViewModel for tool selection.
-protocol ToolControllerProtocol: AnyObject {
-  func setToolForPointerType(tool: IINKPointerTool, pointerType: IINKPointerType) throws
-  func setStyleForTool(style: String, tool: IINKPointerTool) throws
-  func styleForTool(tool: IINKPointerTool) throws -> String
-}
-
-// Makes the real IINKToolController conform to the protocol.
-extension IINKToolController: ToolControllerProtocol {
-  func setToolForPointerType(tool: IINKPointerTool, pointerType: IINKPointerType) throws {
-    try self.set(tool: tool, forType: pointerType)
-  }
-
-  func setStyleForTool(style: String, tool: IINKPointerTool) throws {
-    try self.set(style: style, forTool: tool)
-  }
-
-  func styleForTool(tool: IINKPointerTool) throws -> String {
-    return try self.style(forTool: tool)
-  }
-}
-
-// MARK: - EditorProtocol
-
-// Protocol abstracting IINKEditor for testability.
-// Covers the properties and methods used by InputViewModel and EditorViewModel for editor operations.
-protocol EditorProtocol: AnyObject {
-  var editorRenderer: any RendererProtocol { get }
-  var editorConfiguration: any ConfigurationProtocol { get }
-  var editorToolController: any ToolControllerProtocol { get }
-  var isScrollAllowed: Bool { get }
-  var viewSize: CGSize { get }
-  func setEditorViewSize(_ size: CGSize) throws
-  func clampEditorViewOffset(_ offset: inout CGPoint)
-  func setEditorPart(_ part: IINKContentPart?) throws
-  func setEditorTheme(_ theme: String) throws
-  func setEditorFontMetricsProvider(_ provider: IINKIFontMetricsProvider)
-  func addEditorDelegate(_ delegate: IINKEditorDelegate)
-  func performClear() throws
-  func performUndo()
-  func performRedo()
-  // Pointer event methods for programmatic stroke creation.
-  func pointerDown(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws
-  func pointerMove(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws
-  func pointerUp(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws
-}
-
-// Makes the real IINKEditor conform to the protocol.
-extension IINKEditor: EditorProtocol {
-  var editorRenderer: any RendererProtocol {
-    return self.renderer
-  }
-
-  var editorConfiguration: any ConfigurationProtocol {
-    return self.configuration
-  }
-
-  var editorToolController: any ToolControllerProtocol {
-    return self.toolController
-  }
-
-  func setEditorViewSize(_ size: CGSize) throws {
-    try self.set(viewSize: size)
-  }
-
-  func clampEditorViewOffset(_ offset: inout CGPoint) {
-    self.clampViewOffset(&offset)
-  }
-
-  func setEditorPart(_ part: IINKContentPart?) throws {
-    try self.set(part: part)
-  }
-
-  func setEditorTheme(_ theme: String) throws {
-    try self.set(theme: theme)
-  }
-
-  func setEditorFontMetricsProvider(_ provider: IINKIFontMetricsProvider) {
-    self.set(fontMetricsProvider: provider)
-  }
-
-  func addEditorDelegate(_ delegate: IINKEditorDelegate) {
-    self.addDelegate(delegate)
-  }
-
-  func performClear() throws {
-    try self.clear()
-  }
-
-  func performUndo() {
-    self.undo()
-  }
-
-  func performRedo() {
-    self.redo()
-  }
-
-  func pointerDown(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws {
-    _ = try self.pointerDown(
-      point: point, timestamp: timestamp, force: force, type: type, pointerId: 0)
-  }
-
-  func pointerMove(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws {
-    try self.pointerMove(point: point, timestamp: timestamp, force: force, type: type, pointerId: 0)
-  }
-
-  func pointerUp(point: CGPoint, timestamp: Int64, force: Float, type: IINKPointerType) throws {
-    try self.pointerUp(point: point, timestamp: timestamp, force: force, type: type, pointerId: 0)
-  }
-}
-
-// MARK: - InputViewControllerProtocol
-
-// Protocol abstracting InputViewController for testability.
-// Covers the methods used by EditorViewModel for tool selection and input mode.
-@MainActor
-protocol InputViewControllerProtocol: AnyObject {
-  var view: UIView! { get }
-  func selectPenTool()
-  func selectEraserTool()
-  func selectHighlighterTool()
-  func updateInputMode(newInputMode: InputMode)
-}
-
-// Makes the real InputViewController conform to the protocol.
-extension InputViewController: InputViewControllerProtocol {}
-
-// MARK: - DocumentHandleProtocol
-
-// Protocol abstracting DocumentHandle for testability.
-// Covers the properties and methods used by EditorViewModel for document operations.
-// Inherits JIIXDocumentHandleProtocol to support JIIX persistence.
-protocol DocumentHandleProtocol: JIIXDocumentHandleProtocol {
-  nonisolated var notebookID: String { get }
-  nonisolated var initialManifest: Manifest { get }
-  var manifest: Manifest { get async }
-  func ensureInitialPart(type: String) async throws -> any ContentPartProtocol
-  func savePackageToTemp() async throws
-  func savePackage() async throws
-  func savePreviewImageData(_ data: Data) async throws
-  func updateViewportState(_ state: ViewportState) async
-  func close(saveBeforeClose: Bool) async
-}
-
-// Makes the real DocumentHandle conform to the protocol.
-extension DocumentHandle: DocumentHandleProtocol {}
