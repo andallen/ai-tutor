@@ -162,8 +162,8 @@ class InputViewModel {
 
   // MARK: - Properties
 
-  // Uses protocol type to allow dependency injection for testing.
-  var editor: (any EditorProtocol)?
+  // The iink editor for handling ink input and recognition.
+  var editor: IINKEditor?
   private weak var engine: IINKEngine?
 
   // PDF background renderer for drawing pages behind ink.
@@ -174,9 +174,9 @@ class InputViewModel {
   // When set to a value > 0, vertical scrolling is bounded by this height.
   // This allows scrolling through stacked PDF pages beyond the SDK's default bounds.
   var totalContentHeight: CGFloat = 0
-  // Stores the tool controller so tools can be switched from the Notebook toolbar.
-  // Uses protocol type to allow dependency injection for testing.
-  private var toolController: (any ToolControllerProtocol)?
+
+  // Tool controller for switching between pen, eraser, and other tools.
+  private var toolController: IINKToolController?
   private(set) var originalViewOffset: CGPoint = CGPoint.zero
   private weak var editorDelegate: EditorDelegate?
   private var editorDelegateTrampoline: EditorDelegateTrampoline
@@ -623,9 +623,9 @@ class InputViewModel {
       let endPoint = CGPoint(x: 2, y: yPosition)
 
       do {
-        try editor.pointerDown(point: startPoint, timestamp: timestamp, force: 0.5, type: .pen)
-        try editor.pointerMove(point: endPoint, timestamp: timestamp + 1, force: 0.5, type: .pen)
-        try editor.pointerUp(point: endPoint, timestamp: timestamp + 2, force: 0.5, type: .pen)
+        _ = try editor.pointerDown(point: startPoint, timestamp: timestamp, force: 0.5, type: .pen, pointerId: 0)
+        try editor.pointerMove(point: endPoint, timestamp: timestamp + 1, force: 0.5, type: .pen, pointerId: 0)
+        try editor.pointerUp(point: endPoint, timestamp: timestamp + 2, force: 0.5, type: .pen, pointerId: 0)
       } catch {
         // Silently ignore anchor stroke errors.
       }
@@ -920,7 +920,7 @@ class InputViewModel {
   // Internal method for test injection of mock dependencies.
   // Allows tests to set editor and tool controller without going through SDK initialization.
   func setTestDependencies(
-    editor: (any EditorProtocol)?, toolController: (any ToolControllerProtocol)?
+    editor: IINKEditor?, toolController: IINKToolController?
   ) {
     self.editor = editor
     self.toolController = toolController

@@ -1,218 +1,33 @@
-# InkOS Project Structure
+# Alan Project Structure
 
 ## Project Overview
 
-InkOS is an iPad note-taking app built with SwiftUI and the MyScript iink SDK for handwriting recognition. The app uses a bundle-based storage system for notebooks and supports PDF annotation.
+Alan is an iPad app built with SwiftUI and the MyScript iink SDK for handwriting recognition.
 
 ## Module Organization
 
 ```
-InkOS/
+Alan/
 ├── InkOS/                                # App source root
 │   ├── InkOSApp.swift                    # App entry point
 │   ├── InkOS-Bridging-Header.h           # Exposes MyScript Obj-C headers to Swift
 │   ├── Info.plist                        # App configuration
 │   ├── theme.css                         # Styling for text rendering
 │   │
-│   ├── App/                              # High-level navigation & integration
-│   │   ├── AppRootView.swift             # Root view (Loading -> Dashboard)
-│   │   ├── EditorHostView.swift          # SwiftUI bridge for EditorViewController
-│   │   └── NotebookTransition/           # Custom notebook open/close animations
-│   │       ├── EditorNavigationController.swift
-│   │       ├── NotebookPresentAnimator.swift
-│   │       ├── NotebookDismissAnimator.swift
-│   │       └── NotebookTransitionCoordinator.swift
+│   ├── App/                              # High-level navigation
+│   │   └── AppRootView.swift             # Root view
 │   │
-│   ├── Features/                         # SwiftUI Feature Modules
-│   │   ├── AIIndexing/                   # AI-powered content indexing for semantic search
-│   │   │   ├── Extraction/               # Content extraction from notebooks
-│   │   │   │   ├── ChunkingService.swift      # Splits content into chunks for embedding
-│   │   │   │   ├── ContentExtractor.swift     # Extracts text content from notebooks
-│   │   │   │   └── ExtractionModels.swift     # Data models for extraction
-│   │   │   │
-│   │   │   ├── Indexing/                 # Indexing coordination and queue management
-│   │   │   │   ├── IndexingCoordinator.swift  # Orchestrates the indexing pipeline
-│   │   │   │   ├── IndexingModels.swift       # Data models for indexing
-│   │   │   │   └── IndexingQueue.swift        # Queue for processing indexing jobs
-│   │   │   │
-│   │   │   └── VectorStore/              # Vector storage and embedding services
-│   │   │       ├── EmbeddingService.swift     # Generates embeddings via API
-│   │   │       ├── VectorStoreClient.swift    # Client for vector database operations
-│   │   │       └── VectorStoreModels.swift    # Data models for vector storage
-│   │   │
-│   │   ├── AIChat/                       # AI chat and messaging feature
-│   │   │   ├── Models/                   # Chat data models
-│   │   │   │   ├── AttachmentContract.swift     # Attachment handling contract
-│   │   │   │   ├── ChatContract.swift           # Chat message contracts
-│   │   │   │   ├── MultimodalMessageContract.swift  # Multimodal message support
-│   │   │   │   └── TokenManagement/             # Token management for AI requests
-│   │   │   └── Services/                 # Chat services and clients
-│   │   │       ├── AttachmentServiceContract.swift  # Attachment service interface
-│   │   │       ├── ChatService.swift            # Core chat service
-│   │   │       ├── ChatStorage.swift            # Chat persistence
-│   │   │       ├── ContextGatherer.swift        # Context extraction for AI
-│   │   │       ├── FirebaseChatClient.swift     # Firebase integration
-│   │   │       ├── FirebaseTokenCounting/       # Token counting via Firebase
-│   │   │       └── TokenAwareMessaging/         # Token-aware message handling
-│   │   │
-│   │   ├── Dashboard/                    # Notebook library and management UI (UIKit-based)
-│   │   │   ├── CardFoundation.swift      # Card layout constants and base styles
-│   │   │   ├── CardUIComponents.swift    # Shared card UI components
-│   │   │   ├── DashboardCardRepresentable.swift  # UIViewRepresentable for card cells
-│   │   │   ├── DashboardCardView.swift   # Card view wrapper for dashboard items
-│   │   │   ├── DashboardItem.swift       # Dashboard item model (enum for notebooks/folders/PDFs/lessons)
-│   │   │   ├── DashboardModels.swift     # Centralized model definitions
-│   │   │   ├── DebugDataPopulator.swift  # Debug helper for populating test data
-│   │   │   ├── NotebookLibrary.swift     # Notebook data source and state management
-│   │   │   ├── SearchOverlayRootView.swift  # Search overlay UI
-│   │   │   ├── SearchOverlayState.swift  # Search state management
-│   │   │   └── UIKit/                    # UIKit dashboard implementation
-│   │   │       ├── DashboardHostView.swift      # SwiftUI bridge for UIKit dashboard
-│   │   │       ├── DashboardLayout.swift        # Collection view layout configuration
-│   │   │       ├── DashboardViewController.swift # Main UIKit collection view controller
-│   │   │       ├── Cells/                       # Collection view cells
-│   │   │       │   ├── FolderCell.swift         # Folder card cell
-│   │   │       │   ├── LessonCell.swift         # Lesson card cell
-│   │   │       │   ├── NotebookCell.swift       # Notebook card cell
-│   │   │       │   └── PDFDocumentCell.swift    # PDF document card cell
-│   │   │       └── Overlays/                    # Folder overlay system
-│   │   │           ├── FolderOverlayCell.swift  # Cell for items inside folder overlay
-│   │   │           ├── FolderOverlayViewController.swift  # Folder contents overlay controller
-│   │   │           ├── FolderPresentationController.swift # Custom presentation for folder overlay
-│   │   │           └── FolderTransitionAnimator.swift     # Folder open/close animations
-│   │   │
-│   │   ├── Lesson/                       # Lesson generation and display
-│   │   │   ├── LessonHostView.swift      # SwiftUI/UIKit bridge for lessons
-│   │   │   ├── Components/               # Lesson UI components
-│   │   │   │   └── LessonCardView.swift         # Lesson card for dashboard
-│   │   │   ├── Generation/               # Lesson content generation
-│   │   │   │   ├── AnswerComparisonService.swift  # Answer evaluation
-│   │   │   │   ├── LessonGenerationService.swift  # Lesson generation API
-│   │   │   │   ├── LessonGenerator.swift          # Core lesson generator
-│   │   │   │   └── LessonPreviewGenerator.swift   # Preview generation
-│   │   │   ├── Models/                   # Lesson data models
-│   │   │   │   ├── LessonModel.swift            # Core lesson model
-│   │   │   │   └── LessonProgress.swift         # Progress tracking
-│   │   │   ├── ViewModels/               # Lesson view models
-│   │   │   │   └── LessonViewModel.swift        # Lesson state management
-│   │   │   ├── Views/                    # SwiftUI lesson views
-│   │   │   │   ├── LessonView.swift             # Main lesson view
-│   │   │   │   ├── ContentSectionView.swift     # Content display
-│   │   │   │   ├── LessonGenerationOverlay.swift # Overlay during generation
-│   │   │   │   ├── QuestionSectionView.swift    # Question display
-│   │   │   │   ├── SummarySectionView.swift     # Summary display
-│   │   │   │   └── VisualPlaceholderView.swift  # Visual placeholders
-│   │   │   └── UIKit/                    # UIKit lesson implementation
-│   │   │       ├── LessonViewController.swift   # Main UIKit controller
-│   │   │       ├── LessonTypography.swift       # Typography constants for lessons
-│   │   │       ├── MarkdownRenderer.swift       # Markdown to NSAttributedString
-│   │   │       ├── MathContentView.swift        # Math content display
-│   │   │       ├── NotesButtonView.swift        # Notes toggle button
-│   │   │       ├── NotesOverlayCoordinator.swift # Notes overlay logic
-│   │   │       ├── NotesOverlayView.swift       # Notes overlay UI
-│   │   │       ├── QuestionCanvasManager.swift  # Handwriting input
-│   │   │       └── Cells/                       # Section cells
-│   │   │           ├── ContentSectionCell.swift
-│   │   │           ├── LessonHeaderCell.swift   # Lesson header
-│   │   │           ├── QuestionSectionCell.swift
-│   │   │           ├── SummarySectionCell.swift
-│   │   │           └── VisualSectionCell.swift
-│   │   │
-│   │   ├── Notebook/                     # Notebook metadata models
-│   │   │   └── NotebookModel.swift
-│   │   │
-│   │   ├── PDFImport/                    # PDF import functionality
-│   │   │   ├── PDFDataModel.swift        # NoteDocument, NoteBlock, ImportCoordinator
-│   │   │   └── PDFImport.swift           # PDFDocumentWrapper implementation
-│   │   │
-│   │   ├── PDFDisplay/                   # PDF viewing and annotation
-│   │   │   ├── PDFEditorHostView.swift   # SwiftUI bridge for PDF editor
-│   │   │   ├── PDFEditorViewController.swift  # PDF editor controller
-│   │   │   ├── PDFEditorViewModel.swift  # PDF editor state management
-│   │   │   ├── PDFPageLayout.swift       # PDF page layout calculations
-│   │   │   ├── PDFBackgroundRenderer.swift    # PDF background rendering
-│   │   │   ├── DottedGridView.swift      # Grid overlay for annotation
-│   │   │   └── PDFStubs.swift            # PDF-related stub implementations
-│   │   │
-│   │   ├── Search/                       # Search and indexing system
-│   │   │   ├── Index/                    # Search index components
-│   │   │   │   ├── Contract.swift        # Search index contract/interface
-│   │   │   │   ├── SearchIndex.swift     # Core search index implementation
-│   │   │   │   └── SearchIndexTriggers.swift  # Event triggers for indexing
-│   │   │   ├── Service/                  # Search service layer
-│   │   │   │   ├── BundleManagerFolderLookup.swift  # Folder lookup for search
-│   │   │   │   ├── LibraryPreviewLookup.swift   # Preview lookup for search results
-│   │   │   │   ├── SearchService.swift   # Search service implementation
-│   │   │   │   └── SearchServiceContract.swift  # Service contract/interface
-│   │   │   └── UI/                       # Search UI components
-│   │   │       └── Dashboard/            # Dashboard search integration
-│   │   │           ├── DashboardSearchBar.swift     # Search bar component
-│   │   │           ├── DashboardSearchResults.swift # Search results view
-│   │   │           └── SnippetContentView.swift     # Search result snippet display
-│   │   │
-│   │   ├── Skills/                       # AI-powered skills system
-│   │   │   ├── Core/                     # Skill infrastructure
-│   │   │   │   ├── SkillExecutor.swift          # Skill execution engine
-│   │   │   │   ├── SkillRegistration.swift      # Skill registration helper
-│   │   │   │   ├── SkillRegistry.swift          # Skill registration
-│   │   │   │   └── SkillsContract.swift         # Core contracts
-│   │   │   ├── Icons/                    # Skill icon assets
-│   │   │   ├── Graph/                    # Graphing calculator skill
-│   │   │   │   ├── EquationRenderer.swift       # Equation rendering
-│   │   │   │   ├── GraphImageRenderer.swift     # Graph image generation
-│   │   │   │   ├── GraphInsertionService.swift  # Graph insertion to canvas
-│   │   │   │   ├── GraphView.swift              # Graph SwiftUI view
-│   │   │   │   ├── GraphViewModel.swift         # Graph state management
-│   │   │   │   └── MathExpressionParser.swift   # Math expression parsing
-│   │   │   ├── Invocation/               # Skill invocation system
-│   │   │   │   ├── AISkillInvocationService.swift  # AI-triggered invocation
-│   │   │   │   ├── InvocationContract.swift        # Invocation contracts
-│   │   │   │   └── SkillCloudClient.swift          # Cloud function client
-│   │   │   └── Skills/                   # Skill implementations
-│   │   │       └── GraphingCalculatorSkill.swift   # Graphing calculator
-│   │   │
-│   │   └── Shared/                       # Shared UI components & utilities
-│   │       ├── ContextMenuView.swift     # Reusable context menu component
+│   ├── Features/                         # Feature Modules
+│   │   └── Shared/                       # Shared utilities
+│   │       ├── UIComponents.swift        # Color extensions, UI modifiers
 │   │       ├── FileLogger.swift          # Debug logging utility
-│   │       ├── NotebookNotifications.swift # Notification names for notebook events
-│   │       └── UIComponents.swift        # Color extensions and shared UI modifiers
+│   │       └── ContextMenuView.swift     # Reusable context menu
 │   │
-│   ├── Storage/                          # Persistence Layer (Actors)
-│   │   ├── BundleManager.swift           # Central actor for file system operations
-│   │   ├── BundleManager+Lessons.swift   # Lesson-specific bundle operations
-│   │   ├── BundleStorage.swift           # Helper for directory paths
-│   │   ├── DocumentHandle.swift          # Safe handle for open notebook operations
-│   │   ├── PDFDocumentHandle.swift       # Handle for PDF document operations
-│   │   ├── Manifest.swift                # JSON metadata structure
-│   │   ├── FolderManifest.swift          # Folder metadata structure
-│   │   ├── LessonManifest.swift          # Lesson bundle metadata structure
-│   │   ├── LessonStorage.swift           # Lesson-specific storage operations
-│   │   ├── SDKProtocols.swift            # SDK protocol definitions
-│   │   │
-│   │   └── JIIXPersistence/              # JIIX format persistence
-│   │       ├── JIIXPersistenceTypes.swift         # Error types, protocols, configuration
-│   │       ├── JIIXPersistenceService.swift       # Persistence service
-│   │       └── IINKEditorExportExtension.swift    # Editor export extension
-│   │
-│   ├── Editor/                           # EDITOR IMPLEMENTATION (Core Logic)
-│   │   ├── EditorViewController.swift    # The main Editor Canvas UI
-│   │   ├── EditorViewModel.swift         # Editor state & tool logic
-│   │   ├── EngineProvider.swift          # Singleton managing IINKEngine lifecycle
-│   │   ├── ToolPaletteView.swift         # Floating custom toolbar
-│   │   ├── EditingToolbarView.swift      # Undo/Redo/Clear toolbar
-│   │   ├── ColorThicknessPillView.swift  # Color and thickness selection UI
-│   │   ├── HomeButtonView.swift          # Home navigation button
-│   │   ├── AIButtonView.swift            # AI assistant button component
-│   │   ├── AIOverlayView.swift           # AI assistant overlay interface
-│   │   ├── AIChatInputBar.swift          # AI chat input component
-│   │   │
-│   │   └── RawContentConfiguration/      # MyScript Raw Content mode settings
-│   │       └── RawContentConfiguration.swift  # Configuration applier for recognition
+│   ├── Storage/                          # Persistence Layer
+│   │   └── BundleStorage.swift           # Directory path helpers
 │   │
 │   ├── Frameworks/
-│   │   └── Ink/                          # Low-level MyScript Wrappers
-│   │       ├── IInkUIReferenceImplementation-Bridging-Header.h
-│   │       │
+│   │   └── Ink/                          # MyScript SDK Wrappers
 │   │       ├── Input/                    # Touch/Pen input handling
 │   │       │   ├── InputViewController.swift
 │   │       │   └── InputViewModel.swift
@@ -249,52 +64,9 @@ InkOS/
 │   └── Assets.xcassets                   # App assets
 │
 ├── InkOSTests/                           # Unit test suite
-│   ├── Editor/
-│   │   ├── EditorViewModelTests.swift
-│   │   ├── EngineProviderTests.swift
-│   │   └── InputViewModelTests.swift
-│   │
-│   ├── Features/
-│   │   ├── NotebookModelTests.swift
-│   │   ├── AIChat/                       # AI chat tests
-│   │   │   ├── AttachmentContractTests.swift
-│   │   │   ├── ChatServiceTests.swift
-│   │   │   ├── ChatStorageTests.swift
-│   │   │   ├── ContextGathererTests.swift
-│   │   │   └── FirebaseChatClientTests.swift
-│   │   ├── AIIndexing/                   # AI indexing tests
-│   │   │   ├── ChunkingServiceTests.swift
-│   │   │   ├── ContentExtractorTests.swift
-│   │   │   ├── EmbeddingServiceTests.swift
-│   │   │   ├── IndexingCoordinatorTests.swift
-│   │   │   ├── IndexingIntegrationTests.swift
-│   │   │   ├── IndexingModelsTests.swift
-│   │   │   ├── IndexingQueueTests.swift
-│   │   │   ├── VectorStoreClientTests.swift
-│   │   │   └── VectorStoreModelsTests.swift
-│   │   ├── Search/
-│   │   │   ├── SearchIndexTests.swift
-│   │   │   └── SearchServiceTests.swift
-│   │   └── Skills/                       # Skills tests
-│   │       ├── Graph/
-│   │       │   ├── EquationRendererTests.swift
-│   │       │   ├── GraphImageRendererTests.swift
-│   │       │   ├── GraphInsertionServiceTests.swift
-│   │       │   ├── GraphViewModelTests.swift
-│   │       │   └── MathExpressionParserTests.swift
-│   │       ├── GraphingCalculatorSkillTests.swift
-│   │       ├── SkillInvocationTests.swift
-│   │       └── SkillsCoreTests.swift
-│   │
-│   ├── Rendering/
-│   │   ├── DisplayViewModelTests.swift
-│   │   └── OffscreenRenderSurfacesTests.swift
-│   │
-│   └── Storage/
-│       ├── BundleManagerTests.swift
-│       ├── BundleStorageTests.swift
-│       ├── DocumentHandleTests.swift
-│       └── ManifestTests.swift
+│   └── Rendering/
+│       ├── DisplayViewModelTests.swift
+│       └── OffscreenRenderSurfacesTests.swift
 │
 ├── InkOSUITests/                         # UI test suite
 │   └── InkOSUITests.swift
@@ -313,9 +85,6 @@ InkOS/
 ├── Scripts/                              # Build & Utility Scripts
 │   ├── buildapp                          # Build executable
 │   ├── testapp                           # Test executable
-│   ├── test-ui                           # UI test runner script
-│   ├── run-ui-tests                      # Extended UI test runner with options
-│   ├── grablogs                          # Grab logs script
 │   └── retrieve_recognition-assets.sh    # Download recognition assets
 │
 ├── Docs/                                 # Reference documentation
@@ -324,7 +93,6 @@ InkOS/
 │   └── myscript-reference.txt
 │
 ├── apple-hig/                            # Apple Human Interface Guidelines reference
-│   └── [various topic directories]       # HIG documentation by topic (buttons, colors, etc.)
 │
 ├── recognition-assets/                   # MyScript recognition data (binary)
 │   └── resources/
@@ -334,12 +102,12 @@ InkOS/
 │
 ├── Podfile                               # CocoaPods dependency specification
 ├── Podfile.lock                          # Locked dependency versions
-└── Pods/                                 # CocoaPods dependencies (generated)
+├── Pods/                                 # CocoaPods dependencies (generated)
+│
+└── Logs/                                 # Build artifacts & logs
 ```
 
 ## Project Rules
-
-
 
 ### 1. Comments
 - Comment frequently with simple and direct language
@@ -359,9 +127,3 @@ InkOS/
 
 - **Build**: `Scripts/buildapp`
 - **Test**: `Scripts/testapp`
-
-## Key Architecture Notes
-See subdirectory CLAUDE.md files for layer-specific rules:
-- `InkOS/Editor/CLAUDE.md` - MainActor isolation and thread safety for MyScript SDK
-- `InkOS/Storage/CLAUDE.md` - Actor isolation for BundleManager and DocumentHandle
-- `InkOS/Features/Dashboard/CLAUDE.md` - Dashboard UI consistency guidelines

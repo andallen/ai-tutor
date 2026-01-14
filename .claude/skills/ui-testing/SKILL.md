@@ -30,6 +30,38 @@ UI tests in this workflow are **temporary verification tests**, not permanent te
 
 **Objective tests are faster, more reliable, and provide clearer pass/fail signals.** Only use screenshots when the verification genuinely requires visual inspection (e.g., checking that an animation looks correct, verifying spacing, or confirming visual styling).
 
+## CRITICAL: Every Test MUST Have Assertions
+
+**MANDATORY RULE**: Every test MUST contain at least one `XCTAssert*` statement that would FAIL if the feature being tested is broken.
+
+### ❌ INVALID Test (No Assertions)
+```swift
+func testGhostNotation() throws {
+    saveScreenshot(name: "ghost_notation")
+    print("Verify manually that ghost notation appears")  // ← INVALID
+}
+```
+**Problem**: This test will ALWAYS PASS even if ghost notation is completely broken.
+
+### ✅ VALID Test (Has Assertions)
+```swift
+func testGhostNotation() throws {
+    // Find an element that proves ghost notation initialized
+    let ghostIndicator = app.otherElements["ghost_notation_view"]
+    XCTAssertTrue(ghostIndicator.exists, "Ghost notation view should exist")
+
+    // OPTIONAL: Screenshot for visual verification
+    saveScreenshot(name: "ghost_notation")
+}
+```
+
+**Before writing any test, answer this question**: *"What assertion would FAIL if this feature stopped working?"*
+
+If you cannot answer this question with a specific XCTAssert statement, you must either:
+1. Add testability hooks to the code (accessibility identifiers, debug views)
+2. Find a proxy indicator that proves the feature is working
+3. Document why objective testing is impossible and provide a detailed visual verification protocol
+
 Example - prefer this:
 ```swift
 // Objective: verify context menu appears with correct options
@@ -137,34 +169,97 @@ saveScreenshot(name: "descriptive_name")
 
 Screenshots are saved as: `descriptive_name_<timestamp>.png`
 
+## Visual Verification Protocol
+
+When objective assertions are impossible and screenshots are required, follow this protocol:
+
+### 1. Pre-Screenshot Checklist
+Before capturing a screenshot, verify:
+- [ ] I've exhausted all objective testing options (element existence, counts, labels)
+- [ ] I've documented WHY objective testing is impossible
+- [ ] I know EXACTLY what visual element I'm looking for in the screenshot
+
+### 2. Screenshot Capture
+```swift
+// Document what you expect to see
+print("[Test] Expecting to see: X equations distributed across screen, avoiding center content area")
+saveScreenshot(name: "descriptive_name")
+```
+
+### 3. Screenshot Analysis (MANDATORY)
+After extracting screenshots, you MUST:
+
+1. **Read the screenshot file using the Read tool**
+2. **Explicitly describe what you observe**:
+   - "I see 5 equations: 'E=mc2' (top-left), 'F=ma' (middle-right)..."
+   - "The center content area from Y=200 to Y=800 is clear"
+3. **Compare against expectations**:
+   - ✅ "Expected: equations avoiding center. Observed: all equations are in margins. PASS"
+   - ❌ "Expected: ghost notation visible. Observed: NO equations visible anywhere. FAIL"
+4. **State pass/fail explicitly**:
+   - DO NOT say "looks good" without describing what you see
+   - DO NOT assume test passed just because screenshot was captured
+
+### 4. Negative Testing
+For visual features, always test that they DON'T appear when they shouldn't:
+```swift
+// Navigate away from the screen where feature should appear
+navigateToOtherScreen()
+saveScreenshot(name: "feature_should_not_appear")
+// Then verify in screenshot that feature is absent
+```
+
+### ❌ INVALID Visual Test
+```swift
+saveScreenshot(name: "ghost_notation")
+print("Verify manually...")  // ← Who will verify? When? INVALID
+```
+
+### ✅ VALID Visual Test
+```swift
+print("[Test] Expecting: 8-10 equations scattered across screen, none in center Y=300-700")
+saveScreenshot(name: "ghost_notation_present")
+
+// Then in analysis:
+// "Screenshot shows: 9 equations visible. 'E=mc2' at (100,150), 'F=ma' at (600,200)...
+//  All equations are outside center zone. PASS ✅"
+```
+
 ## Viewing Screenshots
 
 Screenshots are attached to test results via `XCTAttachment` and stored in the xcresult bundle on the Mac (not on the device filesystem).
 
 ### Extracting Screenshots from xcresult
 
-After running tests, extract screenshots from the xcresult bundle:
+After running tests, extract screenshots from the xcresult bundle using the official `xcresulttool` command:
 
 ```bash
 # Find the latest xcresult bundle
 xcresult_path=$(ls -td ~/Library/Developer/Xcode/DerivedData/InkOS-*/Logs/Test/*.xcresult 2>/dev/null | head -1)
-echo "xcresult: $xcresult_path"
+echo "Extracting from: $xcresult_path"
 
 # Create output directory
-mkdir -p /tmp/inkos-screenshots-local
+output_dir="/tmp/inkos-ui-screenshots"
+rm -rf "$output_dir"
+mkdir -p "$output_dir"
 
-# Extract all PNG screenshots from the Data directory
-for f in "$xcresult_path/Data/"*; do
-    filetype=$(file "$f" 2>/dev/null)
-    if echo "$filetype" | grep -q "PNG image"; then
-        name=$(basename "$f")
-        cp "$f" "/tmp/inkos-screenshots-local/${name}.png"
-        echo "Extracted: ${name}.png"
-    fi
-done
+# Export all attachments using xcresulttool
+xcrun xcresulttool export attachments --path "$xcresult_path" --output-path "$output_dir"
 
 # List extracted screenshots
-ls -la /tmp/inkos-screenshots-local/*.png
+find "$output_dir" -name "*.png"
+```
+
+**Important**: Use `xcresulttool export attachments` instead of manually copying files from the Data directory. The Data directory no longer contains raw PNG files in modern Xcode versions - attachments are stored in a compressed format.
+
+### Optional: Export Only Specific Tests or Failures
+
+```bash
+# Export attachments for a specific test
+xcrun xcresulttool export attachments --path "$xcresult_path" --output-path "$output_dir" --test-id "InkOSUITests/testMethodName()"
+
+# Export only attachments from failed tests
+xcrun xcresulttool export attachments --path "$xcresult_path" --output-path "$output_dir" --only-failures
 ```
 
 ### Viewing Extracted Screenshots
@@ -172,15 +267,17 @@ ls -la /tmp/inkos-screenshots-local/*.png
 Use the Read tool on the extracted PNG files:
 
 ```
-/tmp/inkos-screenshots-local/screenshot_1.png
+/tmp/inkos-ui-screenshots/F8C0E679-F5BE-4010-A6E6-BFEAA6DBB457.png
 ```
 
-### Why This Is Necessary
+The export command also creates a `manifest.json` file with metadata about each attachment (test name, suggested filename, timestamp, etc.).
+
+### Why xcresulttool Is Required
 
 - Tests run on the physical iPad device
-- `FileManager` operations in tests write to the device filesystem
-- Screenshots attached via `XCTAttachment` are synced back to the Mac in the xcresult bundle
-- The xcresult Data directory contains the raw PNG files (not compressed)
+- Screenshots attached via `XCTAttachment` are synced to the Mac in the xcresult bundle
+- Modern Xcode stores attachments in a compressed/optimized format, not as raw PNGs
+- The official `xcresulttool export attachments` command properly extracts and decompresses them
 
 ## Lock File Protection
 
@@ -197,6 +294,61 @@ A lock at `/tmp/inkos-ui-test.lock` prevents concurrent test runs:
 5. **Run the test**: `Scripts/test-ui run testMethodName`
 6. **Check results**: `Scripts/test-ui results`
 7. **If using screenshots**: Extract and view them (see "Viewing Screenshots" section)
+8. **MANDATORY: Validate test quality** (see below)
+
+## Test Quality Validation
+
+Before declaring a test complete, validate it using this checklist:
+
+### ✅ Pre-Completion Checklist
+
+Run through this checklist BEFORE reporting test success:
+
+1. **Assertion Check**
+   - [ ] Test contains at least one `XCTAssert*` statement
+   - [ ] OR has documented visual verification with explicit pass/fail criteria
+
+2. **Failure Validation**
+   - [ ] Answer: "If I broke this feature right now, would this test FAIL?"
+   - [ ] If unsure, mentally walk through what would happen if feature was disabled
+
+3. **Screenshot Validation** (if screenshots used)
+   - [ ] I have EXTRACTED and READ the screenshot files
+   - [ ] I have DESCRIBED what I observe in the screenshots
+   - [ ] I have COMPARED observations against expectations
+   - [ ] I have EXPLICITLY stated PASS or FAIL with reasoning
+
+4. **Negative Testing**
+   - [ ] Test verifies feature appears when it should
+   - [ ] Test verifies feature doesn't appear when it shouldn't (or documented why this is N/A)
+
+### Red Flags That Indicate Invalid Test
+
+- ❌ Print statement says "Verify manually..."
+- ❌ No XCTAssert statements in entire test
+- ❌ Test passed but you didn't look at screenshots
+- ❌ Test passed but you can't explain what it verified
+- ❌ You said "looks good" without describing what you saw
+
+### Example: Proper Test Completion
+
+```swift
+// Test written and run ✅
+func testGhostNotation() throws {
+    let questionText = app.staticTexts["onboarding_question"]
+    XCTAssertTrue(questionText.exists)
+    Thread.sleep(forTimeInterval: 2)
+    saveScreenshot(name: "ghost_notation")
+}
+```
+
+**Validation:**
+1. ✅ Has assertion (questionText.exists)
+2. ❓ Would test fail if ghost notation broke? NO - it only checks question text
+3. ❌ INVALID TEST - needs better assertion or visual verification
+
+**Fix:**
+Add accessibility element for ghost notation OR document detailed visual verification protocol.
 
 ## Common Interactions
 
