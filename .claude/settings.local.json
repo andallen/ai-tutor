@@ -14,7 +14,8 @@
       "Bash(plutil:*)",
       "Bash(cat:*)",
       "Bash(xcrun devicectl:*)",
-      "Bash(xcrun xctrace:*)"
+      "Bash(xcrun xctrace:*)",
+      "Bash(./Scripts/buildapp:*)"
     ]
   }
 }
