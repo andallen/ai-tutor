@@ -38,13 +38,6 @@ Alan/
 │   │   │   └── Validation/               # Notebook validation
 │   │   │       └── NotebookValidation.swift     # Validation logic
 │   │   │
-│   │   ├── Onboarding/                   # User onboarding flow
-│   │   │   ├── AlanDesignTokens.swift           # Design system tokens (colors, typography)
-│   │   │   ├── GhostNotationView.swift          # Handwriting guide overlay
-│   │   │   ├── OnboardingComponents.swift       # Reusable onboarding UI components
-│   │   │   ├── OnboardingQuestions.swift        # Question definitions and logic
-│   │   │   └── OnboardingView.swift             # Main onboarding flow view
-│   │   │
 │   │   └── Shared/                       # Shared utilities
 │   │       ├── UIComponents.swift        # Color extensions, UI modifiers
 │   │       ├── FileLogger.swift          # Debug logging utility
