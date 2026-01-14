@@ -1354,10 +1354,10 @@ struct MessageContextMetadataTests {
   }
 }
 
-// MARK: - MessageRole Tests (Chat)
+// MARK: - MessageRole Tests
 
-@Suite("Chat MessageRole Tests")
-struct ChatMessageRoleTests {
+@Suite("MessageRole Tests")
+struct MessageRoleTests {
 
   @Test("MessageRole has user case")
   func hasUserCase() {
