@@ -1,5 +1,5 @@
 // Base view controller for editor screens (notebooks and PDFs).
-// Provides common UI elements: home button, tool palette, editing toolbar, AI overlay.
+// Provides common UI elements: home button, tool palette, editing toolbar.
 // Subclasses override callback methods to connect to their specific view models.
 
 import Combine
@@ -24,9 +24,6 @@ class BaseEditorViewController: UIViewController {
   // Editing toolbar at top right.
   private var editingToolbarView: EditingToolbarView?
 
-  // AI overlay coordinator (manages button and overlay).
-  private(set) var aiOverlayCoordinator: AIOverlayCoordinator?
-
   // Tap gesture for dismissing the tool palette.
   private var paletteDismissTapRecognizer: UITapGestureRecognizer?
 
@@ -37,23 +34,6 @@ class BaseEditorViewController: UIViewController {
 
   // Standard off-black accent color for UI elements.
   let offBlack = UIColor(red: 0.20, green: 0.20, blue: 0.20, alpha: 1.0)
-
-  // MARK: - AIOverlayContextProvider (overridable)
-
-  // Default location for editors is .note.
-  var overlayLocation: AIOverlayLocation {
-    .note
-  }
-
-  // Subclasses should override to return the current notebook ID.
-  var currentNoteID: String? {
-    nil
-  }
-
-  // Editors typically don't have a folder context.
-  var currentFolderID: String? {
-    nil
-  }
 
   // MARK: - Lifecycle
 
@@ -74,7 +54,6 @@ class BaseEditorViewController: UIViewController {
     configureToolPalette()
     configurePaletteDismissTap()
     configureEditingToolbar()
-    configureAIOverlayCoordinator()
   }
 
   // MARK: - Abstract Callbacks (Override in Subclasses)
@@ -234,16 +213,6 @@ class BaseEditorViewController: UIViewController {
     editingToolbarView = toolbarView
   }
 
-  // MARK: - AI Overlay Coordinator
-
-  // Sets up the AI overlay coordinator.
-  // The coordinator manages the AI button and overlay lifecycle.
-  private func configureAIOverlayCoordinator() {
-    let coordinator = AIOverlayCoordinator()
-    coordinator.attach(to: self, contextProvider: self)
-    aiOverlayCoordinator = coordinator
-  }
-
   // MARK: - Transition UI Control (for hero animations)
 
   // Controls the visibility of the home button for hero transitions.
@@ -291,21 +260,11 @@ class BaseEditorViewController: UIViewController {
     }
   }
 
-  // Controls the visibility of the AI button for hero transitions.
-  func setAIButtonVisible(_ visible: Bool, animated: Bool) {
-    if visible {
-      aiOverlayCoordinator?.showButton(animated: animated)
-    } else {
-      aiOverlayCoordinator?.hideButton(animated: animated)
-    }
-  }
-
   // Hides all UI elements for the hero transition animation.
   func hideAllUIForTransition() {
     setHomeButtonVisible(false, animated: false)
     setToolPaletteVisible(false, animated: false)
     setEditingToolbarVisible(false, animated: false)
-    setAIButtonVisible(false, animated: false)
   }
 
   // Shows all UI elements after the hero transition completes.
@@ -313,7 +272,6 @@ class BaseEditorViewController: UIViewController {
     setHomeButtonVisible(true, animated: animated)
     setToolPaletteVisible(true, animated: animated)
     setEditingToolbarVisible(true, animated: animated)
-    setAIButtonVisible(true, animated: animated)
   }
 }
 
@@ -330,6 +288,3 @@ extension BaseEditorViewController: UIGestureRecognizerDelegate {
   }
 }
 
-// MARK: - AIOverlayContextProvider
-
-extension BaseEditorViewController: AIOverlayContextProvider {}

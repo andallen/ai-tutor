@@ -8,7 +8,7 @@ import Foundation
 
 // Actor managing debounced JIIX persistence to file system.
 // Uses debounce mechanism to avoid excessive exports during rapid editing.
-// Posts .notebookContentSaved notification after successful saves for indexing.
+// Posts .notebookContentSaved notification after successful saves.
 actor JIIXPersistenceService {
 
   // The debounce delay in seconds before triggering an export after content changes.
@@ -244,7 +244,7 @@ actor JIIXPersistenceService {
       NotificationCenter.default.post(
         name: .notebookContentSaved,
         object: nil,
-        userInfo: [IndexingNotificationKey.documentID: capturedNotebookID]
+        userInfo: ["documentID": capturedNotebookID]
       )
     }
   }

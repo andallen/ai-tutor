@@ -51,6 +51,18 @@ InkOS/
 │   │   │       ├── ContextGatherer.swift        # Context extraction for AI
 │   │   │       └── FirebaseChatClient.swift     # Firebase integration
 │   │   │
+│   │   ├── Block/                        # Block primitive system (Alan content model)
+│   │   │   ├── Core/                     # Core block types and contracts
+│   │   │   │   ├── BlockContract.swift          # Block, BlockID, BlockMetadata, BlockSource
+│   │   │   │   ├── BlockKind.swift              # BlockKind enum (20 types) + BlockTrait
+│   │   │   │   ├── BlockProperties.swift        # Type-safe property structs per kind
+│   │   │   │   ├── BlockParameter.swift         # Parameter system (sliders, toggles, etc.)
+│   │   │   │   ├── BlockAction.swift            # Actions blocks can trigger
+│   │   │   │   ├── BlockState.swift             # State enum + valid transitions
+│   │   │   │   └── BlockValidation.swift        # BlockError + DefaultBlockValidator
+│   │   │   └── Extensions/               # Codable and utility extensions
+│   │   │       └── Block+Codable.swift          # Manual Codable conformance
+│   │   │
 │   │   ├── Dashboard/                    # Notebook library and management UI (UIKit-based)
 │   │   │   ├── CardFoundation.swift      # Card layout constants and base styles
 │   │   │   ├── CardUIComponents.swift    # Shared card UI components
@@ -254,6 +266,15 @@ InkOS/
 │   │   │   ├── IndexingQueueTests.swift
 │   │   │   ├── VectorStoreClientTests.swift
 │   │   │   └── VectorStoreModelsTests.swift
+│   │   ├── Block/                        # Block primitive tests (planned)
+│   │   │   ├── BlockContractTests.swift
+│   │   │   ├── BlockKindTests.swift
+│   │   │   ├── BlockPropertiesTests.swift
+│   │   │   ├── BlockParameterTests.swift
+│   │   │   ├── BlockActionTests.swift
+│   │   │   ├── BlockStateTests.swift
+│   │   │   ├── BlockValidationTests.swift
+│   │   │   └── BlockCodableTests.swift
 │   │   ├── Search/
 │   │   │   ├── SearchIndexTests.swift
 │   │   │   └── SearchServiceTests.swift

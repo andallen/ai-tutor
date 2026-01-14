@@ -93,13 +93,6 @@ class EditorViewController: BaseEditorViewController {
 
   override func handleBackButtonTapped() {
     prepareForExit()
-    // Check for custom UIKit transition coordinator first.
-    if let navController = navigationController as? EditorNavigationController,
-       let coordinator = navController.notebookTransitionCoordinator {
-      coordinator.dismiss()
-      return
-    }
-    // Fallback to SwiftUI dismiss handler or standard dismiss.
     super.handleBackButtonTapped()
   }
 
@@ -125,12 +118,6 @@ class EditorViewController: BaseEditorViewController {
 
   override func handleClearTapped() {
     viewModel.clear()
-  }
-
-  // MARK: - AIOverlayContextProvider
-
-  override var currentNoteID: String? {
-    documentHandle?.notebookID
   }
 
   // MARK: - Exit Handling

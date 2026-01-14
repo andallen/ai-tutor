@@ -1,7 +1,6 @@
 import UIKit
 
 // Circular button with a house icon in the center.
-// Matches the glass styling used by AIButtonView for visual consistency.
 final class HomeButtonView: UIView {
   // Notifies the host when the button is tapped.
   var tapped: (() -> Void)?

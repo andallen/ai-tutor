@@ -11,8 +11,7 @@ RESULT_DIR="/tmp/inkos-ui-tests"
 SCREENSHOT_DIR="$RESULT_DIR/screenshots"
 
 # Device configuration.
-# Note: xcodebuild uses different UDIDs than devicectl.
-IPAD_UDID="00008120-001665CC21900032"
+IPAD_NAME="Andrew's iPad"
 
 # Check lock.
 check_lock() {
@@ -43,7 +42,7 @@ run_test() {
     xcodebuild test \
         -workspace InkOS.xcworkspace \
         -scheme InkOS \
-        -destination "platform=iOS,id=$IPAD_UDID" \
+        -destination "platform=iOS,name=$IPAD_NAME" \
         -only-testing:"InkOSUITests/InkOSUITests/$test_name" \
         -skip-testing:InkOSTests \
         -allowProvisioningUpdates \

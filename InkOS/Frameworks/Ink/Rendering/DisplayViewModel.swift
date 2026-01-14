@@ -20,10 +20,6 @@ class DisplayViewModel: NSObject {
   private(set) var offscreenRenderSurfaces: OffscreenRenderSurfacesProtocol
   private var didSetConstraints: Bool = false
 
-  // PDF background renderer for drawing pages behind ink.
-  // Set this before setupModel() to have it applied to the RenderView.
-  weak var backgroundRenderer: PDFBackgroundRendererProtocol?
-
   // MARK: - Initialization
 
   // Accepts an offscreenRenderSurfaces dependency. Defaults to production implementation.
@@ -40,9 +36,6 @@ class DisplayViewModel: NSObject {
     }
     if let imageLoader {
       renderView.imageLoader = imageLoader
-    }
-    if let backgroundRenderer {
-      renderView.backgroundRenderer = backgroundRenderer
     }
     self.renderView = renderView
   }

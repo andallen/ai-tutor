@@ -166,14 +166,10 @@ class InputViewModel {
   var editor: (any EditorProtocol)?
   private weak var engine: IINKEngine?
 
-  // PDF background renderer for drawing pages behind ink.
-  // Set before calling setupModel() to have it applied to the display chain.
-  weak var backgroundRenderer: PDFBackgroundRendererProtocol?
-
-  // Total content height for PDF mode scrolling.
+  // Total content height for custom scroll bounds.
   // When set to a value > 0, vertical scrolling is bounded by this height.
-  // This allows scrolling through stacked PDF pages beyond the SDK's default bounds.
   var totalContentHeight: CGFloat = 0
+
   // Stores the tool controller so tools can be switched from the Notebook toolbar.
   // Uses protocol type to allow dependency injection for testing.
   private var toolController: (any ToolControllerProtocol)?
@@ -233,8 +229,6 @@ class InputViewModel {
     pinchGesture: UIPinchGestureRecognizer?
   ) {
     let displayViewModel = DisplayViewModel()
-    // Pass PDF background renderer to display chain if set.
-    displayViewModel.backgroundRenderer = self.backgroundRenderer
     self.initEditor(with: displayViewModel)
     self.displayViewController = DisplayViewController(viewModel: displayViewModel)
     if self.smartGuideDisabled == false {
@@ -495,10 +489,10 @@ class InputViewModel {
 
     // Store desired offsets before SDK clamping since clampViewOffset may restrict them.
     let desiredXOffset = currentOffset.x
-    // When totalContentHeight is set (PDF mode), preserve Y because SDK clamps based on
-    // ink content bounds which is more restrictive than our PDF page bounds.
+    // When totalContentHeight is set, preserve Y because SDK clamps based on
+    // ink content bounds which may be more restrictive than our custom bounds.
     let desiredYOffset = currentOffset.y
-    let hasPDFBounds = totalContentHeight > 0
+    let hasCustomBounds = totalContentHeight > 0
 
     // Let SDK clamp offsets. We'll override with our custom bounds.
     if var clampedOffset = Optional(currentOffset) {
@@ -519,7 +513,7 @@ class InputViewModel {
     }
 
     // When PDF bounds are set, use our own Y clamping instead of SDK's.
-    if hasPDFBounds {
+    if hasCustomBounds {
       currentOffset.y = desiredYOffset
     }
 
@@ -853,8 +847,8 @@ class InputViewModel {
   }
 
   // Calculates the maximum vertical offset based on content height and zoom level.
-  // When totalContentHeight is set (PDF mode), scrolling is bounded by the stacked page height.
-  // At zoom 1.0: maxYOffset = contentHeight - viewportHeight (scroll to see last page).
+  // When totalContentHeight is set, scrolling is bounded by that height.
+  // At zoom 1.0: maxYOffset = contentHeight - viewportHeight.
   // At higher zoom: maxYOffset increases since content appears larger.
   private func calculateMaxYOffset() -> CGFloat {
     guard let editor = self.editor else {
