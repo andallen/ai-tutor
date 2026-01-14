@@ -93,7 +93,7 @@ run_tests() {
         -scheme InkOS \
         -destination \"$destination\" \
         -resultBundlePath \"$RESULT_DIR/TestResults.xcresult\" \
-        -derivedDataPath \"$PROJECT_DIR/DerivedData\""
+        -derivedDataPath \"$PROJECT_DIR/Logs.nosync/DerivedData\""
 
     # Add test filter if specified.
     if [ -n "$test_filter" ]; then
