@@ -12,6 +12,7 @@ SCREENSHOT_DIR="$RESULT_DIR/screenshots"
 
 # Device configuration.
 IPAD_UDID="00008120-001665CC21900032"
+IPAD_NAME="Andrew's iPad"
 
 # Check lock.
 check_lock() {

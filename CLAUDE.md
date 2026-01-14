@@ -18,16 +18,53 @@ Alan/
 │   │   └── AppRootView.swift             # Root view
 │   │
 │   ├── Features/                         # Feature Modules
+│   │   ├── Block/                        # Block primitive system (Alan content model)
+│   │   │   ├── Core/                     # Core block types and contracts
+│   │   │   │   ├── BlockContract.swift          # Block, BlockID, BlockMetadata, BlockSource
+│   │   │   │   ├── BlockKind.swift              # BlockKind enum (20 types) + BlockTrait
+│   │   │   │   ├── BlockProperties.swift        # Type-safe property structs per kind
+│   │   │   │   ├── BlockParameter.swift         # Parameter system (sliders, toggles, etc.)
+│   │   │   │   ├── BlockAction.swift            # Actions blocks can trigger
+│   │   │   │   ├── BlockState.swift             # State enum + valid transitions
+│   │   │   │   └── BlockValidation.swift        # BlockError + DefaultBlockValidator
+│   │   │   └── Extensions/               # Codable and utility extensions
+│   │   │       └── Block+Codable.swift          # Manual Codable conformance
+│   │   │
+│   │   ├── Notebook/                     # Notebook data models
+│   │   │   ├── Core/                     # Core notebook contracts
+│   │   │   │   └── NotebookContract.swift       # Notebook, Page, NotebookID
+│   │   │   ├── Extensions/               # Notebook extensions
+│   │   │   │   └── Notebook+Codable.swift       # Codable conformance
+│   │   │   └── Validation/               # Notebook validation
+│   │   │       └── NotebookValidation.swift     # Validation logic
+│   │   │
+│   │   ├── Onboarding/                   # User onboarding flow
+│   │   │   ├── AlanDesignTokens.swift           # Design system tokens (colors, typography)
+│   │   │   ├── GhostNotationView.swift          # Handwriting guide overlay
+│   │   │   ├── OnboardingComponents.swift       # Reusable onboarding UI components
+│   │   │   ├── OnboardingQuestions.swift        # Question definitions and logic
+│   │   │   └── OnboardingView.swift             # Main onboarding flow view
+│   │   │
 │   │   └── Shared/                       # Shared utilities
 │   │       ├── UIComponents.swift        # Color extensions, UI modifiers
 │   │       ├── FileLogger.swift          # Debug logging utility
 │   │       └── ContextMenuView.swift     # Reusable context menu
 │   │
+│   ├── Editor/                           # Editor canvas components
+│   │   ├── BaseEditorViewController.swift       # Base editor controller
+│   │   ├── EditorViewController.swift           # Main editor controller
+│   │   └── HomeButtonView.swift                 # Home navigation button
+│   │
 │   ├── Storage/                          # Persistence Layer
-│   │   └── BundleStorage.swift           # Directory path helpers
+│   │   ├── BundleStorage.swift           # Directory path helpers
+│   │   ├── SDKProtocols.swift            # SDK protocol definitions
+│   │   └── JIIXPersistence/              # JIIX format persistence
+│   │       └── JIIXPersistenceService.swift     # Persistence service
 │   │
 │   ├── Frameworks/
 │   │   └── Ink/                          # MyScript SDK Wrappers
+│   │       ├── EngineProvider.swift      # MyScript engine singleton
+│   │       │
 │   │       ├── Input/                    # Touch/Pen input handling
 │   │       │   ├── InputViewController.swift
 │   │       │   └── InputViewModel.swift
@@ -64,6 +101,21 @@ Alan/
 │   └── Assets.xcassets                   # App assets
 │
 ├── InkOSTests/                           # Unit test suite
+│   ├── Features/
+│   │   ├── Block/                        # Block tests
+│   │   │   ├── BlockActionTests.swift
+│   │   │   ├── BlockCodableTests.swift
+│   │   │   ├── BlockContractTests.swift
+│   │   │   ├── BlockKindTests.swift
+│   │   │   ├── BlockParameterTests.swift
+│   │   │   ├── BlockPropertiesTests.swift
+│   │   │   ├── BlockStateTests.swift
+│   │   │   └── BlockValidationTests.swift
+│   │   └── Notebook/                     # Notebook tests
+│   │       ├── NotebookCodableTests.swift
+│   │       ├── NotebookContractTests.swift
+│   │       └── NotebookValidationTests.swift
+│   │
 │   └── Rendering/
 │       ├── DisplayViewModelTests.swift
 │       └── OffscreenRenderSurfacesTests.swift
@@ -85,6 +137,9 @@ Alan/
 ├── Scripts/                              # Build & Utility Scripts
 │   ├── buildapp                          # Build executable
 │   ├── testapp                           # Test executable
+│   ├── test-ui                           # UI test runner
+│   ├── run-ui-tests                      # Extended UI test runner
+│   ├── html-preview                      # HTML preview script
 │   └── retrieve_recognition-assets.sh    # Download recognition assets
 │
 ├── Docs/                                 # Reference documentation
@@ -102,9 +157,7 @@ Alan/
 │
 ├── Podfile                               # CocoaPods dependency specification
 ├── Podfile.lock                          # Locked dependency versions
-├── Pods/                                 # CocoaPods dependencies (generated)
-│
-└── Logs/                                 # Build artifacts & logs
+└── Pods/                                 # CocoaPods dependencies (generated)
 ```
 
 ## Project Rules

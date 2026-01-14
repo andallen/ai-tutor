@@ -10,13 +10,7 @@ import UIKit
 
   // MARK: - Properties
 
-  // Context is set at the start of each frame by RenderView.
-  // didSet resets the PDF flag so PDF is only drawn once per frame.
-  var context: CGContext? {
-    didSet {
-      pdfDrawnThisFrame = false
-    }
-  }
+  var context: CGContext?
   var size: CGSize = CGSize.zero
   var clearAtStartDraw: Bool = true
   weak var imageLoader: ImageLoader?
@@ -32,25 +26,6 @@ import UIKit
   // Set to false to hide real-time recognition overlay while keeping strokes visible.
   // Recognition still runs and JIIX export still contains recognized text.
   var shouldDrawText: Bool = false
-
-  // MARK: - PDF Background Rendering
-
-  // Background renderer for PDF pages.
-  // When set, PDF pages are drawn before ink strokes.
-  weak var backgroundRenderer: PDFBackgroundRendererProtocol?
-
-  // Current viewport offset from the renderer.
-  // Used to calculate which PDF pages are visible.
-  var viewportOffset: CGPoint = .zero
-
-  // Current viewport scale from the renderer.
-  // Used for resolution-appropriate PDF rendering.
-  var viewportScale: CGFloat = 1.0
-
-  // Tracks whether PDF background has been drawn this frame.
-  // Reset when context is set (new frame), set true after drawing PDF.
-  // Prevents PDF from being drawn twice (once for model, once for capture) which covers model strokes.
-  private var pdfDrawnThisFrame: Bool = false
 }
 
 extension Canvas: IINKICanvas {
@@ -75,65 +50,6 @@ extension Canvas: IINKICanvas {
     self.context?.clip(to: rect)
     if self.clearAtStartDraw {
       self.context?.clear(rect)
-    }
-    // Draw PDF background pages before ink strokes.
-    drawPDFBackground()
-  }
-
-  // Draws visible PDF pages as background before ink strokes.
-  // Pages are drawn in screen coordinates since MyScript's renderer handles viewport transforms
-  // internally when drawing ink. Both PDF and ink must be in the same coordinate space.
-  // Only draws once per frame to prevent PDF from covering model strokes when capture strokes render.
-  private func drawPDFBackground() {
-    // Skip if PDF was already drawn this frame (model pass already rendered it).
-    guard !pdfDrawnThisFrame else { return }
-
-    guard let context = self.context,
-          let renderer = backgroundRenderer else {
-      return
-    }
-
-    // Mark PDF as drawn for this frame.
-    pdfDrawnThisFrame = true
-
-    // Calculate the viewport rect in content coordinates.
-    // viewportOffset is in scaled screen coordinates, so divide by scale to get content position.
-    // viewportOffset.x = contentX * scale, therefore contentX = viewportOffset.x / scale.
-    let viewportRect = CGRect(
-      x: viewportOffset.x / viewportScale,
-      y: viewportOffset.y / viewportScale,
-      width: size.width / viewportScale,
-      height: size.height / viewportScale
-    )
-
-    // Get pages visible in the current viewport.
-    let visiblePages = renderer.visiblePages(in: viewportRect)
-
-    guard !visiblePages.isEmpty else { return }
-
-    // Draw each visible page in screen coordinates.
-    // Convert content coordinates to screen coordinates mathematically rather than
-    // transforming the context, since MyScript draws ink in screen coordinates.
-    for (pageIndex, contentFrame) in visiblePages {
-      if let image = renderer.renderPage(at: pageIndex, scale: viewportScale) {
-        // Convert content frame to screen frame.
-        // viewOffset is in scaled coords: viewOffset = contentOffset * scale.
-        // Therefore: screenPos = contentPos * scale - viewOffset.
-        let screenFrame = CGRect(
-          x: contentFrame.origin.x * viewportScale - viewportOffset.x,
-          y: contentFrame.origin.y * viewportScale - viewportOffset.y,
-          width: contentFrame.width * viewportScale,
-          height: contentFrame.height * viewportScale
-        )
-
-        // PDF images are rendered right-side up, but CGContext draws with Y flipped.
-        // Save state, flip for this image, then restore.
-        context.saveGState()
-        context.translateBy(x: screenFrame.origin.x, y: screenFrame.origin.y + screenFrame.height)
-        context.scaleBy(x: 1.0, y: -1.0)
-        context.draw(image, in: CGRect(origin: .zero, size: screenFrame.size))
-        context.restoreGState()
-      }
     }
   }
 
