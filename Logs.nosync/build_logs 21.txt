@@ -1,0 +1,296 @@
+
+----- xcbeautify -----
+Version: 3.1.2
+----------------------
+
+note: Building targets in dependency order
+note: Target dependency graph (3 targets)
+[MyScriptInteractiveInk-Runtime] Running script [CP] Copy XCFrameworks
+[InkOS] Write Auxiliary File InkOS.SwiftFileList
+[InkOS] Write Auxiliary File InkOS.SwiftConstValuesFileList
+[InkOS] Write Auxiliary File InkOS.LinkFileList
+[InkOS] Write Auxiliary File InkOS-OutputFileMap.json
+[InkOS] Write Auxiliary File InkOS.SwiftFileList
+[InkOS] Write Auxiliary File InkOS.SwiftConstValuesFileList
+[InkOS] Write Auxiliary File InkOS.LinkFileList
+[InkOS] Write Auxiliary File InkOS-OutputFileMap.json
+[MyScriptInteractiveInk-Runtime] Running script Copy generated compatibility header
+[MyScriptInteractiveInk-Runtime] Extract App Intents Metadata
+[Pods-InkOS] Compiling Pods-InkOS-dummy.m
+[Pods-InkOS] Building library libPods-InkOS.a
+[Pods-InkOS] Compiling Pods-InkOS-dummy.m
+[Pods-InkOS] Building library libPods-InkOS.a
+[Pods-InkOS] Create Universal Binary libPods-InkOS.a
+[InkOS] Running script [CP] Check Pods Manifest.lock
+[InkOS] Linking __preview.dylib
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Linking __preview.dylib
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Create Universal Binary __preview.dylib
+[InkOS] Compiling InputViewController.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Frameworks/Ink/Input/InputViewController.swift:141:30: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let scale = min(UIScreen.main.scale, maxPixelDimension / maxDimension)
+                             ^
+[InkOS] Compiling InputViewModel.swift
+[InkOS] Compiling DisplayViewController.swift
+[InkOS] Compiling DisplayViewModel.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Frameworks/Ink/Rendering/DisplayViewModel.swift:132:27: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return Float(UIScreen.main.scale)
+                          ^
+[InkOS] Compiling Canvas.swift
+[InkOS] Compiling InputView.swift
+[InkOS] Compiling OffscreenRenderSurfaces.swift
+[InkOS] Compiling RenderView.swift
+[InkOS] Compiling ContextualActionsHelper.swift
+[InkOS] Compiling CTRun+Metrics.swift
+[InkOS] Compiling FontMetricsProvider.swift
+[InkOS] Compiling JIIXPersistenceService.swift
+[InkOS] Compiling JIIXPersistenceTypes.swift
+[InkOS] Compiling BundleManager.swift
+[InkOS] Compiling BundleStorage.swift
+[InkOS] Compiling DocumentHandle.swift
+[InkOS] Compiling FolderManifest.swift
+[InkOS] Compiling Manifest.swift
+[InkOS] Compiling PDFDocumentHandle.swift
+[InkOS] Compiling SDKProtocols.swift
+[InkOS] Compiling InkOSApp.swift
+[InkOS] Compiling GeneratedAssetSymbols.swift
+[InkOS] Compiling Helper.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Frameworks/Ink/Utils/Helper.swift:38:68: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return UIDevice.current.userInterfaceIdiom == .pad && UIScreen.main.scale > 1
+                                                                   ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Frameworks/Ink/Utils/Helper.swift:50:70: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return UIDevice.current.userInterfaceIdiom == .phone && UIScreen.main.scale > 2
+                                                                     ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Frameworks/Ink/Utils/Helper.swift:76:42: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return Helper.dpi() / Float(UIScreen.main.scale)
+                                         ^
+[InkOS] Compiling IInkUIRefImplUtils.swift
+[InkOS] Compiling ImageLoader.swift
+[InkOS] Compiling ImagePainter.swift
+[InkOS] Compiling NSAttributedString+Helper.swift
+[InkOS] Compiling NSFileManager+Additions.swift
+[InkOS] Compiling Path.swift
+[InkOS] Compiling SynchronizedSwift.swift
+[InkOS] Compiling TextFormatHelper.swift
+[InkOS] Compiling UIFont+Helper.swift
+[InkOS] Compiling IINKEditorExportExtension.swift
+[InkOS] Compiling EmbeddingService.swift
+[InkOS] Compiling VectorStoreClient.swift
+[InkOS] Compiling VectorStoreModels.swift
+[InkOS] Compiling ContextMenuOverlay.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Features/Dashboard/ContextMenuOverlay.swift:107:33: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenBounds = UIScreen.main.bounds
+                                ^
+[InkOS] Compiling DashboardAlerts.swift
+[InkOS] Compiling DashboardComponents.swift
+[InkOS] Compiling DashboardItem.swift
+[InkOS] Compiling DashboardView.swift
+[InkOS] Compiling FolderCard.swift
+[InkOS] Compiling FolderDraggableCards.swift
+[InkOS] Compiling FolderDropDelegate.swift
+[InkOS] Compiling PDFStubs.swift
+[InkOS] Compiling PDFDataModel.swift
+[InkOS] Compiling PDFImport.swift
+[InkOS] Compiling Contract.swift
+[InkOS] Compiling SearchIndex.swift
+[InkOS] Compiling SearchIndexTriggers.swift
+[InkOS] Compiling SearchService.swift
+[InkOS] Compiling SearchServiceContract.swift
+[InkOS] Compiling ContextMenuView.swift
+[InkOS] Compiling NotebookNotifications.swift
+[InkOS] Compiling UIComponents.swift
+[InkOS] Compiling FolderOverlay.swift
+[InkOS] Compiling MoveToFolderSheet.swift
+[InkOS] Compiling NotebookLibrary.swift
+[InkOS] Compiling UIKitDragWrapper.swift
+[InkOS] Compiling NotebookModel.swift
+[InkOS] Compiling DottedGridView.swift
+[InkOS] Compiling PDFBackgroundRenderer.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Features/PDFDisplay/PDFBackgroundRenderer.swift:101:32: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenScale = UIScreen.main.scale
+                               ^
+[InkOS] Compiling PDFEditorHostView.swift
+[InkOS] Compiling PDFEditorViewController.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Features/PDFDisplay/PDFEditorViewController.swift:78:48: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let containerView = UIView(frame: UIScreen.main.bounds)
+                                               ^
+[InkOS] Compiling PDFEditorViewModel.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Features/PDFDisplay/PDFEditorViewModel.swift:45:32: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenWidth = UIScreen.main.bounds.width
+                               ^
+[InkOS] Compiling PDFPageLayout.swift
+[InkOS] Compiling EditorNavigationController.swift
+[InkOS] Compiling NotebookDismissAnimator.swift
+[InkOS] Compiling NotebookPresentAnimator.swift
+[InkOS] Compiling NotebookTransitionCoordinator.swift
+[InkOS] Compiling AppRootView.swift
+[InkOS] Compiling EditorHostView.swift
+[InkOS] Compiling RawContentConfiguration.swift
+[InkOS] Compiling AIButtonView.swift
+[InkOS] Compiling AIChatInputBar.swift
+[InkOS] Compiling AIOverlayView.swift
+[InkOS] Compiling ColorThicknessPillView.swift
+[InkOS] Compiling EditingToolbarView.swift
+[InkOS] Compiling EditorNavigationController.swift
+[InkOS] Compiling NotebookDismissAnimator.swift
+[InkOS] Compiling NotebookPresentAnimator.swift
+[InkOS] Compiling NotebookTransitionCoordinator.swift
+[InkOS] Compiling AppRootView.swift
+[InkOS] Compiling EditorHostView.swift
+[InkOS] Compiling RawContentConfiguration.swift
+[InkOS] Compiling AIButtonView.swift
+[InkOS] Compiling AIChatInputBar.swift
+[InkOS] Compiling AIOverlayView.swift
+[InkOS] Compiling ColorThicknessPillView.swift
+[InkOS] Compiling EditingToolbarView.swift
+[InkOS] Compiling Helper.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Frameworks/Ink/Utils/Helper.swift:38:68: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return UIDevice.current.userInterfaceIdiom == .pad && UIScreen.main.scale > 1
+                                                                   ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Frameworks/Ink/Utils/Helper.swift:50:70: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return UIDevice.current.userInterfaceIdiom == .phone && UIScreen.main.scale > 2
+                                                                     ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Frameworks/Ink/Utils/Helper.swift:76:42: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return Helper.dpi() / Float(UIScreen.main.scale)
+                                         ^
+[InkOS] Compiling IInkUIRefImplUtils.swift
+[InkOS] Compiling ImageLoader.swift
+[InkOS] Compiling ImagePainter.swift
+[InkOS] Compiling NSAttributedString+Helper.swift
+[InkOS] Compiling NSFileManager+Additions.swift
+[InkOS] Compiling Path.swift
+[InkOS] Compiling SynchronizedSwift.swift
+[InkOS] Compiling TextFormatHelper.swift
+[InkOS] Compiling UIFont+Helper.swift
+[InkOS] Compiling IINKEditorExportExtension.swift
+[InkOS] Copy x86_64-apple-ios-simulator.swiftmodule -> InkOS.swiftmodule
+[InkOS] Copy x86_64-apple-ios-simulator.abi.json -> InkOS.abi.json
+[InkOS] Copy x86_64-apple-ios-simulator.swiftsourceinfo -> InkOS.swiftsourceinfo
+[InkOS] Compiling EmbeddingService.swift
+[InkOS] Compiling VectorStoreClient.swift
+[InkOS] Compiling VectorStoreModels.swift
+[InkOS] Compiling ContextMenuOverlay.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Features/Dashboard/ContextMenuOverlay.swift:107:33: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenBounds = UIScreen.main.bounds
+                                ^
+[InkOS] Compiling DashboardAlerts.swift
+[InkOS] Compiling DashboardComponents.swift
+[InkOS] Compiling DashboardItem.swift
+[InkOS] Compiling DashboardView.swift
+[InkOS] Compiling FolderCard.swift
+[InkOS] Compiling FolderDraggableCards.swift
+[InkOS] Compiling FolderDropDelegate.swift
+[InkOS] Compiling InputViewController.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Frameworks/Ink/Input/InputViewController.swift:141:30: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let scale = min(UIScreen.main.scale, maxPixelDimension / maxDimension)
+                             ^
+[InkOS] Compiling InputViewModel.swift
+[InkOS] Compiling DisplayViewController.swift
+[InkOS] Compiling DisplayViewModel.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Frameworks/Ink/Rendering/DisplayViewModel.swift:132:27: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return Float(UIScreen.main.scale)
+                          ^
+[InkOS] Compiling Canvas.swift
+[InkOS] Compiling InputView.swift
+[InkOS] Compiling OffscreenRenderSurfaces.swift
+[InkOS] Compiling RenderView.swift
+[InkOS] Compiling ContextualActionsHelper.swift
+[InkOS] Compiling CTRun+Metrics.swift
+[InkOS] Compiling FontMetricsProvider.swift
+[InkOS] Compiling JIIXPersistenceService.swift
+[InkOS] Compiling JIIXPersistenceTypes.swift
+[InkOS] Compiling BundleManager.swift
+[InkOS] Compiling BundleStorage.swift
+[InkOS] Compiling DocumentHandle.swift
+[InkOS] Compiling FolderManifest.swift
+[InkOS] Compiling Manifest.swift
+[InkOS] Compiling PDFDocumentHandle.swift
+[InkOS] Compiling SDKProtocols.swift
+[InkOS] Compiling InkOSApp.swift
+[InkOS] Compiling GeneratedAssetSymbols.swift
+[InkOS] Copy arm64-apple-ios-simulator.swiftmodule -> InkOS.swiftmodule
+[InkOS] Copy arm64-apple-ios-simulator.abi.json -> InkOS.abi.json
+[InkOS] Copy arm64-apple-ios-simulator.swiftsourceinfo -> InkOS.swiftsourceinfo
+[InkOS] Compiling FolderOverlay.swift
+[InkOS] Compiling MoveToFolderSheet.swift
+[InkOS] Compiling NotebookLibrary.swift
+[InkOS] Compiling UIKitDragWrapper.swift
+[InkOS] Compiling NotebookModel.swift
+[InkOS] Compiling DottedGridView.swift
+[InkOS] Compiling PDFBackgroundRenderer.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Features/PDFDisplay/PDFBackgroundRenderer.swift:101:32: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenScale = UIScreen.main.scale
+                               ^
+[InkOS] Compiling PDFEditorHostView.swift
+[InkOS] Compiling PDFEditorViewController.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Features/PDFDisplay/PDFEditorViewController.swift:78:48: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let containerView = UIView(frame: UIScreen.main.bounds)
+                                               ^
+[InkOS] Compiling PDFEditorViewModel.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Features/PDFDisplay/PDFEditorViewModel.swift:45:32: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenWidth = UIScreen.main.bounds.width
+                               ^
+[InkOS] Compiling PDFPageLayout.swift
+[InkOS] Compiling PDFStubs.swift
+[InkOS] Compiling PDFDataModel.swift
+[InkOS] Compiling PDFImport.swift
+[InkOS] Compiling Contract.swift
+[InkOS] Compiling SearchIndex.swift
+[InkOS] Compiling SearchIndexTriggers.swift
+[InkOS] Compiling SearchService.swift
+[InkOS] Compiling SearchServiceContract.swift
+[InkOS] Compiling ContextMenuView.swift
+[InkOS] Compiling NotebookNotifications.swift
+[InkOS] Compiling UIComponents.swift
+[InkOS] Compiling EditorViewController.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Editor/EditorViewController.swift:56:48: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let containerView = UIView(frame: UIScreen.main.bounds)
+                                               ^
+[InkOS] Compiling EditorViewModel.swift
+[InkOS] Compiling EngineProvider.swift
+[InkOS] Compiling HomeButtonView.swift
+[InkOS] Compiling ToolPaletteView.swift
+[InkOS] Compiling ChunkingService.swift
+[InkOS] Compiling ContentExtractor.swift
+[InkOS] Compiling ExtractionModels.swift
+[InkOS] Compiling IndexingCoordinator.swift
+[InkOS] Compiling IndexingModels.swift
+[InkOS] Compiling IndexingQueue.swift
+[InkOS] Compiling EditorViewController.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-dashboard/InkOS/Editor/EditorViewController.swift:56:48: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let containerView = UIView(frame: UIScreen.main.bounds)
+                                               ^
+[InkOS] Compiling EditorViewModel.swift
+[InkOS] Compiling EngineProvider.swift
+[InkOS] Compiling HomeButtonView.swift
+[InkOS] Compiling ToolPaletteView.swift
+[InkOS] Compiling ChunkingService.swift
+[InkOS] Compiling ContentExtractor.swift
+[InkOS] Compiling ExtractionModels.swift
+[InkOS] Compiling IndexingCoordinator.swift
+[InkOS] Compiling IndexingModels.swift
+[InkOS] Compiling IndexingQueue.swift
+[InkOS] Compiling me.andy.allen.Trivial.c
+[InkOS] Compiling SmartGuideViewController.mm
+[InkOS] Compiling me.andy.allen.Trivial.c
+[InkOS] Compiling SmartGuideViewController.mm
+[InkOS] Linking InkOS.debug.dylib
+[!] ld: ignoring duplicate libraries: '-lc++'
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+note: Using stub executor library with Swift entry point. (in target 'InkOS' from project 'InkOS')
+[InkOS] Linking InkOS.debug.dylib
+[!] ld: ignoring duplicate libraries: '-lc++'
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Linking InkOS
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Create Universal Binary InkOS.debug.dylib
+note: Using stub executor library with Swift entry point. (in target 'InkOS' from project 'InkOS')
+[InkOS] Linking InkOS
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Create Universal Binary InkOS
+[InkOS] Running script Copy Recognition Assets
+[InkOS] Extract App Intents Metadata
+[InkOS] Processing Info.plist
+note: Run script build phase 'Copy Recognition Assets' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'InkOS' from project 'InkOS')
+Build Succeeded
