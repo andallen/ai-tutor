@@ -231,7 +231,7 @@ final class AIOverlayView: UIView {
     NotificationCenter.default.removeObserver(self)
   }
 
-  // Configures the glass material effect.
+  // Configures the glass material effect using unified liquid glass styling.
   private func configureGlassView() {
     glassView.layer.cornerRadius = overlayCornerRadius
     glassView.layer.cornerCurve = .continuous
@@ -242,13 +242,8 @@ final class AIOverlayView: UIView {
     glassView.layer.shadowRadius = 0
     glassView.layer.shadowColor = nil
 
-    if #available(iOS 26.0, *) {
-      let effect = UIGlassEffect(style: .regular)
-      effect.isInteractive = false
-      glassView.effect = effect
-    } else {
-      glassView.effect = UIBlurEffect(style: .systemMaterial)
-    }
+    // Apply unified liquid glass effect.
+    applyLiquidGlassEffect(to: glassView, style: .regular)
   }
 
   // Calculates the expanded frame so the button sits at the bottom-right corner.

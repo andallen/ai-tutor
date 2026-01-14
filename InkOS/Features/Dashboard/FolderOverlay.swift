@@ -439,6 +439,7 @@ struct FolderOverlay: View {
   }
 
   // Glass background that works with the current corner radius.
+  // Uses unified liquid glass styling for consistent appearance.
   @ViewBuilder
   private func glassBackground(cornerRadius: CGFloat) -> some View {
     if #available(iOS 26.0, *) {
@@ -748,25 +749,10 @@ private enum FolderItem {
 
 // MARK: - Glass Overlay Background
 
-// View modifier for the folder overlay glass effect.
+// Convenience alias for liquidGlassBackground with interactive style.
+// Used by overlays that need consistent glass appearance with tap shimmer.
 extension View {
   func glassOverlayBackground(cornerRadius: CGFloat) -> some View {
-    Group {
-      if #available(iOS 26.0, *) {
-        self
-          .background(
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-              .fill(Color.clear)
-              .glassEffect(.regular.interactive(), in: .rect(cornerRadius: cornerRadius))
-          )
-      } else {
-        // Fallback for older iOS versions.
-        self
-          .background(
-            .ultraThinMaterial,
-            in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-          )
-      }
-    }
+    liquidGlassBackground(cornerRadius: cornerRadius, style: .interactive)
   }
 }

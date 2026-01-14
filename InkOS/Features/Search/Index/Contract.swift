@@ -610,6 +610,11 @@ enum SearchIndexConstants {
 
   // Debounce interval for indexing triggers (seconds).
   static let indexingDebounceInterval: TimeInterval = 2.0
+
+  // Markers used in FTS5 snippet() to wrap matched text.
+  // These markers are parsed by the UI to apply highlighting.
+  static let matchStartMarker = "[MATCH]"
+  static let matchEndMarker = "[/MATCH]"
 }
 
 // MARK: - Edge Cases & Error Conditions

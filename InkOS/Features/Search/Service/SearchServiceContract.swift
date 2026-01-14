@@ -23,6 +23,12 @@ enum MatchSource: String, Sendable, Equatable, Codable {
 
   // Match was found in PDF extracted text.
   case pdfText
+
+  // Match was found in lesson content (questions, answers, sections).
+  case lessonContent
+
+  // Match was found in folder name.
+  case folderName
 }
 
 /*
@@ -81,6 +87,11 @@ struct SearchResult: Sendable, Equatable, Identifiable {
 
   // Timestamp when the document was last modified.
   let modifiedAt: Date
+
+  // Preview thumbnail image data for displaying in search results.
+  // This is the same preview data used in the dashboard cards.
+  // Nil if no preview is available.
+  var previewImageData: Data?
 
   // Identifiable conformance using documentID.
   var id: String { documentID }
@@ -516,6 +527,20 @@ protocol FolderLookupProtocol: Sendable {
   // Resolves a folder ID to its display name.
   // Returns nil if folder does not exist.
   func getFolderDisplayName(folderID: String) async -> String?
+}
+
+// MARK: - PreviewLookup Protocol
+
+// Protocol for resolving document IDs to preview image data.
+// Allows dependency injection for testing.
+// The preview data returned here is the same data used in dashboard cards,
+// ensuring visual consistency between search results and the main dashboard.
+protocol PreviewLookupProtocol: Sendable {
+  // Resolves a document ID to its preview image data.
+  // documentID: The unique identifier of the document.
+  // documentType: The type of document (notebook, pdf, or lesson).
+  // Returns the preview image PNG data, or nil if no preview exists.
+  func getPreviewImageData(documentID: String, documentType: DocumentType) async -> Data?
 }
 
 /*

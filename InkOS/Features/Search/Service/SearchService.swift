@@ -18,12 +18,21 @@ actor SearchService: SearchServiceProtocol {
   // Protocol for resolving folder IDs to display names.
   private let folderLookup: FolderLookupProtocol
 
+  // Protocol for resolving document IDs to preview image data.
+  private let previewLookup: PreviewLookupProtocol?
+
   // Creates a SearchService with the given dependencies.
   // index: The search index to query.
   // folderLookup: Protocol for resolving folder IDs to display names.
-  init(index: any SearchIndexProtocol, folderLookup: FolderLookupProtocol) {
+  // previewLookup: Optional protocol for resolving document IDs to preview images.
+  init(
+    index: any SearchIndexProtocol,
+    folderLookup: FolderLookupProtocol,
+    previewLookup: PreviewLookupProtocol? = nil
+  ) {
     self.index = index
     self.folderLookup = folderLookup
+    self.previewLookup = previewLookup
   }
 
   // MARK: - SearchServiceProtocol
@@ -79,14 +88,31 @@ actor SearchService: SearchServiceProtocol {
   // MARK: - Private Helpers
 
   // Transforms IndexedMatch array to SearchResult array with enriched metadata.
+  // Deduplicates by documentID, keeping the highest-ranked match.
   private func transformMatches(_ matches: [IndexedMatch], query: String) async -> [SearchResult] {
     var results: [SearchResult] = []
+    var seenDocumentIDs: Set<String> = []
 
     for match in matches {
+      // Skip duplicate documents - keep first (highest ranked) only.
+      guard !seenDocumentIDs.contains(match.documentID) else {
+        continue
+      }
+      seenDocumentIDs.insert(match.documentID)
+
       // Resolve folder display name if applicable.
       var folderPath: String?
       if let folderID = match.folderID {
         folderPath = await folderLookup.getFolderDisplayName(folderID: folderID)
+      }
+
+      // Resolve preview image data if lookup is available.
+      var previewImageData: Data?
+      if let previewLookup {
+        previewImageData = await previewLookup.getPreviewImageData(
+          documentID: match.documentID,
+          documentType: match.documentType
+        )
       }
 
       // Determine match source based on query and title.
@@ -104,7 +130,8 @@ actor SearchService: SearchServiceProtocol {
         matchSnippet: match.snippet,
         matchSource: matchSource,
         folderPath: folderPath,
-        modifiedAt: Date()
+        modifiedAt: Date(),
+        previewImageData: previewImageData
       )
 
       results.append(result)
@@ -115,7 +142,7 @@ actor SearchService: SearchServiceProtocol {
 
   // Determines where the match was found based on query presence in title.
   // If any query term appears in the title (case-insensitive), returns .title.
-  // Otherwise returns .handwriting for notebooks or .pdfText for PDFs.
+  // Otherwise returns .handwriting for notebooks, .pdfText for PDFs, or .lessonContent for lessons.
   private func determineMatchSource(
     query: String,
     title: String,
@@ -140,6 +167,11 @@ actor SearchService: SearchServiceProtocol {
       return .handwriting
     case .pdf:
       return .pdfText
+    case .lesson:
+      return .lessonContent
+    case .folder:
+      // Folders only have a name, so if query matched, it was the name.
+      return .folderName
     }
   }
 }

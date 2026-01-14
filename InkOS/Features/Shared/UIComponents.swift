@@ -28,23 +28,162 @@ struct BackgroundWhite: View {
   }
 }
 
-// View modifier that applies a glass background effect.
-extension View {
-  func glassBackground(cornerRadius: CGFloat) -> some View {
-    Group {
-      if #available(iOS 26.0, *) {
-        self
-          .glassEffect(.regular.interactive(), in: .rect(cornerRadius: cornerRadius))
-      } else {
-        // Falls back to a blurred material background on older iOS.
-        self
-          .background(
-            .ultraThinMaterial,
-            in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-          )
-      }
+// MARK: - Liquid Glass Effects
+
+// Style variants for liquid glass effects.
+// Use these presets for consistent glass appearance across the app.
+enum LiquidGlassStyle {
+  // Standard glass for overlays, panels, and cards.
+  // Non-interactive - no shimmer on tap.
+  case regular
+
+  // Interactive glass that responds to touch with shimmer effect.
+  // Use for buttons and tappable elements.
+  case interactive
+
+  // Clear glass with more transparency.
+  // Use for subtle floating elements that shouldn't dominate visually.
+  case clear
+
+  // Tinted glass with optional color overlay.
+  // Use sparingly for accent elements.
+  case tinted(Color)
+}
+
+// View modifier that applies a liquid glass background effect.
+// Uses iOS 26 glassEffect with ultraThinMaterial fallback.
+private struct LiquidGlassBackgroundModifier: ViewModifier {
+  let cornerRadius: CGFloat
+  let style: LiquidGlassStyle
+
+  func body(content: Content) -> some View {
+    if #available(iOS 26.0, *) {
+      content
+        .background(
+          RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(Color.clear)
+            .glassEffect(glassForStyle, in: .rect(cornerRadius: cornerRadius))
+        )
+    } else {
+      content
+        .background(
+          .ultraThinMaterial,
+          in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        )
     }
   }
+
+  @available(iOS 26.0, *)
+  private var glassForStyle: Glass {
+    switch style {
+    case .regular:
+      return .regular
+    case .interactive:
+      return .regular.interactive()
+    case .clear:
+      return .clear
+    case .tinted(let color):
+      return .regular.tint(color)
+    }
+  }
+}
+
+// View modifier that applies liquid glass directly to the view shape.
+// Use when the view itself should be the glass element, not just have a background.
+private struct LiquidGlassModifier: ViewModifier {
+  let cornerRadius: CGFloat
+  let style: LiquidGlassStyle
+
+  func body(content: Content) -> some View {
+    if #available(iOS 26.0, *) {
+      content
+        .glassEffect(glassForStyle, in: .rect(cornerRadius: cornerRadius))
+    } else {
+      content
+        .background(
+          .ultraThinMaterial,
+          in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        )
+    }
+  }
+
+  @available(iOS 26.0, *)
+  private var glassForStyle: Glass {
+    switch style {
+    case .regular:
+      return .regular
+    case .interactive:
+      return .regular.interactive()
+    case .clear:
+      return .clear
+    case .tinted(let color):
+      return .regular.tint(color)
+    }
+  }
+}
+
+// Convenience view modifiers for liquid glass effects.
+extension View {
+  // Applies a liquid glass background with the specified corner radius and style.
+  // Default style is .regular (non-interactive).
+  func liquidGlassBackground(
+    cornerRadius: CGFloat,
+    style: LiquidGlassStyle = .regular
+  ) -> some View {
+    modifier(LiquidGlassBackgroundModifier(cornerRadius: cornerRadius, style: style))
+  }
+
+  // Applies liquid glass directly to the view.
+  // Use when the view should be the glass element.
+  func liquidGlass(
+    cornerRadius: CGFloat,
+    style: LiquidGlassStyle = .regular
+  ) -> some View {
+    modifier(LiquidGlassModifier(cornerRadius: cornerRadius, style: style))
+  }
+
+  // Legacy compatibility - applies a glass background effect.
+  // Prefer liquidGlassBackground for new code.
+  func glassBackground(cornerRadius: CGFloat) -> some View {
+    liquidGlassBackground(cornerRadius: cornerRadius, style: .interactive)
+  }
+}
+
+// MARK: - UIKit Liquid Glass Helpers
+
+// Applies liquid glass effect to a UIVisualEffectView.
+// Use this in UIKit view controllers for consistent glass appearance.
+func applyLiquidGlassEffect(
+  to visualEffectView: UIVisualEffectView,
+  style: LiquidGlassStyle = .regular
+) {
+  if #available(iOS 26.0, *) {
+    let glassEffect = UIGlassEffect(style: .regular)
+    switch style {
+    case .regular, .tinted:
+      glassEffect.isInteractive = false
+    case .interactive:
+      glassEffect.isInteractive = true
+    case .clear:
+      glassEffect.isInteractive = false
+    }
+    visualEffectView.effect = glassEffect
+  } else {
+    visualEffectView.effect = UIBlurEffect(style: .systemThinMaterial)
+  }
+}
+
+// Creates a configured UIVisualEffectView with liquid glass effect.
+func makeLiquidGlassView(
+  cornerRadius: CGFloat,
+  style: LiquidGlassStyle = .regular
+) -> UIVisualEffectView {
+  let glassView = UIVisualEffectView()
+  glassView.layer.cornerRadius = cornerRadius
+  glassView.layer.cornerCurve = .continuous
+  glassView.clipsToBounds = true
+  applyLiquidGlassEffect(to: glassView, style: style)
+  return glassView
 }
 
 // Shared color definitions.
@@ -255,115 +394,6 @@ struct RoundedCornerShape: Shape {
     }
     path.closeSubpath()
     return path
-  }
-}
-
-// MARK: - Animated Blur View
-
-// UIViewRepresentable that wraps a UIVisualEffectView for smooth blur animation.
-// Uses UIViewPropertyAnimator with CADisplayLink for smooth interpolation.
-// Animates smoothly between clear (0) and fully blurred (1).
-struct AnimatedBlurView: UIViewRepresentable {
-  // Target blur intensity from 0 (clear) to 1 (full blur).
-  let blurFraction: CGFloat
-  // Duration for blur animation.
-  let animationDuration: TimeInterval
-  // Style of blur effect to use.
-  let style: UIBlurEffect.Style
-
-  init(
-    blurFraction: CGFloat,
-    animationDuration: TimeInterval = 0.35,
-    style: UIBlurEffect.Style = .regular
-  ) {
-    self.blurFraction = blurFraction
-    self.animationDuration = animationDuration
-    self.style = style
-  }
-
-  func makeUIView(context: Context) -> UIVisualEffectView {
-    let blurView = UIVisualEffectView(effect: nil)
-    // Create an animator that applies blur when its fractionComplete increases.
-    let animator = UIViewPropertyAnimator(duration: 1, curve: .linear) {
-      blurView.effect = UIBlurEffect(style: self.style)
-    }
-    animator.pausesOnCompletion = true
-    animator.fractionComplete = 0
-    context.coordinator.animator = animator
-    context.coordinator.currentFraction = 0
-    // Start animation to target if not zero.
-    if blurFraction > 0 {
-      context.coordinator.animateTo(blurFraction, duration: animationDuration)
-    }
-    return blurView
-  }
-
-  func updateUIView(_ uiView: UIVisualEffectView, context: Context) {
-    // Animate to new target fraction if different from current target.
-    let target = blurFraction
-    if abs(context.coordinator.targetFraction - target) > 0.001 {
-      context.coordinator.animateTo(target, duration: animationDuration)
-    }
-  }
-
-  func makeCoordinator() -> Coordinator {
-    Coordinator()
-  }
-
-  class Coordinator {
-    var animator: UIViewPropertyAnimator?
-    var displayLink: CADisplayLink?
-    var currentFraction: CGFloat = 0
-    var targetFraction: CGFloat = 0
-    var animationStartTime: CFTimeInterval = 0
-    var animationStartFraction: CGFloat = 0
-    var animationDuration: TimeInterval = 0.35
-
-    // Starts a smooth animation from current fraction to target.
-    func animateTo(_ target: CGFloat, duration: TimeInterval) {
-      targetFraction = target
-      animationStartFraction = currentFraction
-      animationDuration = duration
-      animationStartTime = CACurrentMediaTime()
-
-      // Cancel existing display link.
-      displayLink?.invalidate()
-
-      // Create new display link for animation.
-      let link = CADisplayLink(target: self, selector: #selector(updateAnimation))
-      link.add(to: .main, forMode: .common)
-      displayLink = link
-    }
-
-    @objc func updateAnimation() {
-      let elapsed = CACurrentMediaTime() - animationStartTime
-      var progress = min(1.0, elapsed / animationDuration)
-
-      // Apply ease-out cubic for smooth deceleration.
-      progress = easeOutCubic(progress)
-
-      // Interpolate between start and target.
-      let newFraction = animationStartFraction + (targetFraction - animationStartFraction) * progress
-      currentFraction = newFraction
-      animator?.fractionComplete = newFraction
-
-      // Stop animation when complete.
-      if progress >= 1.0 {
-        displayLink?.invalidate()
-        displayLink = nil
-      }
-    }
-
-    // Ease out cubic for a smooth deceleration.
-    private func easeOutCubic(_ t: CGFloat) -> CGFloat {
-      let adjusted = t - 1
-      return adjusted * adjusted * adjusted + 1
-    }
-
-    deinit {
-      displayLink?.invalidate()
-      animator?.stopAnimation(true)
-    }
   }
 }
 

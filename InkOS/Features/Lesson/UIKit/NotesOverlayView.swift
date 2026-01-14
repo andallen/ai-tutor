@@ -78,13 +78,8 @@ final class NotesOverlayView: UIView {
     glassView.layer.cornerCurve = .continuous
     glassView.clipsToBounds = true
 
-    if #available(iOS 26.0, *) {
-      let effect = UIGlassEffect(style: .regular)
-      effect.isInteractive = false
-      glassView.effect = effect
-    } else {
-      glassView.effect = UIBlurEffect(style: .systemMaterial)
-    }
+    // Apply unified liquid glass effect.
+    applyLiquidGlassEffect(to: glassView, style: .regular)
 
     addSubview(glassView)
   }

@@ -1,0 +1,1489 @@
+================================================================================================
+                                    TEST RESULTS SUMMARY
+================================================================================================
+
+Total Tests:  859
+Passed:       852
+Failed:       7
+
+Status:       ❌ SOME TESTS FAILED
+
+------------------------------------------------------------------------------------------------
+                                      FAILED TESTS
+------------------------------------------------------------------------------------------------
+
+    ✖ [InputViewModelTests/BoundaryCalculationTests] maxHorizontalOffsetAtScale1 on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✖ [InputViewModelTests/BoundaryCalculationTests] verticalOffsetAlwaysNonNegative on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✖ [InputViewModelTests/EdgeCaseTests] extremeTranslationValues on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✖ [InputViewModelTests/PanGestureTests] panGestureHorizontalDisabledAtScale1 on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✖ [InputViewModelTests/PanGestureTests] panGestureClampsVerticalOffset on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✖ [InputViewModelTests/PinchGestureTests] pinchGestureClampsViewportOffset on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✖ [EditorViewModelTests/ToolUpdateTests] updateToolAppliesToEditor on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+
+================================================================================================
+                                   DETAILED TEST OUTPUT
+================================================================================================
+
+
+----- xcbeautify -----
+Version: 3.1.2
+----------------------
+
+note: Building targets in dependency order
+note: Target dependency graph (5 targets)
+[InkOS] Write Auxiliary File InkOS.hmap
+[InkOS] Write Auxiliary File Script-AEA6BC5A2EF8654800D18138.sh
+[InkOS] Write Auxiliary File Script-89BBA18F5E78F49FCF8CC369.sh
+[InkOS] Write Auxiliary File 7187679823f38a2a940e0043cdf9d637-common-args.resp
+[InkOS] Write Auxiliary File af3fcb34312c57c0f52879cdce924b91-common-args.resp
+[InkOS] Write Auxiliary File InkOS-OutputFileMap.json
+[InkOS] Write Auxiliary File InkOS_const_extract_protocols.json
+[Pods-InkOSTests] Write Auxiliary File Pods-InkOSTests.hmap
+[Pods-InkOSTests] Write Auxiliary File Pods-InkOSTests.DependencyStaticMetadataFileList
+[Pods-InkOSTests] Write Auxiliary File Pods-InkOSTests.DependencyMetadataFileList
+[Pods-InkOSTests] Write Auxiliary File Pods-InkOSTests-project-headers.hmap
+[Pods-InkOSTests] Write Auxiliary File Pods-InkOSTests-own-target-headers.hmap
+[Pods-InkOSTests] Write Auxiliary File Pods-InkOSTests-generated-files.hmap
+[Pods-InkOSTests] Write Auxiliary File Pods-InkOSTests-all-target-headers.hmap
+[Pods-InkOSTests] Write Auxiliary File Pods-InkOSTests-all-non-framework-target-headers.hmap
+[Pods-InkOSTests] Write Auxiliary File Pods-InkOSTests.LinkFileList
+[Pods-InkOSTests] Write Auxiliary File e6072d4f65d7061329687fe24e3d63a7-common-args.resp
+[Pods-InkOS] Write Auxiliary File Pods-InkOS.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS.DependencyStaticMetadataFileList
+[Pods-InkOS] Write Auxiliary File Pods-InkOS.DependencyMetadataFileList
+[Pods-InkOS] Write Auxiliary File Pods-InkOS-project-headers.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS-own-target-headers.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS-generated-files.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS-all-target-headers.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS-all-non-framework-target-headers.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS.LinkFileList
+[Pods-InkOS] Write Auxiliary File e6072d4f65d7061329687fe24e3d63a7-common-args.resp
+[InkOSTests] Write Auxiliary File empty-InkOSTests.plist
+[InkOSTests] Write Auxiliary File c43c4a3b629c2b3e895822465f5593e5.sb
+[InkOSTests] Write Auxiliary File Script-12CB4D4CBD5D64C8E35D38B7.sh
+[InkOSTests] Write Auxiliary File InkOSTests_const_extract_protocols.json
+[InkOSTests] Write Auxiliary File InkOSTests.SwiftFileList
+[InkOSTests] Write Auxiliary File InkOSTests.SwiftConstValuesFileList
+[InkOSTests] Write Auxiliary File InkOSTests-OutputFileMap.json
+[InkOSTests] Write Auxiliary File InkOSTests.LinkFileList
+[InkOSTests] Write Auxiliary File InkOSTests.hmap
+[InkOSTests] Write Auxiliary File InkOSTests.DependencyStaticMetadataFileList
+[InkOSTests] Write Auxiliary File InkOSTests.DependencyMetadataFileList
+[InkOSTests] Write Auxiliary File InkOSTests-own-target-headers.hmap
+[InkOSTests] Write Auxiliary File InkOSTests-project-headers.hmap
+[InkOSTests] Write Auxiliary File InkOSTests-generated-files.hmap
+[InkOSTests] Write Auxiliary File InkOSTests-all-target-headers.hmap
+[InkOSTests] Write Auxiliary File InkOSTests-all-non-framework-target-headers.hmap
+[InkOS] Write Auxiliary File InkOS.SwiftFileList
+[InkOS] Write Auxiliary File InkOS.SwiftConstValuesFileList
+[InkOS] Write Auxiliary File InkOS.LinkFileList
+[InkOS] Write Auxiliary File InkOS.DependencyStaticMetadataFileList
+[InkOS] Write Auxiliary File InkOS.DependencyMetadataFileList
+[InkOS] Write Auxiliary File InkOS-project-headers.hmap
+[InkOS] Write Auxiliary File InkOS-own-target-headers.hmap
+[InkOS] Write Auxiliary File InkOS-generated-files.hmap
+[InkOS] Write Auxiliary File InkOS-all-target-headers.hmap
+[InkOS] Write Auxiliary File InkOS-all-non-framework-target-headers.hmap
+[InkOS] Write Auxiliary File InkOS-DebugDylibPath-normal-arm64.txt
+[InkOS] Write Auxiliary File InkOS-DebugDylibInstallName-normal-arm64.txt
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File OutputFileList-39CDEF633587C8ABCC20EB5BD6520245-MyScriptInteractiveInk-Runtime-xcframeworks-output-files-c1657a727c2a9cb59299e940e9792b2c-resolved.xcfilelist
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File Script-39CDEF633587C8ABCC20EB5BD6520245.sh
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File Script-4A7B4ECFEDB50C2F025F224FD29FFEA9.sh
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime_const_extract_protocols.json
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File e6072d4f65d7061329687fe24e3d63a7-common-args.resp
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.SwiftFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.SwiftConstValuesFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.LinkFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-OutputFileMap.json
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.DependencyStaticMetadataFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.DependencyMetadataFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-project-headers.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-own-target-headers.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-generated-files.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-all-target-headers.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-all-non-framework-target-headers.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File InputFileList-39CDEF633587C8ABCC20EB5BD6520245-MyScriptInteractiveInk-Runtime-xcframeworks-input-files-cb8f698b7c7daaa2c46086d1e54b780b-resolved.xcfilelist
+[MyScriptInteractiveInk-Runtime] Running script [CP] Copy XCFrameworks
+[MyScriptInteractiveInk-Runtime] Compiling IINK.swift
+[MyScriptInteractiveInk-Runtime] Compiling IINK.swift
+[MyScriptInteractiveInk-Runtime] Copy arm64-apple-ios-simulator.swiftmodule -> MyScriptInteractiveInk_Runtime.swiftmodule
+[MyScriptInteractiveInk-Runtime] Copy arm64-apple-ios-simulator.swiftdoc -> MyScriptInteractiveInk_Runtime.swiftdoc
+[MyScriptInteractiveInk-Runtime] Copy arm64-apple-ios-simulator.abi.json -> MyScriptInteractiveInk_Runtime.abi.json
+[MyScriptInteractiveInk-Runtime] Copy arm64-apple-ios-simulator.swiftsourceinfo -> MyScriptInteractiveInk_Runtime.swiftsourceinfo
+[MyScriptInteractiveInk-Runtime] Compiling MyScriptInteractiveInk-Runtime-dummy.m
+[MyScriptInteractiveInk-Runtime] Running script Copy generated compatibility header
+[MyScriptInteractiveInk-Runtime] Extract App Intents Metadata
+[Pods-InkOSTests] Compiling Pods-InkOSTests-dummy.m
+[Pods-InkOS] Compiling Pods-InkOS-dummy.m
+[InkOS] Copy libXCTestBundleInject.dylib -> libXCTestBundleInject.dylib
+[InkOS] Copy libXCTestSwiftSupport.dylib -> libXCTestSwiftSupport.dylib
+[InkOS] Copy XCUnit.framework -> XCUnit.framework
+[InkOS] Copy XCTestCore.framework -> XCTestCore.framework
+[InkOS] Copy XCTestSupport.framework -> XCTestSupport.framework
+[InkOS] Copy XCUIAutomation.framework -> XCUIAutomation.framework
+[InkOS] Copy XCTest.framework -> XCTest.framework
+[InkOS] Running script [CP] Check Pods Manifest.lock
+[InkOS] Copy XCTAutomationSupport.framework -> XCTAutomationSupport.framework
+[InkOS] Copy Testing.framework -> Testing.framework
+[InkOS] Linking __preview.dylib
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Copying CLAUDE.md
+[InkOS] Copying theme.css
+[InkOS] Generate Asset Symbols Assets.xcassets
+[InkOS] Processing Info.plist
+[InkOS] Compiling Helper.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOS/Frameworks/Ink/Utils/Helper.swift:38:68: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return UIDevice.current.userInterfaceIdiom == .pad && UIScreen.main.scale > 1
+                                                                   ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOS/Frameworks/Ink/Utils/Helper.swift:50:70: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return UIDevice.current.userInterfaceIdiom == .phone && UIScreen.main.scale > 2
+                                                                     ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOS/Frameworks/Ink/Utils/Helper.swift:76:42: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return Helper.dpi() / Float(UIScreen.main.scale)
+                                         ^
+[InkOS] Compiling IInkUIRefImplUtils.swift
+[InkOS] Compiling ImageLoader.swift
+[InkOS] Compiling ImagePainter.swift
+[InkOS] Compiling NSAttributedString+Helper.swift
+[InkOS] Compiling NSFileManager+Additions.swift
+[InkOS] Compiling Path.swift
+[InkOS] Compiling SynchronizedSwift.swift
+[InkOS] Compiling TextFormatHelper.swift
+[InkOS] Compiling UIFont+Helper.swift
+[InkOS] Compiling IINKEditorExportExtension.swift
+[InkOS] Compiling EmbeddingService.swift
+[InkOS] Compiling VectorStoreClient.swift
+[InkOS] Compiling VectorStoreModels.swift
+[InkOS] Compiling ContextMenuOverlay.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOS/Features/Dashboard/ContextMenuOverlay.swift:107:33: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenBounds = UIScreen.main.bounds
+                                ^
+[InkOS] Compiling DashboardAlerts.swift
+[InkOS] Compiling DashboardComponents.swift
+[InkOS] Compiling DashboardItem.swift
+[InkOS] Compiling DashboardView.swift
+[InkOS] Compiling FolderCard.swift
+[InkOS] Compiling FolderDraggableCards.swift
+[InkOS] Compiling FolderDropDelegate.swift
+[InkOS] Compiling EditorViewController.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOS/Editor/EditorViewController.swift:56:48: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let containerView = UIView(frame: UIScreen.main.bounds)
+                                               ^
+[InkOS] Compiling EditorViewModel.swift
+[InkOS] Compiling EngineProvider.swift
+[InkOS] Compiling HomeButtonView.swift
+[InkOS] Compiling ToolPaletteView.swift
+[InkOS] Compiling ChunkingService.swift
+[InkOS] Compiling ContentExtractor.swift
+[InkOS] Compiling ExtractionModels.swift
+[InkOS] Compiling IndexingCoordinator.swift
+[InkOS] Compiling IndexingModels.swift
+[InkOS] Compiling IndexingQueue.swift
+[InkOS] Compiling InputViewController.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOS/Frameworks/Ink/Input/InputViewController.swift:141:30: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let scale = min(UIScreen.main.scale, maxPixelDimension / maxDimension)
+                             ^
+[InkOS] Compiling InputViewModel.swift
+[InkOS] Compiling DisplayViewController.swift
+[InkOS] Compiling DisplayViewModel.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOS/Frameworks/Ink/Rendering/DisplayViewModel.swift:132:27: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    return Float(UIScreen.main.scale)
+                          ^
+[InkOS] Compiling Canvas.swift
+[InkOS] Compiling InputView.swift
+[InkOS] Compiling OffscreenRenderSurfaces.swift
+[InkOS] Compiling RenderView.swift
+[InkOS] Compiling ContextualActionsHelper.swift
+[InkOS] Compiling CTRun+Metrics.swift
+[InkOS] Compiling FontMetricsProvider.swift
+[InkOS] Compiling EditorNavigationController.swift
+[InkOS] Compiling NotebookDismissAnimator.swift
+[InkOS] Compiling NotebookPresentAnimator.swift
+[InkOS] Compiling NotebookTransitionCoordinator.swift
+[InkOS] Compiling AppRootView.swift
+[InkOS] Compiling EditorHostView.swift
+[InkOS] Compiling RawContentConfiguration.swift
+[InkOS] Compiling AIButtonView.swift
+[InkOS] Compiling AIChatInputBar.swift
+[InkOS] Compiling AIOverlayView.swift
+[InkOS] Compiling ColorThicknessPillView.swift
+[InkOS] Compiling EditingToolbarView.swift
+[InkOS] Compiling PDFStubs.swift
+[InkOS] Compiling PDFDataModel.swift
+[InkOS] Compiling PDFImport.swift
+[InkOS] Compiling Contract.swift
+[InkOS] Compiling SearchIndex.swift
+[InkOS] Compiling SearchIndexTriggers.swift
+[InkOS] Compiling SearchService.swift
+[InkOS] Compiling SearchServiceContract.swift
+[InkOS] Compiling ContextMenuView.swift
+[InkOS] Compiling NotebookNotifications.swift
+[InkOS] Compiling UIComponents.swift
+[InkOS] Compiling FolderOverlay.swift
+[InkOS] Compiling MoveToFolderSheet.swift
+[InkOS] Compiling NotebookLibrary.swift
+[InkOS] Compiling UIKitDragWrapper.swift
+[InkOS] Compiling NotebookModel.swift
+[InkOS] Compiling DottedGridView.swift
+[InkOS] Compiling PDFBackgroundRenderer.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOS/Features/PDFDisplay/PDFBackgroundRenderer.swift:101:32: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenScale = UIScreen.main.scale
+                               ^
+[InkOS] Compiling PDFEditorHostView.swift
+[InkOS] Compiling PDFEditorViewController.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOS/Features/PDFDisplay/PDFEditorViewController.swift:78:48: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let containerView = UIView(frame: UIScreen.main.bounds)
+                                               ^
+[InkOS] Compiling PDFEditorViewModel.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOS/Features/PDFDisplay/PDFEditorViewModel.swift:45:32: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let screenWidth = UIScreen.main.bounds.width
+                               ^
+[InkOS] Compiling PDFPageLayout.swift
+[InkOS] Compiling JIIXPersistenceService.swift
+[InkOS] Compiling JIIXPersistenceTypes.swift
+[InkOS] Compiling BundleManager.swift
+[InkOS] Compiling BundleStorage.swift
+[InkOS] Compiling DocumentHandle.swift
+[InkOS] Compiling FolderManifest.swift
+[InkOS] Compiling Manifest.swift
+[InkOS] Compiling PDFDocumentHandle.swift
+[InkOS] Compiling SDKProtocols.swift
+[InkOS] Compiling InkOSApp.swift
+[InkOS] Compiling GeneratedAssetSymbols.swift
+[InkOS] Copy arm64-apple-ios-simulator.swiftmodule -> InkOS.swiftmodule
+[InkOS] Copy arm64-apple-ios-simulator.swiftdoc -> InkOS.swiftdoc
+[InkOS] Copy arm64-apple-ios-simulator.abi.json -> InkOS.abi.json
+[InkOS] Copy arm64-apple-ios-simulator.swiftsourceinfo -> InkOS.swiftsourceinfo
+[InkOS] Compiling SmartGuideViewController.mm
+[InkOS] Compiling me.andy.allen.Trivial.c
+[InkOS] Linking InkOS.debug.dylib
+[!] ld: ignoring duplicate libraries: '-lc++'
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+note: Using stub executor library with Swift entry point. (in target 'InkOS' from project 'InkOS')
+[InkOS] Linking InkOS
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Running script Copy Recognition Assets
+[InkOS] Extract App Intents Metadata
+[InkOSTests] Running script [CP] Check Pods Manifest.lock
+[InkOSTests] Processing empty-InkOSTests.plist
+[InkOSTests] Compiling ChunkingServiceTests.swift
+[InkOSTests] Compiling ContentExtractorTests.swift
+[InkOSTests] Compiling EmbeddingServiceTests.swift
+[InkOSTests] Compiling IndexingQueueTests.swift
+[InkOSTests] Compiling VectorStoreClientTests.swift
+[InkOSTests] Compiling VectorStoreModelsTests.swift
+[InkOSTests] Compiling DocumentHandleTests.swift
+[!]  @__swiftmacro_10InkOSTests0030DocumentHandleTestsswift_eDAEifMX206_6_6expectfMf_.swift:1:22: no 'async' operations occur within 'await' expression
+Testing.__checkValue(await handle.notebookID == "test-id",expression: .__fromSyntaxNode(#"await handle.notebookID == "test-id""#),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+                     ^
+[!]  @__swiftmacro_10InkOSTests0030DocumentHandleTestsswift_eDAEifMX313_6_6expectfMf_.swift:1:22: no 'async' operations occur within 'await' expression
+Testing.__checkValue(await handle.notebookID == "test-123",expression: .__fromSyntaxNode(#"await handle.notebookID == "test-123""#),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+                     ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Storage/DocumentHandleTests.swift:353:32: no 'async' operations occur within 'await' expression
+      let initialDisplayName = await handle.initialManifest.displayName
+                               ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Storage/DocumentHandleTests.swift:633:20: comparing non-optional value of type 'any ContentPartProtocol' to 'nil' always returns true
+      #expect(part != nil)
+              ~~~~ ^  ~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Storage/DocumentHandleTests.swift:1052:29: no 'async' operations occur within 'await' expression
+      let initialViewport = await handle.initialManifest.viewportState
+                            ^
+[InkOSTests] Compiling ManifestTests.swift
+[!]  @__swiftmacro_10InkOSTests0030DocumentHandleTestsswift_eDAEifMX206_6_6expectfMf_.swift:1:22: no 'async' operations occur within 'await' expression
+Testing.__checkValue(await handle.notebookID == "test-id",expression: .__fromSyntaxNode(#"await handle.notebookID == "test-id""#),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+                     ^
+[!]  @__swiftmacro_10InkOSTests0030DocumentHandleTestsswift_eDAEifMX313_6_6expectfMf_.swift:1:22: no 'async' operations occur within 'await' expression
+Testing.__checkValue(await handle.notebookID == "test-123",expression: .__fromSyntaxNode(#"await handle.notebookID == "test-123""#),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+                     ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Storage/DocumentHandleTests.swift:353:32: no 'async' operations occur within 'await' expression
+      let initialDisplayName = await handle.initialManifest.displayName
+                               ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Storage/DocumentHandleTests.swift:633:20: comparing non-optional value of type 'any ContentPartProtocol' to 'nil' always returns true
+      #expect(part != nil)
+              ~~~~ ^  ~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Storage/DocumentHandleTests.swift:1052:29: no 'async' operations occur within 'await' expression
+      let initialViewport = await handle.initialManifest.viewportState
+                            ^
+[InkOSTests] Compiling SearchIndexTests.swift
+[InkOSTests] Compiling SearchServiceTests.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Features/Search/SearchServiceTests.swift:130:10: instance method 'lock' is unavailable from asynchronous contexts; Use async-safe scoped locking instead; this is an error in the Swift 6 language mode
+    lock.lock()
+         ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Features/Search/SearchServiceTests.swift:132:10: instance method 'unlock' is unavailable from asynchronous contexts; Use async-safe scoped locking instead; this is an error in the Swift 6 language mode
+    lock.unlock()
+         ^
+[InkOSTests] Compiling NotebookModelTests.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Features/NotebookModelTests.swift:56:11: initialization of immutable value 'modifiedDate' was never used; consider replacing with assignment to '_' or removing it
+      let modifiedDate = testDate.addingTimeInterval(3600)
+      ~~~~^~~~~~~~~~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Features/NotebookModelTests.swift:642:11: variable 'model1' was never mutated; consider changing to 'let' constant
+      var model1 = NotebookModel(from: manifest)
+      ~~~ ^
+[InkOSTests] Compiling EditorViewModelTests.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Editor/EngineProviderTests.swift:29:22: 'is' test is always true
+    #expect(provider is AnyObject, "EngineProvider should be a reference type")
+                     ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Editor/EngineProviderTests.swift:206:27: comparing non-optional value of type 'IINKConfiguration' to 'nil' always returns true
+    #expect(configuration != nil, "Engine should have configuration")
+            ~~~~~~~~~~~~~ ^  ~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Editor/EngineProviderTests.swift:218:22: comparing non-optional value of type 'EngineProvider' to 'nil' always returns true
+    #expect(provider != nil, "Provider should be accessible on MainActor")
+            ~~~~~~~~ ^  ~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Editor/EngineProviderTests.swift:230:22: 'is' test is always true
+      #expect(engine is IINKEngine, "Engine should be IINKEngine type")
+                     ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Editor/EngineProviderTests.swift:419:28: comparing non-optional value of type 'IINKToolController' to 'nil' always returns true
+    #expect(toolController != nil, "Engine should create a tool controller")
+            ~~~~~~~~~~~~~~ ^  ~~~
+[InkOSTests] Compiling EngineProviderTests.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Editor/EngineProviderTests.swift:29:22: 'is' test is always true
+    #expect(provider is AnyObject, "EngineProvider should be a reference type")
+                     ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Editor/EngineProviderTests.swift:206:27: comparing non-optional value of type 'IINKConfiguration' to 'nil' always returns true
+    #expect(configuration != nil, "Engine should have configuration")
+            ~~~~~~~~~~~~~ ^  ~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Editor/EngineProviderTests.swift:218:22: comparing non-optional value of type 'EngineProvider' to 'nil' always returns true
+    #expect(provider != nil, "Provider should be accessible on MainActor")
+            ~~~~~~~~ ^  ~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Editor/EngineProviderTests.swift:230:22: 'is' test is always true
+      #expect(engine is IINKEngine, "Engine should be IINKEngine type")
+                     ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Editor/EngineProviderTests.swift:419:28: comparing non-optional value of type 'IINKToolController' to 'nil' always returns true
+    #expect(toolController != nil, "Engine should create a tool controller")
+            ~~~~~~~~~~~~~~ ^  ~~~
+[InkOSTests] Compiling InputViewModelTests.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Editor/EngineProviderTests.swift:29:22: 'is' test is always true
+    #expect(provider is AnyObject, "EngineProvider should be a reference type")
+                     ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Editor/EngineProviderTests.swift:206:27: comparing non-optional value of type 'IINKConfiguration' to 'nil' always returns true
+    #expect(configuration != nil, "Engine should have configuration")
+            ~~~~~~~~~~~~~ ^  ~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Editor/EngineProviderTests.swift:218:22: comparing non-optional value of type 'EngineProvider' to 'nil' always returns true
+    #expect(provider != nil, "Provider should be accessible on MainActor")
+            ~~~~~~~~ ^  ~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Editor/EngineProviderTests.swift:230:22: 'is' test is always true
+      #expect(engine is IINKEngine, "Engine should be IINKEngine type")
+                     ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Editor/EngineProviderTests.swift:419:28: comparing non-optional value of type 'IINKToolController' to 'nil' always returns true
+    #expect(toolController != nil, "Engine should create a tool controller")
+            ~~~~~~~~~~~~~~ ^  ~~~
+[InkOSTests] Compiling DisplayViewModelTests.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Rendering/DisplayViewModelTests.swift:150:44: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+      let expectedDensity = Float(UIScreen.main.scale)
+                                           ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Rendering/DisplayViewModelTests.swift:427:22: comparing non-optional value of type 'any IINKICanvas' to 'nil' always returns true
+      #expect(canvas != nil)
+              ~~~~~~ ^  ~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Rendering/DisplayViewModelTests.swift:440:22: comparing non-optional value of type 'any IINKICanvas' to 'nil' always returns true
+      #expect(canvas != nil)
+              ~~~~~~ ^  ~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Rendering/DisplayViewModelTests.swift:470:22: comparing non-optional value of type 'any IINKICanvas' to 'nil' always returns true
+      #expect(canvas != nil)
+              ~~~~~~ ^  ~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Rendering/DisplayViewModelTests.swift:640:22: comparing non-optional value of type 'any IINKICanvas' to 'nil' always returns true
+      #expect(canvas != nil)
+              ~~~~~~ ^  ~~~
+[InkOSTests] Compiling OffscreenRenderSurfacesTests.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Rendering/DisplayViewModelTests.swift:150:44: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+      let expectedDensity = Float(UIScreen.main.scale)
+                                           ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Rendering/DisplayViewModelTests.swift:427:22: comparing non-optional value of type 'any IINKICanvas' to 'nil' always returns true
+      #expect(canvas != nil)
+              ~~~~~~ ^  ~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Rendering/DisplayViewModelTests.swift:440:22: comparing non-optional value of type 'any IINKICanvas' to 'nil' always returns true
+      #expect(canvas != nil)
+              ~~~~~~ ^  ~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Rendering/DisplayViewModelTests.swift:470:22: comparing non-optional value of type 'any IINKICanvas' to 'nil' always returns true
+      #expect(canvas != nil)
+              ~~~~~~ ^  ~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Rendering/DisplayViewModelTests.swift:640:22: comparing non-optional value of type 'any IINKICanvas' to 'nil' always returns true
+      #expect(canvas != nil)
+              ~~~~~~ ^  ~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Rendering/OffscreenRenderSurfacesTests.swift:663:21: instance method 'lock' is unavailable from asynchronous contexts; Use async-safe scoped locking instead; this is an error in the Swift 6 language mode
+            idsLock.lock()
+                    ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Rendering/OffscreenRenderSurfacesTests.swift:665:21: instance method 'unlock' is unavailable from asynchronous contexts; Use async-safe scoped locking instead; this is an error in the Swift 6 language mode
+            idsLock.unlock()
+                    ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Rendering/OffscreenRenderSurfacesTests.swift:842:33: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+      surfaces.scale = UIScreen.main.scale
+                                ^
+[InkOSTests] Compiling BundleManagerTests.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Storage/BundleManagerTests.swift:26:23: 'is' test is always true
+      #expect(bundles is [NotebookMetadata])
+                      ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Storage/BundleManagerTests.swift:34:23: 'is' test is always true
+      #expect(bundles is [NotebookMetadata])
+                      ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Storage/BundleManagerTests.swift:536:22: 'is' test is always true
+      #expect(handle is DocumentHandle)
+                     ^
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Storage/BundleManagerTests.swift:568:22: no 'async' operations occur within 'await' expression
+      let handleId = await handle.notebookID
+                     ^
+[InkOSTests] Compiling BundleStorageTests.swift
+[!]  /Users/andrewallen/Desktop/swift_projects/InkOS-search/InkOSTests/Storage/BundleStorageTests.swift:543:22: 'is' test is always true
+      #expect(result is URL)
+                     ^
+[InkOSTests] Compiling IndexingCoordinatorTests.swift
+[InkOSTests] Compiling IndexingIntegrationTests.swift
+[InkOSTests] Compiling IndexingModelsTests.swift
+[InkOSTests] Copy arm64-apple-ios-simulator.swiftmodule -> InkOSTests.swiftmodule
+[InkOSTests] Copy arm64-apple-ios-simulator.swiftdoc -> InkOSTests.swiftdoc
+[InkOSTests] Copy arm64-apple-ios-simulator.abi.json -> InkOSTests.abi.json
+[InkOSTests] Copy arm64-apple-ios-simulator.swiftsourceinfo -> InkOSTests.swiftsourceinfo
+[InkOSTests] Linking InkOSTests
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOSTests] Extract App Intents Metadata
+[InkOSTests] RegisterExecutionPolicyException InkOSTests.xctest
+[InkOSTests] Touching InkOSTests.xctest
+[InkOS] RegisterExecutionPolicyException InkOS.app
+[InkOS] Validate InkOS.app
+[InkOS] Touching InkOS.app
+note: Run script build phase 'Copy Recognition Assets' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'InkOS' from project 'InkOS')
+Testing started
+Test Suite SearchIndexSearchTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchIndexIsDocumentIndexedTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite BatchIndexingResultTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite BatchUpsertResultTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchIndexConfigurationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite InNoteSearchMatchTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite InputViewModelTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchIndexEntryTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite MockEmbeddingServiceTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite EmbeddingServiceTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite IndexingQueueTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite MockVectorStoreClientTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite EmbeddingTaskTypeTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite MockIndexingCoordinatorTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchScopeTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchIndexRemoveDocumentTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchIndexConstantsTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ChunkingServiceTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ViewportStateTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite VectorStoreConstantsTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchIndexErrorTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ExtractionErrorTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite IndexingEdgeCaseTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite IndexingPipelineIntegrationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchIndexTriggersTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite QueuedIndexRequestTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite MatchSourceTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite EditorViewModelTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite IndexingNotificationKeyTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite IndexingResultTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite EngineFactoryMethodTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite MockContentExtractorTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite OffscreenRenderSurfacesTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite MockFolderLookupTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite VectorStoreClientTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite JIIXParsingModelTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite NotebookModelTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite MatchSourceDeterminationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchIndexIndexDocumentTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchIndexIndexDocumentsTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite IndexingResultFactoryTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ChunkingErrorTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ContentExtractorTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite BundleStorageTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchIndexClearIndexTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite IndexingConfigurationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchServiceIntegrationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchServiceActorTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchIndexEdgeCaseTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchIndexInitializeTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite IndexRequestTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite MockIndexingQueueTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite VectorStoreErrorTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite MockChunkingServiceTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchServiceEdgeCaseTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ContentBlockTypeTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite EngineProviderTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite IndexingProgressTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite IndexedChunkTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchIndexDocumentNeedsReindexTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchResultTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchServiceSearchInNoteTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DocumentHandleTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite IndexedMatchTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DisplayViewModelTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite MockSearchIndexTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite VectorSearchRequestTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite VectorSearchResultTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchServiceConstantsTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchServiceSearchAllTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite IndexingStateTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ManifestTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchIndexIntegrationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite IndexingCoordinatorErrorHandlingTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite BundleManagerTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite EngineStatePreservationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite IndexingErrorTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ManifestVersionTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchServiceErrorTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite InputViewModelTests/ConfigureEditorUITests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite SearchServiceSearchInFolderTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite InputViewModelTests/InitializationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite BatchDeleteResultTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite InputViewModelTests/StopInertialScrollTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite InputViewModelTests/EdgeCaseTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite InputViewModelTests/BoundaryCalculationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite InputViewModelTests/ConstantsValidationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite InputViewModelTests/InputModeTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite InputViewModelTests/EditorViewSizeTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ViewportStateTests/EquatableTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ViewportStateTests/ValidationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite InputViewModelTests/PanGestureTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite InputViewModelTests/PinchGestureTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ViewportStateTests/InitializationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ChunkingServiceTests/TokenEstimationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite InputViewModelTests/ToolSelectionTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ViewportStateTests/CodableTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ViewportStateTests/DefaultStateTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ChunkingServiceTests/DocumentChunkModelTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ChunkingServiceTests/LargeTextChunkingTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ChunkingServiceTests/ParagraphSplittingTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ChunkingServiceTests/BasicChunkingTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ChunkingServiceTests/ChunkIndexingTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite EditorViewModelTests/PublishedPropertiesTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite EditorViewModelTests/ToolSelectionTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite EditorViewModelTests/InkColorTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite EditorViewModelTests/LifecycleTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite EditorViewModelTests/EditOperationsTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite EditorViewModelTests/ToolUpdateTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite EditorViewModelTests/EdgeCaseTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite EditorViewModelTests/SetEditorViewSizeTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite OffscreenRenderSurfacesTests/ReleaseSurfaceTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite OffscreenRenderSurfacesTests/ScalePropertyTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite VectorStoreClientTests/UpsertOperationsTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite OffscreenRenderSurfacesTests/MemoryManagementTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite OffscreenRenderSurfacesTests/ThreadSafetyTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite OffscreenRenderSurfacesTests/IDGenerationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite OffscreenRenderSurfacesTests/AddSurfaceTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite OffscreenRenderSurfacesTests/EdgeCaseTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite OffscreenRenderSurfacesTests/GetSurfaceBufferTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite EditorViewModelTests/InkWidthTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite NotebookModelTests/EdgeCaseTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite OffscreenRenderSurfacesTests/IntegrationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite NotebookModelTests/DisplayNameTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite NotebookModelTests/InitializationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite NotebookModelTests/NotebookIDTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite NotebookModelTests/ValueSemanticsTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite NotebookModelTests/VersionTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite NotebookModelTests/UseCaseTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite NotebookModelTests/ConsistencyTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite NotebookModelTests/CreatedAtTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite NotebookModelTests/ModifiedAtTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite BundleStorageTests/URLPropertiesTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ContentExtractorTests/JIIXExtractionTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite BundleStorageTests/DirectoryContentsTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite NotebookModelTests/FieldExclusionTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite NotebookModelTests/PerformanceTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite BundleStorageTests/ConcurrentAccessTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ContentExtractorTests/EmptyContentTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite BundleStorageTests/FileSystemBehaviorTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite BundleStorageTests/DirectoryPathTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite BundleStorageTests/ErrorConditionTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite BundleStorageTests/DirectoryCreationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite BundleStorageTests/ReturnTypeTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite BundleStorageTests/EdgeCaseTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DocumentHandleTests/GetPartCountTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DocumentHandleTests/PropertiesTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite BundleStorageTests/IdempotencyTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DocumentHandleTests/SavePackageToTempTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DocumentHandleTests/EnsureInitialPartTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DocumentHandleTests/ErrorDescriptionsTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DocumentHandleTests/CloseTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DocumentHandleTests/SavePackageTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DocumentHandleTests/UpdateViewportStateTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DocumentHandleTests/InitializationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DisplayViewModelTests/MemoryManagementTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DocumentHandleTests/GetPackageTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DocumentHandleTests/GetPartTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DocumentHandleTests/ThreadSafetyTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DisplayViewModelTests/SetupTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DisplayViewModelTests/OffscreenSurfaceTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DisplayViewModelTests/RefreshDisplayTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DisplayViewModelTests/EdgeCaseTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DisplayViewModelTests/PropertiesTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DisplayViewModelTests/OffscreenCanvasTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DisplayViewModelTests/InitializationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DisplayViewModelTests/PublishedPropertiesTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite DisplayViewModelTests/IntegrationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ManifestTests/InitializationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ManifestTests/SendableTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ManifestTests/EdgeCaseTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ManifestTests/CodableTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite BundleManagerTests/ListBundlesTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+Test Suite ManifestTests/MutabilityTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+    ✔ [SearchIndexConfigurationTests] defaultConfigurationValues on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexConfigurationTests] customConfiguration on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIsDocumentIndexedTests] isIndexedAfterRemoval on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexSearchTests] searchWithZeroLimit on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIsDocumentIndexedTests] isIndexedReturnsTrue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIsDocumentIndexedTests] isIndexedRecordsCheck on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexSearchTests] searchNoResults on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InNoteSearchMatchTests] conformsToIdentifiable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BatchIndexingResultTests] aggregatesResults on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIsDocumentIndexedTests] isIndexedReturnsFalse on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexConfigurationTests] testingConfigurationValues on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexSearchTests] searchWithDocumentScope on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InNoteSearchMatchTests] idPropertyReturnsMatchIndex on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexSearchTests] searchWithFolderScope on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexEntryTests] entryWithEmptyContent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InNoteSearchMatchTests] differentMatchIndexNotEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InNoteSearchMatchTests] isEquatable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexSearchTests] searchRecordsParameters on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BatchUpsertResultTests] tracksCounts on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InNoteSearchMatchTests] boundingBoxNilUntilPhase5 on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexEntryTests] entryEquatable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexSearchTests] searchReturnsConfiguredResults on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockEmbeddingServiceTests] recordsTaskTypes on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InNoteSearchMatchTests] storesSnippetCorrectly on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexEntryTests] pdfEntryInFolder on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockEmbeddingServiceTests] returnsMockEmbeddings on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockVectorStoreClientTests] recordsUpsertedChunks on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexEntryTests] notebookEntryAtRoot on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BatchUpsertResultTests] failuresIncludeDetails on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockVectorStoreClientTests] recordsSearchQueries on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockVectorStoreClientTests] getsChunksSortedByIndex on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockVectorStoreClientTests] resetClearsState on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockVectorStoreClientTests] recordsDeletedChunkIDs on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockVectorStoreClientTests] upsertsAndRetrieves on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingQueueTests] removeDecreasesSize on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockVectorStoreClientTests] respectsSearchLimit on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingQueueTests] enqueueSameDocumentReplaces on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockVectorStoreClientTests] searchesWithFilter on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingQueueTests] enqueueDifferentDocumentsAdds on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockVectorStoreClientTests] deletesByDocumentID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingQueueTests] cancelAllClearsQueue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingQueueTests] enqueueIncreasesSize on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockEmbeddingServiceTests] resetClearsState on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingQueueTests] initialQueueSize on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingQueueTests] removeNonExistentIsNoOp on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EmbeddingTaskTypeTests] retrievalDocumentRawValue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingQueueTests] allowsReplacingWhenFull on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockIndexingCoordinatorTests] recordsCancelAllCalled on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EmbeddingTaskTypeTests] classificationRawValue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EmbeddingTaskTypeTests] isCodable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingQueueTests] initialNotProcessing on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockEmbeddingServiceTests] recordsRequestedTexts on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockIndexingCoordinatorTests] recordsIndexedRequests on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingQueueTests] getPendingDocumentIDsReturnsAll on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EmbeddingTaskTypeTests] semanticSimilarityRawValue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingQueueTests] forceProcessProcessesAll on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockIndexingCoordinatorTests] returnsMockResult on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EmbeddingTaskTypeTests] retrievalQueryRawValue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockIndexingCoordinatorTests] returnsMockBatchResult on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EmbeddingTaskTypeTests] clusteringRawValue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockIndexingCoordinatorTests] recordsScheduledRequests on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockIndexingCoordinatorTests] recordsRemovedDocumentIDs on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorStoreConstantsTests] chunksCollectionName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorStoreConstantsTests] embeddingDimensions on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexConstantsTests] tokenizerConfig on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockIndexingCoordinatorTests] recordsIndexAllNotebooksCalled on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexConstantsTests] debounceInterval on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockIndexingCoordinatorTests] resetClearsState on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorStoreConstantsTests] maxTextsPerRequest on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorStoreConstantsTests] embeddingModel on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchScopeTests] documentScopeEquality on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexRemoveDocumentTests] removeAndReindex on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexRemoveDocumentTests] removeIndexedDocument on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexConstantsTests] ftsTableName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorStoreConstantsTests] maxBatchSize on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexConstantsTests] titleWeightHigher on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorStoreConstantsTests] defaultSearchLimit on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexRemoveDocumentTests] removeDocumentRecordsRemoval on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockIndexingCoordinatorTests] throwsConfiguredError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingQueueTests] throwsWhenQueueFull on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexSearchTests] searchThrowsError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockVectorStoreClientTests] throwsConfiguredError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockEmbeddingServiceTests] throwsConfiguredError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexEntryTests] entryCodable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchScopeTests] allScopeConformance on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchScopeTests] folderScopeInequality on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexRemoveDocumentTests] removeNonExistentDocument on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchScopeTests] documentScopeInequality on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexErrorTests] documentNotFoundErrorsEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexErrorTests] invalidQueryErrorsNotEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexErrorTests] initializationFailedDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexErrorTests] databaseErrorDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchScopeTests] folderScopeEquality on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexErrorTests] invalidQueryDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexErrorTests] documentNotFoundDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexErrorTests] fileSystemErrorDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchScopeTests] differentScopeTypesNotEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexErrorTests] sameTypeErrorsEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingEdgeCaseTests] handlesSpecialCharsInDocumentID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexErrorTests] differentTypesNotEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingEdgeCaseTests] handlesVeryLongText on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexErrorTests] invalidQueryErrorsEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingEdgeCaseTests] embeddingDimensionsAreConsistent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingEdgeCaseTests] preservesMixedBlockTypes on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingEdgeCaseTests] handlesWhitespaceOnlyContent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingPipelineIntegrationTests] documentReIndexingReplacesOldChunks on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingEdgeCaseTests] handlesUnicodeContent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingEdgeCaseTests] preservesPageNumbersForPDF on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingEdgeCaseTests] chunkIndicesRemainSequential on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingPipelineIntegrationTests] pipelineHandlesEmptyDocument on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ExtractionErrorTests] jiixParsingFailedDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingPipelineIntegrationTests] fullPipelineSuccess on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingPipelineIntegrationTests] pipelinePropagatesChunkingErrors on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingPipelineIntegrationTests] multipleDocumentsIndexedIndependently on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingPipelineIntegrationTests] pipelinePropagatesExtractionErrors on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingPipelineIntegrationTests] pipelinePropagatesStorageErrors on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ExtractionErrorTests] jiixFileNotFoundDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [QueuedIndexRequestTests] preservesRequest on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingPipelineIntegrationTests] searchReturnsRelevantResults on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ExtractionErrorTests] documentNotFoundDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingPipelineIntegrationTests] pipelinePropagatesEmbeddingErrors on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ExtractionErrorTests] errorsAreEquatable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ExtractionErrorTests] noContentExtractedDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockContentExtractorTests] returnsMockContent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexTriggersTests] notificationsReceivedWhenObserving on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [QueuedIndexRequestTests] recordsQueueTime on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingResultTests] successResult on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [QueuedIndexRequestTests] uniqueID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingPipelineIntegrationTests] batchOperationsHandleLargeDocumentSets on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexTriggersTests] stopObservingClearsState on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingResultTests] failureResult on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexTriggersTests] startObservingSetsState on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexTriggersTests] notificationsIgnoredWhenNotObserving on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexTriggersTests] multipleStartCalls on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MatchSourceTests] invalidRawValueReturnsNil on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexTriggersTests] notificationsIgnoredAfterStop on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockContentExtractorTests] resetClearsState on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MatchSourceTests] isEquatable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockContentExtractorTests] throwsConfiguredError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexTriggersTests] resetClearsAllState on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MatchSourceTests] hasPdfTextCase on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexTriggersTests] stopObservingWhenNotStarted on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingNotificationKeyTests] keyValues on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MatchSourceTests] hasTitleCase on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MatchSourceTests] rawValueIsCorrect on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MatchSourceTests] isCodable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockContentExtractorTests] recordsExtractionCalls on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MatchSourceTests] canBeCreatedFromRawValue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [JIIXParsingModelTests] canDecodeJIIXDocument on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MatchSourceTests] hasHandwritingCase on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockFolderLookupTests] resetClearsAllState on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockFolderLookupTests] returnsNilForUnconfigured on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockFolderLookupTests] returnsConfiguredFolderName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MatchSourceDeterminationTests] partialQueryTermInTitleMatches on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIndexDocumentsTests] indexDocumentsRecordsBatch on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockFolderLookupTests] tracksLookupCalls on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIndexDocumentsTests] indexMultipleDocuments on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [JIIXParsingModelTests] handlesMissingOptionalFields on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MatchSourceDeterminationTests] titleMatchTakesPrecedence on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIndexDocumentsTests] indexEmptyArray on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIndexDocumentTests] indexDocumentThrowsError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingResultFactoryTests] successFactory on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIndexDocumentTests] indexSpecialCharacters on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIndexDocumentTests] indexDocumentRecordsEntry on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIndexDocumentsTests] indexDocumentsThrowsError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIndexDocumentTests] indexNewDocument on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MatchSourceDeterminationTests] emptyTitleResultsInContentMatchSource on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIndexDocumentTests] indexDocumentUpdatesExisting on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingResultFactoryTests] failureFactory on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIndexDocumentsTests] indexLargeBatch on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIndexDocumentTests] indexEmptyContent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingErrorTests] emptyInputDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingErrorTests] invalidChunkSizeDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [JIIXParsingModelTests] canDecodeJIIXElement on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingErrorTests] invalidOverlapDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceIntegrationTests] multipleDocumentTypesCorrectMatchSources on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceActorTests] isActor on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingErrorTests] errorsAreEquatable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceIntegrationTests] mixedFolderAndRootDocuments on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexClearIndexTests] clearRecordsCall on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingConfigurationTests] testingConfiguration on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockIndexingQueueTests] recordsRemovedDocumentIDs on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockIndexingQueueTests] resetClearsState on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexClearIndexTests] indexUsableAfterClear on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexClearIndexTests] clearRemovesAll on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockIndexingQueueTests] recordsEnqueuedRequests on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexRequestTests] pdfDocumentType on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexRequestTests] notebookDocumentID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorStoreErrorTests] errorsAreEquatable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexRequestTests] notebookDocumentType on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexRequestTests] equatable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexClearIndexTests] clearThrowsError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexRequestTests] pdfDocumentID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexClearIndexTests] clearEmptyIndex on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorStoreErrorTests] authenticationFailedDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorStoreErrorTests] embeddingGenerationFailedDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexEdgeCaseTests] negativeLimitHandled on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockIndexingQueueTests] throwsConfiguredError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexEdgeCaseTests] indexVeryLongContent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexEdgeCaseTests] searchNonExistentFolder on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockIndexingQueueTests] recordsCancelAllCalled on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexRequestTests] preservesModifiedAt on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexEdgeCaseTests] searchNonExistentDocument on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexEdgeCaseTests] sqlInjectionSafe on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexInitializeTests] initializeCallable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingConfigurationTests] defaultConfiguration on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexInitializeTests] initializeIdempotent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexEdgeCaseTests] emptyQueryThrowsError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentBlockTypeTests] shapeTypeRawValue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceIntegrationTests] caseInsensitiveMatchingAcrossQueries on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentBlockTypeTests] canInitializeFromString on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentBlockTypeTests] textTypeRawValue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockChunkingServiceTests] throwsConfiguredError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentBlockTypeTests] returnsNilForInvalidString on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexEdgeCaseTests] whitespaceQueryThrowsError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentBlockTypeTests] drawingTypeRawValue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentBlockTypeTests] mathTypeRawValue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingProgressTests] progressProperties on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexedChunkTests] isEquatable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentBlockTypeTests] unknownTypeRawValue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorStoreErrorTests] firestoreWriteFailedDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorStoreErrorTests] invalidEmbeddingDimensionsDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockChunkingServiceTests] recordsChunkCalls on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchResultTests] differentDocumentIDNotEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexedChunkTests] isIdentifiable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchResultTests] folderPathIndicatesFolderLocation on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchResultTests] nilFolderPathIndicatesRoot on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockChunkingServiceTests] returnsMockChunks on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexedChunkTests] stores768DimEmbedding on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchResultTests] idPropertyReturnsDocumentID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexRequestTests] preservesDisplayName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchResultTests] isEquatable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorStoreErrorTests] rateLimitExceededDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchResultTests] conformsToIdentifiable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchResultTests] storesAllProperties on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexedChunkTests] preservesDocumentMetadata on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexDocumentNeedsReindexTests] needsReindexForNewerIndexed on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchInNoteTests] returnsEmptyArrayPhase5Stub on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexDocumentNeedsReindexTests] needsReindexForOutdated on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexDocumentNeedsReindexTests] needsReindexRecordsCheck on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexDocumentNeedsReindexTests] needsReindexForUpToDate on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexDocumentNeedsReindexTests] needsReindexForNewDocument on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexedMatchTests] matchIdProperty on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentBlockTypeTests] isCodable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceEdgeCaseTests] queryWithSpecialCharactersHandled on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceEdgeCaseTests] queryWithTabsAndNewlinesHandled on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchInNoteTests] emptyQueryThrowsError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchInNoteTests] whitespaceQueryThrowsError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceEdgeCaseTests] veryLongQueryHandled on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexedMatchTests] matchWithFolderID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceEdgeCaseTests] queryWithUnicodeCharactersHandled on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorSearchResultTests] isIdentifiable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexedMatchTests] matchEquatable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorSearchRequestTests] defaultValues on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorSearchResultTests] includesScore on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexedMatchTests] createsValidMatch on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexInitializeTests] initializeThrowsError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorSearchRequestTests] customValues on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceConstantsTests] defaultResultLimitIs25 on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockSearchIndexTests] searchResultsConfigurationWorks on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchAllTests] noFolderLookupsWhenNoResults on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceConstantsTests] defaultResultLimitIsPositive on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchAllTests] trimsQueryBeforeValidation on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockSearchIndexTests] resetClearsState on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchAllTests] returnsNilFolderPathForRootLevel on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchAllTests] handlesDeletedFolderGracefully on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchAllTests] matchSourcePdfTextForPdfContent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchAllTests] passesScopeAllToIndex on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchAllTests] emptyQueryThrowsError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchAllTests] matchSourceTitleCaseInsensitive on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [MockSearchIndexTests] errorConfigurationWorks on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchAllTests] resolvesFolderIDToFolderPath on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchAllTests] whitespaceQueryThrowsError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchAllTests] matchSourceHandwritingForNotebookContent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchAllTests] matchSourceTitleWhenQueryInTitle on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingCoordinatorErrorHandlingTests] batchResultTracksAllDocuments on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingCoordinatorErrorHandlingTests] handlesMultipleSequentialRequests on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchAllTests] returnsEmptyArrayWhenNoMatches on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingCoordinatorErrorHandlingTests] throwsErrorOnSchedule on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingCoordinatorErrorHandlingTests] handlesMultipleRemoveOperations on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchAllTests] transformsIndexedMatchToSearchResult on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestVersionTests] supportedContainsVersionOne on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestVersionTests] supportedContainsCurrent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestVersionTests] supportedIsNotEmpty on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingCoordinatorErrorHandlingTests] failureResultHasZeroChunks on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchAllTests] respectsDefaultResultLimit on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIntegrationTests] reindexCheckWorkflow on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestVersionTests] currentVersionIsOne on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingStateTests] isCodable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingCoordinatorErrorHandlingTests] throwsErrorOnIndexAll on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIntegrationTests] folderScopedWorkflow on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingCoordinatorErrorHandlingTests] indexNotebookDelegates on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexIntegrationTests] fullWorkflow on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingStateTests] rawValues on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingErrorTests] errorsEquatable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchAllTests] passesLimitToIndex on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingErrorTests] queueFullDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingCoordinatorErrorHandlingTests] throwsDocumentNotFoundOnRemove on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingErrorTests] documentNotFoundDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingCoordinatorErrorHandlingTests] pdfRequestHasCorrectType on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceErrorTests] emptyQueryDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceErrorTests] indexNotInitializedEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceErrorTests] folderLookupFailedDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceErrorTests] folderLookupFailedSameReasonEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingErrorTests] extractionFailedDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceErrorTests] folderLookupFailedDifferentReasonsNotEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceErrorTests] differentTypesNotEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceErrorTests] indexErrorSameUnderlyingEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceErrorTests] indexErrorDifferentUnderlyingNotEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchInFolderTests] emptyQueryThrowsError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BatchDeleteResultTests] successfulDelete on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceErrorTests] emptyQueryEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BatchDeleteResultTests] failedDelete on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchInFolderTests] returnsEmptyArrayWhenNoMatchesInFolder on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchInFolderTests] transformsResultsSameAsSearchAll on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchInFolderTests] whitespaceQueryThrowsError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceErrorTests] indexNotInitializedDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceSearchInFolderTests] passesFolderScopeToIndex on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/EquatableTests] differentScaleNotEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/EquatableTests] differentOffsetYNotEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/EquatableTests] differentOffsetXNotEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceErrorTests] indexErrorWrapsUnderlying on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/InitializationTests] initializeWithLargeOffsets on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/InitializationTests] initializeWithNegativeOffsets on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/DefaultStateTests] defaultOffsetYIsZero on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/EquatableTests] defaultStatesAreEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/EquatableTests] equalStatesAreEqual on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/DefaultStateTests] defaultStateIsValid on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/DefaultStateTests] defaultScaleIsOne on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/InitializationTests] initializeWithCustomValues on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/InitializationTests] initializeWithZeroOffsets on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/DefaultStateTests] defaultOffsetXIsZero on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/DocumentChunkModelTests] isIdentifiable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/DocumentChunkModelTests] isEquatable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/CodableTests] decodeFromJSONString on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/CodableTests] encodedJSONHasExpectedKeys on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/CodableTests] encodeAndDecode on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/LargeTextChunkingTests] allTextPreserved on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/CodableTests] encodeAndDecodeDefault on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/LargeTextChunkingTests] createsMultipleChunks on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/CodableTests] decodingFailsWithWrongTypeOffsetX on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/CodableTests] decodingFailsWithMissingOffsetX on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/CodableTests] decodingFailsWithMissingOffsetY on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithAllNaN on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithScaleBelowMinimum on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithPositiveInfinityOffsetY on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/CodableTests] decodingFailsWithMissingScale on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithNegativeInfinityScale on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithScaleAtUpperBoundary on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithVeryLargeScale on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithScaleAtLowerBoundary on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] validAtTypicalZoomLevels on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] validWithMinimumScale on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithNegativeInfinityOffsetY on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithExtremeScaleAboveMax on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/LargeTextChunkingTests] handlesVeryLongWord on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithNegativeScale on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] validWithDefaultValues on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithPositiveInfinityOffsetX on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithNaNScale on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithNegativeInfinityOffsetX on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithNaNOffsetY on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] validWithZoomedAndScrolled on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithZeroScale on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] validWithMaximumScale on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] validWithNegativeFiniteOffsets on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/BasicChunkingTests] shortTextSingleChunk on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/BasicChunkingTests] preservesMetadata on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithInfinityScale on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/TokenEstimationTests] chunkTokenCountsReasonable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/BasicChunkingTests] emptyTextThrows on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/ChunkIndexingTests] firstChunkIndexZero on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/TokenEstimationTests] estimatesEmptyAsZero on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/TokenEstimationTests] estimatesCharsPerToken on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/ChunkIndexingTests] chunksSequentiallyIndexed on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/BasicChunkingTests] chunksHaveUniqueIDs on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/ParagraphSplittingTests] handlesMultipleEmptyLines on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/ParagraphSplittingTests] handlesSingleParagraph on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/EdgeCaseTests] mixedDirectionText on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/EdgeCaseTests] zeroWidthCharacters on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/EdgeCaseTests] combiningCharacters on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EmbeddingServiceTests] generatesSingleEmbedding on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/ValidationTests] invalidWithNaNOffsetX on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/EdgeCaseTests] multipleModelsAreIndependent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/EdgeCaseTests] rtlTextInDisplayName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/DisplayNameTests] displayNameStandardText on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/EdgeCaseTests] nullCharacterInDisplayName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/DisplayNameTests] displayNameWithUnicode on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/EdgeCaseTests] minimumValidData on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ViewportStateTests/CodableTests] decodingFailsWithMalformedJSON on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/DisplayNameTests] displayNameWithEmoji on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/DisplayNameTests] displayNameIsMutable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/DisplayNameTests] displayNameWithDate on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/EdgeCaseTests] asciiSpecialCharacters on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/DisplayNameTests] displayNameWithNewlines on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/DisplayNameTests] displayNameWithTabs on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/DisplayNameTests] displayNameCanBeUpdated on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/NotebookIDTests] notebookIDIsUUIDFormat on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/DisplayNameTests] displayNameEmptyString on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/DisplayNameTests] displayNameWhitespaceOnly on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/ParagraphSplittingTests] splitsByDoubleNewlines on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/NotebookIDTests] notebookIDPreservesUppercase on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/VersionTests] versionIsImmutable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/DisplayNameTests] displayNameVeryLong on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/NotebookIDTests] notebookIDIsImmutable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/VersionTests] versionPreserved on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/NotebookIDTests] notebookIDWithLowercase on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/ValueSemanticsTests] notebookModelIsValueType on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/ConsistencyTests] immutableFieldsRemainUnchanged on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/VersionTests] versionEqualsCurrentVersion on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/ConsistencyTests] mutableAndImmutableFieldsDistinguished on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/ValueSemanticsTests] modifyingCopyDoesNotAffectOriginal on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/UseCaseTests] sortByCreationDate on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/EdgeCaseTests] preservesExactStrings on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/ConsistencyTests] multipleMutationsAccumulated on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/NotebookIDTests] notebookIDEmptyString on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/UseCaseTests] modelCanCalculateAge on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/InitializationTests] versionCopied on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/UseCaseTests] modelForUIDisplay on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/InitializationTests] displayNameCopied on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/UseCaseTests] sortByModifiedDate on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/InitializationTests] notebookIDCopied on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/InitializationTests] modifiedAtCopied on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/UseCaseTests] modelIDAsKey on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/ValueSemanticsTests] assignmentCreatesIndependentCopy on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/InitializationTests] createdAtCopied on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/DisplayNameTests] displayNameWithMultipleEmoji on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/InitializationTests] initializationIsSimpleCopy on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/ModifiedAtTests] modifiedAtEqualsCreatedAtInitially on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/CreatedAtTests] createdAtNeverModified on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/ModifiedAtTests] modifiedAtCanBeSetToFuture on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/ModifiedAtTests] modifiedAtCanBeUpdated on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/ModifiedAtTests] modifiedAtIsMutable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/UseCaseTests] modelCanBeRenamed on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/InitializationTests] createsFromManifest on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/CreatedAtTests] createdAtIsImmutable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/CreatedAtTests] createdAtMatchesManifest on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/ModifiedAtTests] modifiedAtCanBeSetToPast on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/CreatedAtTests] createdAtHasFullPrecision on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/ModifiedAtTests] modifiedAtUpdateDoesNotAffectCreatedAt on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/URLPropertiesTests] bundlesDirectoryPathComponentsCorrect on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/URLPropertiesTests] bundlesDirectoryNoTrailingSlash on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentExtractorTests/EmptyContentTests] emptyExtractionResult on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentExtractorTests/JIIXExtractionTests] emptyContentForNoElements on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentExtractorTests/EmptyContentTests] emptyPDFExtractionResult on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentExtractorTests/JIIXExtractionTests] extractsTextFromSimpleJIIX on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentExtractorTests/JIIXExtractionTests] extractsMixedContent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentExtractorTests/JIIXExtractionTests] extractsMathWithPrefix on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentExtractorTests/JIIXExtractionTests] preservesDocumentMetadata on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentExtractorTests/JIIXExtractionTests] extractsMultipleBlocksSorted on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineFactoryMethodTests] engineCanCreateToolController on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentExtractorTests/JIIXExtractionTests] emptyContentForEmptyLabels on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/ReturnTypeTests] bundlesDirectoryURLToString on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/URLPropertiesTests] bundlesDirectoryURLCanBeResolved on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/ReturnTypeTests] bundlesDirectoryReturnsURL on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/URLPropertiesTests] bundlesDirectoryURLIsStandardized on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/FieldExclusionTests] noLastAccessedAt on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentExtractorTests/JIIXExtractionTests] skipsDrawingBlocks on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/DirectoryContentsTests] bundlesDirectoryInitialContents on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/URLPropertiesTests] bundlesDirectoryCanConstructChildURLs on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentExtractorTests/JIIXExtractionTests] skipsShapeBlocks on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/DirectoryPathTests] bundlesDirectoryWithinDocuments on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/DirectoryPathTests] bundlesDirectoryEndsWithNotebooks on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/ReturnTypeTests] bundlesDirectoryURLConformsToProtocols on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/DirectoryContentsTests] bundlesDirectorySupportsEnumeration on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/DirectoryPathTests] bundlesDirectoryPathContainsDocuments on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/FileSystemBehaviorTests] bundlesDirectoryPersistsAcrossCalls on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentExtractorTests/JIIXExtractionTests] sortsSameRowByXPosition on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/ErrorConditionTests] bundlesDirectoryResultIsWritable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/FileSystemBehaviorTests] bundlesDirectorySupportsNestedStructures on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/ErrorConditionTests] bundlesDirectoryAllowsSubdirectoryCreation on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/FieldExclusionTests] noViewportState on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/PerformanceTests] rapidMutations on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/FileSystemBehaviorTests] bundlesDirectorySupportsLargeFiles on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/DirectoryPathTests] bundlesDirectoryIsFileURL on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/DirectoryPathTests] bundlesDirectoryIsAbsolutePath on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/ErrorConditionTests] bundlesDirectoryThrowsWhenFileExistsAtPath on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ContentExtractorTests/JIIXExtractionTests] throwsErrorForInvalidJSON on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/ConcurrentAccessTests] rapidSequentialCallsDoNotFail on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/EdgeCaseTests] bundlesDirectoryURLManipulation on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [NotebookModelTests/PerformanceTests] rapidCreation on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/EdgeCaseTests] bundlesDirectoryHandlesCreationDeletionCycles on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/EdgeCaseTests] bundlesDirectoryNoSpecialCharacters on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/DirectoryCreationTests] bundlesDirectoryCreatesDirectory on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/DirectoryCreationTests] bundlesDirectoryIdempotent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/DirectoryCreationTests] bundlesDirectoryCreatesIntermediateDirectories on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexedChunkTests] isSendable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/DirectoryCreationTests] bundlesDirectoryReturnsExistingDirectory on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DocumentHandleTests/ErrorDescriptionsTests] engineUnavailableDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/IdempotencyTests] firstCallCreatesSubsequentCallsReturn on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DocumentHandleTests/ErrorDescriptionsTests] packageNotAvailableDescription on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] engineProviderRequiresMainActor on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/IdempotencyTests] returnsSameURLAcrossManyCalls on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] invalidCertificateErrorMessageFormat on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] errorMessageCanBeSetToEmpty on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] providerConformsToAnyObject on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] engineTypeIsIINKEngine on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] engineReturnsCachedResult on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] sharedInstanceTypeMatchesSelf on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] engineConfigurationAccessible on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] emptyCertificateErrorMessageFormat on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] engineErrorMessageIsSettable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] providerHandlesRapidAccess on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] sharedInstanceReturnsSameInstance on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] engineIsLazyLoaded on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] engineErrorMessageEmptyOnSuccess on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] enginePersistsAcrossAccesses on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] engineReturnsEngineWhenCertificateValid on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] engineErrorMessageRemainsEmptyAfterSuccessfulAccess on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] engineAndErrorMessageConsistent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] errorMessageHandlesSpecialCharacters on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] repeatedEngineAccessDoesNotChangeErrorState on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] engineErrorMessageContainsCertificateErrorWhenEmpty on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineProviderTests] sharedInstanceIsReferenceType on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/CodableTests] encodeAndDecodeWithViewport on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/CodableTests] roundTripWithSpecialCharacters on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/CodableTests] decodingFailsWithInvalidDateFormat on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/CodableTests] encodeAndDecode on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/CodableTests] decodingFailsWithMissingVersion on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/EdgeCaseTests] emptyNotebookID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/CodableTests] decodeWithoutOptionalFields on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/CodableTests] encodedJSONHasExpectedKeys on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/CodableTests] decodeWithAllFields on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/EdgeCaseTests] newlinesInDisplayName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/CodableTests] decodingFailsWithMissingNotebookID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/EdgeCaseTests] distantFutureDates on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/CodableTests] datesEncodedInISO8601 on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/EdgeCaseTests] unknownFieldsIgnored on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/InitializationTests] initializeWithUnicodeDisplayName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/EdgeCaseTests] versionZeroDecodes on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/EdgeCaseTests] negativeVersionDecodes on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/EdgeCaseTests] whitespaceDisplayName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/CodableTests] decodingFailsWithMissingDisplayName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/EdgeCaseTests] futureVersionDecodes on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/EdgeCaseTests] tabsInDisplayName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/CodableTests] decodingFailsWithMissingCreatedAt on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/EdgeCaseTests] floatingPointPrecision on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/EdgeCaseTests] distantPastDates on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/InitializationTests] viewportStateIsNilOnInit on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/InitializationTests] initializeWithEmojiDisplayName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [ManifestTests/InitializationTests] modifiedAtEqualsCreatedAt on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [ManifestTests/InitializationTests] initializeWithLongDisplayName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/InitializationTests] lastAccessedAtEqualsCreatedAt on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [ManifestTests/InitializationTests] initializeWithEmptyDisplayName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [ManifestTests/MutabilityTests] modifiedAtCanBeModified on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [ManifestTests/InitializationTests] initializeWithSpecialCharacters on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/InitializationTests] createdAtIsNow on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [ManifestTests/MutabilityTests] displayNameCanBeModified on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [ManifestTests/InitializationTests] notebookIDIsSet on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [ManifestTests/CodableTests] decodingFailsWithMissingModifiedAt on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/MutabilityTests] lastAccessedAtCanBeSetToNil on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [ManifestTests/MutabilityTests] viewportStateCanBeModified on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [ManifestTests/InitializationTests] initializeWithUUID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [ManifestTests/MutabilityTests] viewportStateCanBeSetToNil on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [EngineStatePreservationTests] configurationPersistsOnEngine on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/InitializationTests] displayNameIsSet on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [ManifestTests/CodableTests] decodingFailsWithMalformedJSON on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/MutabilityTests] lastAccessedAtCanBeModified on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [ManifestTests/InitializationTests] versionIsSetToCurrent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [InputViewModelTests/ConfigureEditorUITests] configureEditorUISetViewSizeAndMargins on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/ConfigureEditorUITests] configureEditorUIWithNilEditor on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/CodableTests] decodingFailsWithWrongTypeVersion on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EngineStatePreservationTests] engineReferenceRemainsValidAfterReAccess on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/InitializationTests] originalViewOffsetDefaultsToZero on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleManagerTests/ListBundlesTests] returnsEmptyArrayWhenNoBundles on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [InputViewModelTests/InitializationTests] inputModeDefaultsToInitValue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/InitializationTests] inputModeCanBeAuto on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✖ [InputViewModelTests/BoundaryCalculationTests] maxHorizontalOffsetAtScale1 on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/EdgeCaseTests] zeroAndNegativeScaleValues on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✖ [InputViewModelTests/BoundaryCalculationTests] verticalOffsetAlwaysNonNegative on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/EdgeCaseTests] methodsBeforeSetupDoNotCrash on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/EdgeCaseTests] extremeScaleValues on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✖ [InputViewModelTests/EdgeCaseTests] extremeTranslationValues on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/InputModeTests] inputModeCanBeToggled on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/StopInertialScrollTests] stopInertialScrollNoOpWhenNotDecelerating on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ChunkingServiceTests/DocumentChunkModelTests] isSendable on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/EdgeCaseTests] gestureHandlingAllStates on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/EditorViewSizeTests] setEditorViewSizeIgnoresErrors on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/EditorViewSizeTests] setEditorViewSizeZero on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/EditorViewSizeTests] setEditorViewSizeNilEditor on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/StopInertialScrollTests] stopInertialScrollMultipleCalls on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/InputModeTests] updateInputModeChangesMode on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/PanGestureTests] panGestureHorizontalEnabledWhenZoomed on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✖ [InputViewModelTests/PanGestureTests] panGestureHorizontalDisabledAtScale1 on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/PanGestureTests] panGestureBlockedWhenScrollNotAllowed on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/ToolSelectionTests] selectHighlighterToolSetsTool on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/EditorViewSizeTests] setEditorViewSizeUpdatesSize on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/ToolSelectionTests] selectPenToolSetsTool on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/PanGestureTests] panGestureBeganStoresOffset on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/ToolSelectionTests] toolSelectionNilToolController on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/ToolSelectionTests] rapidToolSwitching on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/ConstantsValidationTests] zoomLimitsEnforced on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/EditorViewSizeTests] setEditorViewSizeMultipleTimes on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/ToolSelectionTests] selectEraserToolSetsTool on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✖ [InputViewModelTests/PanGestureTests] panGestureClampsVerticalOffset on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/PinchGestureTests] pinchGestureRejectsZoomAboveMax on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/PinchGestureTests] pinchGestureRejectsZoomBelowMin on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingQueueTests] zeroDebounceProcessesImmediately on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/PinchGestureTests] pinchGestureAcceptsZoomWithinLimits on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchServiceActorTests] concurrentSearchesAreSerialized on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✖ [InputViewModelTests/PinchGestureTests] pinchGestureClampsViewportOffset on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [InputViewModelTests/PinchGestureTests] pinchGestureNilEditor on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/ToolSelectionTests] selectToolHighlighter on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/ToolSelectionTests] rapidToolSwitching on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/PublishedPropertiesTests] titleEmptyByDefault on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/PublishedPropertiesTests] alertNilByDefault on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/PublishedPropertiesTests] editorViewControllerNilBeforeSetup on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/ToolSelectionTests] selectToolEraser on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/EdgeCaseTests] bundlesDirectoryFromBackground on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/LifecycleTests] presentMissingNotebookErrorShowsAlert on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/PublishedPropertiesTests] editorViewControllerSetAfterInjection on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/ToolSelectionTests] selectToolPen on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/PublishedPropertiesTests] titleSetFromManifest on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/LifecycleTests] handleAppBackgroundNoHandle on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/ToolSelectionTests] selectPenToolDirect on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/EditOperationsTests] redoWithNilEditor on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/EditOperationsTests] clearWithNilEditor on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/EdgeCaseTests] emptyTitle on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/EditOperationsTests] undoWithNilEditor on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/EditOperationsTests] clearShowsAlertOnError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/InkColorTests] updateInkColorForHighlighter on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [VectorStoreClientTests/UpsertOperationsTests] upsertsSingleChunk on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ReleaseSurfaceTests] releaseSurfaceSafeForInvalidID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/EdgeCaseTests] specialCharactersInTitle on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/EdgeCaseTests] methodsBeforeSetupDoNotCrash on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/SetEditorViewSizeTests] setEditorViewSizeWithZeroBounds on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ReleaseSurfaceTests] releaseSurfaceMultiple on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ReleaseSurfaceTests] releaseSurfaceRemovesFromCache on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ReleaseSurfaceTests] releaseSurfaceSafeForIDZero on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/EditOperationsTests] clearCallsEditor on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/InkColorTests] updateInkColorForPen on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/InkColorTests] updateInkColorForEraserIsNoOp on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/EditOperationsTests] redoCallsEditor on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/SetEditorViewSizeTests] setEditorViewSizeUpdatesFrame on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/EditOperationsTests] undoCallsEditor on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/IDGenerationTests] idZeroNeverAssigned on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ReleaseSurfaceTests] releaseSurfaceDoesNotAffectOthers on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/AddSurfaceTests] addSurfaceDifferentSizes on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/AddSurfaceTests] addSurfaceUniqueIDs on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/AddSurfaceTests] addSurfaceSequentialIDs on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/IDGenerationTests] idsContinueAfterRelease on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ReleaseSurfaceTests] releaseSurfaceMaxUInt32ID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/AddSurfaceTests] addSurfaceReturnsNonZeroID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/IDGenerationTests] idsIncrementByOne on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ReleaseSurfaceTests] releaseSurfaceDoubleRelease on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✖ [EditorViewModelTests/ToolUpdateTests] updateToolAppliesToEditor on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ReleaseSurfaceTests] releaseSurfaceAnyOrder on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ScalePropertyTests] scaleNegativeValue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/InkWidthTests] updateInkWidthForPen on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/AddSurfaceTests] addSurfaceManyItems on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ScalePropertyTests] scaleZeroValue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/AddSurfaceTests] addSurfaceIDsNeverReused on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ScalePropertyTests] scaleChangedMultipleTimes on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/IDGenerationTests] firstIDIsOne on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/AddSurfaceTests] addSurfaceStoresBuffer on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ScalePropertyTests] scaleFractionalValue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/InkWidthTests] updateInkWidthForEraserIsNoOp on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ScalePropertyTests] scaleSetAndRetrieved on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/ToolUpdateTests] updateToolNoEditorDoesNothing on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/EdgeCaseTests] getOnEmptyReturnsNil on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ScalePropertyTests] scaleStandardResolution on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/InkWidthTests] updateInkWidthForHighlighter on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/EdgeCaseTests] operationsAfterManyReleases on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/EdgeCaseTests] scaleVerySmall on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/EdgeCaseTests] releaseThenAddThenGet on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/EdgeCaseTests] rapidAddReleaseCycles on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/GetSurfaceBufferTests] getSurfaceBufferIDZero on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ScalePropertyTests] scaleSuperRetinaResolution on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/EdgeCaseTests] releaseAllThenAddNew on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/EdgeCaseTests] scaleVeryLarge on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/GetSurfaceBufferTests] getSurfaceBufferMaxUInt32ID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/GetSurfaceBufferTests] getSurfaceBufferInvalidID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/GetSurfaceBufferTests] getSurfaceBufferValidID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/MemoryManagementTests] addReleaseNoLeak on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/GetSurfaceBufferTests] getSurfaceBufferNeverAssignedID on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/GetSurfaceBufferTests] getSurfaceBufferCorrectBuffer on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/IntegrationTests] multipleSurfacesLifecycle on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/SendableTests] canPassAcrossActorBoundaries on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/GetSurfaceBufferTests] getSurfaceBufferMultipleCalls on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/GetSurfaceBufferTests] getSurfaceBufferReleasedSurface on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/IntegrationTests] interleavedOperations on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ScalePropertyTests] scaleRetinaResolution on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/MemoryManagementTests] largeDimensionSurfaces on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/IntegrationTests] completeLifecycle on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ScalePropertyTests] scaleDefaultsToValidValue on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/SendableTests] viewportCanPassAcrossActorBoundaries on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/IntegrationTests] freshInstanceNoSurfaces on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/EdgeCaseTests] bundlesDirectoryFromMainActor on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/EdgeCaseTests] scaleZeroDoesNotCrash on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/RefreshDisplayTests] refreshDisplayWithoutRenderView on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/MemoryManagementTests] releasingSurfacesDecreasesCount on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/OffscreenSurfaceTests] createOffscreenRenderSurfaceZeroHeightReturnsZero on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/OffscreenSurfaceTests] createOffscreenRenderSurfaceAccountsForScale on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/EdgeCaseTests] negativeScaleDoesNotCrash on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/EdgeCaseTests] methodsBeforeSetupDoNotCrash on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/OffscreenSurfaceTests] createOffscreenRenderSurfaceZeroWidthReturnsZero on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/OffscreenSurfaceTests] createOffscreenRenderSurfaceNegativeWidthReturnsZero on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/OffscreenSurfaceTests] releaseOffscreenRenderSurfaceReleases on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/EdgeCaseTests] rapidSurfaceCreationAndRelease on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/OffscreenCanvasTests] createOffscreenRenderCanvasCreates on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/OffscreenSurfaceTests] createOffscreenRenderSurfaceNegativeHeightReturnsZero on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/OffscreenSurfaceTests] createOffscreenRenderSurfaceZeroDimensionsReturnsZero on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/OffscreenSurfaceTests] multipleSurfacesCanBeCreated on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/IntegrationTests] scaleAffectsUsageNotStorage on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/PropertiesTests] pixelDensityReturnsScreenScale on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/OffscreenSurfaceTests] createOffscreenRenderSurfaceCreatesSurface on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/SetupTests] initModelViewConstraintsIdempotent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/SetupTests] setOffScreenRendererSurfacesScaleSetsScale on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/PropertiesTests] imageLoaderNilByDefault on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/PropertiesTests] rendererNilByDefault on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/OffscreenSurfaceTests] surfacesAreIndependent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/OffscreenCanvasTests] releaseOffscreenRenderCanvasDoesNotCrash on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/SetupTests] setupModelMultipleTimes on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/PublishedPropertiesTests] renderViewHasZeroFrameInitially on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/PublishedPropertiesTests] renderViewNilBeforeSetup on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/IntegrationTests] fullRenderingSetupFlow on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/PublishedPropertiesTests] renderViewCreatedAfterSetup on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/IntegrationTests] offscreenRenderingFlow on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/SetupTests] setupModelCreatesRenderView on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/OffscreenSurfaceTests] releaseOffscreenRenderSurfaceInvalidIdIsSafe on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/RefreshDisplayTests] refreshDisplayAfterSetup on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/OffscreenCanvasTests] canvasLifecycle on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/OffscreenCanvasTests] createOffscreenRenderCanvasInvalidSurfaceReturnsEmptyCanvas on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/MemoryManagementTests] surfaceBufferAccessibleUntilReleased on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DisplayViewModelTests/InitializationTests] defaultInitCreatesOffscreenRenderSurfaces on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [DisplayViewModelTests/InitializationTests] dependencyInjectionAllowsMockSurfaces on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleStorageTests/ConcurrentAccessTests] concurrentCallsReturnValidDirectory on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/ConcurrentAccessTests] bundlesDirectoryHandlesConcurrentCalls on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/LifecycleTests] releaseEditorWithNilEditor on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ThreadSafetyTests] concurrentReleaseSurfaceSafe on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleStorageTests/EdgeCaseTests] bundlesDirectoryConsistentAcrossActors on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ThreadSafetyTests] mixedConcurrentOperations on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [ManifestTests/EdgeCaseTests] multipleManifestsHaveDifferentTimestamps on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DocumentHandleTests/PropertiesTests] notebookIDSetCorrectly on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DocumentHandleTests/PropertiesTests] initialManifestIsSnapshot on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DocumentHandleTests/PropertiesTests] packagePathSetCorrectly on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DocumentHandleTests/CloseTests] withSaveBeforeCloseFalseDoesNotSave on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EditorViewModelTests/LifecycleTests] releaseEditorReleasesPartBinding on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DocumentHandleTests/InitializationTests] successfulInitialization on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ThreadSafetyTests] concurrentGetSurfaceBufferSafe on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DocumentHandleTests/InitializationTests] passesCorrectPathToEngine on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DocumentHandleTests/InitializationTests] passesCorrectOpenOptionToEngine on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [SearchIndexEdgeCaseTests] concurrentOperations on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [IndexingEdgeCaseTests] handlesConcurrentIndexingRequests on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleManagerTests/ListBundlesTests] returnsCorrectType on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [OffscreenRenderSurfacesTests/ThreadSafetyTests] concurrentAddSurfaceUniqueIDs on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [EmbeddingServiceTests] generatesMultipleEmbeddings on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [EmbeddingServiceTests] emptyInputReturnsEmpty on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [EmbeddingServiceTests] generatesQueryEmbedding on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [EmbeddingServiceTests] throwsOnUnauthorized on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [EmbeddingServiceTests] throwsOnRateLimit on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [EmbeddingServiceTests] validatesEmbeddingDimensions on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [VectorStoreClientTests/UpsertOperationsTests] upsertsMultipleChunks on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [VectorStoreClientTests/UpsertOperationsTests] emptyInputReturnsEmptyResult on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [VectorStoreClientTests/UpsertOperationsTests] recordsFailures on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+Test Suite VectorStoreClientTests/DeleteOperationsTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+    ✔ [VectorStoreClientTests/DeleteOperationsTests] deletesSingleChunk on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [VectorStoreClientTests/DeleteOperationsTests] handles404AsSuccess on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [VectorStoreClientTests/DeleteOperationsTests] throwsOnDeleteFailure on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+Test Suite VectorStoreClientTests/QueryOperationsTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+    ✔ [VectorStoreClientTests/QueryOperationsTests] returnsNilForNonexistent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [VectorStoreClientTests/QueryOperationsTests] returnsEmptyForNoChunks on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [EmbeddingServiceTests] batchesLargeRequests on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [DocumentHandleTests/CloseTests] withSaveBeforeCloseTrueSavesPackage on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/SavePackageToTempTests] callsSaveToTempOnPackage on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [EditorViewModelTests/LifecycleTests] releaseEditorCapturesViewport on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [EditorViewModelTests/LifecycleTests] releaseEditorClosesHandle on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/GetPartCountTests] returnsZeroForEmpty on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/CloseTests] releasesPackageReference on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/InitializationTests] throwsWhenEngineNil on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/SavePackageTests] callsSaveOnPackage on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/GetPackageTests] returnsOpenedPackage on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/InitializationTests] throwsWhenPackageOpenFails on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/GetPackageTests] returnsNilAfterClose on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/PropertiesTests] manifestReflectsCurrentState on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/UpdateViewportStateTests] doesNotAffectInitialManifest on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/UpdateViewportStateTests] updatesManifestViewportState on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/EnsureInitialPartTests] throwsWhenPackageNil on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/CloseTests] ignoresSaveErrorsAndReleasesPackage on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/UpdateViewportStateTests] updatesModifiedAtTimestamp on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/ThreadSafetyTests] rapidSaveOperationsAreSerialized on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/SavePackageTests] throwsWhenPackageNil on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/SavePackageToTempTests] throwsWhenPackageNil on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [DocumentHandleTests/CloseTests] canBeCalledMultipleTimesSafely on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [BundleManagerTests/ListBundlesTests] metadataHasNonEmptyId on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [DocumentHandleTests/GetPartCountTests] returnsZeroAfterClose on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (3.000 seconds)
+    ✔ [DocumentHandleTests/GetPartTests] returnsNilForNegativeIndex on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (3.000 seconds)
+    ✔ [DocumentHandleTests/ThreadSafetyTests] concurrentOperationsDoNotCorruptState on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (3.000 seconds)
+    ✔ [DocumentHandleTests/EnsureInitialPartTests] throwsWhenPartCreationFails on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (3.000 seconds)
+    ✔ [DocumentHandleTests/GetPartTests] returnsNilAfterClose on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (3.000 seconds)
+    ✔ [DocumentHandleTests/UpdateViewportStateTests] canBeCalledMultipleTimes on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (3.000 seconds)
+    ✔ [EditorViewModelTests/LifecycleTests] releaseEditorSavesPreviewImage on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (3.000 seconds)
+    ✔ [DocumentHandleTests/SavePackageTests] canBeCalledMultipleTimes on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (3.000 seconds)
+    ✔ [DocumentHandleTests/GetPartTests] returnsNilForOutOfBounds on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (3.000 seconds)
+    ✔ [DocumentHandleTests/GetPartTests] returnsPartAtValidIndex on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (3.000 seconds)
+    ✔ [DocumentHandleTests/EnsureInitialPartTests] returnsExistingPart on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (3.000 seconds)
+    ✔ [DocumentHandleTests/GetPartCountTests] returnsCorrectCountAfterCreatingParts on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (3.000 seconds)
+    ✔ [DocumentHandleTests/EnsureInitialPartTests] createsPartWhenEmpty on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (3.000 seconds)
+    ✔ [BundleManagerTests/ListBundlesTests] metadataHasNonEmptyDisplayName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleManagerTests/ListBundlesTests] metadataPreviewCanBeNil on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/ListBundlesTests] metadataLastAccessedAtIsSet on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/ListBundlesTests] listsMultipleBundles on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/ListBundlesTests] skipsHiddenDirectories on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+Test Suite BundleManagerTests/CreateBundleTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+    ✔ [BundleManagerTests/CreateBundleTests] createsBundleWithDisplayName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleManagerTests/CreateBundleTests] generatesUniqueId on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/CreateBundleTests] newBundleHasNilPreview on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/CreateBundleTests] newBundleHasLastAccessedAt on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/CreateBundleTests] createsBundleWithUnicodeName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/CreateBundleTests] createsBundleWithEmoji on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/CreateBundleTests] createsBundleWithLongName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/CreateBundleTests] createsBundleWithWhitespace on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/CreateBundleTests] createsBundleWithSpecialChars on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleManagerTests/CreateBundleTests] createdBundleAppearsInList on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/CreateBundleTests] multipleCreatesAreIndependent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+Test Suite BundleManagerTests/RenameBundleTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+    ✔ [BundleManagerTests/RenameBundleTests] throwsBundleNotFoundForNonExistent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/RenameBundleTests] throwsBundleNotFoundForEmptyId on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/RenameBundleTests] preservesNotebookIdAfterRename on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/RenameBundleTests] renameWithUnicodeCharacters on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/RenameBundleTests] renameWithVeryLongName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/RenameBundleTests] renameToSameNameSucceeds on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/RenameBundleTests] renameMultipleTimes on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/RenameBundleTests] renameWithWhitespaceOnly on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+Test Suite BundleManagerTests/DeleteBundleTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+    ✔ [BundleManagerTests/DeleteBundleTests] deletesBundleSuccessfully on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/DeleteBundleTests] throwsBundleNotFoundForNonExistent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/DeleteBundleTests] throwsBundleNotFoundForEmptyId on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/DeleteBundleTests] doubleDeleteThrowsError on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/DeleteBundleTests] deleteDoesNotAffectOtherBundles on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/DeleteBundleTests] deleteWithInvalidUUIDFormat on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/DeleteBundleTests] deleteRemovesAllBundleFiles on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+Test Suite BundleManagerTests/OpenNotebookTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+    ✔ [BundleManagerTests/OpenNotebookTests] opensExistingBundle on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/OpenNotebookTests] throwsBundleNotFoundForNonExistent on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/OpenNotebookTests] throwsBundleNotFoundForEmptyId on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/OpenNotebookTests] returnedHandleHasCorrectId on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/OpenNotebookTests] openingUpdatesLastAccessedAt on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (2.000 seconds)
+    ✔ [BundleManagerTests/OpenNotebookTests] canOpenSameNotebookMultipleTimes on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/OpenNotebookTests] handleManifestHasCorrectDisplayName on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/OpenNotebookTests] handlePackagePathIsValid on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+Test Suite BundleManagerTests/IinkPackagePathTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+    ✔ [BundleManagerTests/IinkPackagePathTests] returnsPathEndingWithContentIink on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/IinkPackagePathTests] pathContainsNotebookId on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+    ✔ [BundleManagerTests/IinkPackagePathTests] pathIsAbsolute on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/IinkPackagePathTests] pathDoesNotValidateExistence on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/IinkPackagePathTests] pathUsesDecomposedNormalization on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/IinkPackagePathTests] pathForExistingBundlePointsToRealFile on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+Test Suite BundleManagerTests/ErrorCasesTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+    ✔ [BundleManagerTests/ErrorCasesTests] bundleNotFoundIncludesNotebookId on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/ErrorCasesTests] operationsOnDeletedBundleThrow on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+Test Suite BundleManagerTests/ConcurrencyTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+    ✔ [BundleManagerTests/ConcurrencyTests] concurrentListBundlesCalls on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/ConcurrencyTests] concurrentCreateBundleCalls on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/ConcurrencyTests] createAndDeleteInterleaved on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (1.000 seconds)
+Test Suite BundleManagerTests/EdgeCasesTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+    ✔ [BundleManagerTests/EdgeCasesTests] createBundleWithNewlines on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/EdgeCasesTests] createBundleWithTabs on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/EdgeCasesTests] createBundleWithNullCharacter on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/EdgeCasesTests] createBundleWithRTLText on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/EdgeCasesTests] createBundleWithMixedDirectionText on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/EdgeCasesTests] createBundleWithCombiningCharacters on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/EdgeCasesTests] createBundleWithZeroWidthCharacters on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/EdgeCasesTests] notebookIdWithPathTraversalHandledSafely on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/EdgeCasesTests] notebookIdWithForwardSlashHandledSafely on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/EdgeCasesTests] notebookIdWithBackslashHandledSafely on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+Test Suite BundleManagerTests/IntegrationTests started on 'Clone 1 of iPhone 17 Pro - InkOS (8259)'
+    ✔ [BundleManagerTests/IntegrationTests] fullLifecycle on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/IntegrationTests] createModifyVerify on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)
+    ✔ [BundleManagerTests/IntegrationTests] packagePathMatchesHandlePath on 'Clone 1 of iPhone 17 Pro - InkOS (8259)' (0.000 seconds)

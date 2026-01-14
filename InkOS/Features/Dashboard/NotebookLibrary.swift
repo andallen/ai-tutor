@@ -33,7 +33,8 @@ class NotebookLibrary: ObservableObject {
   @Published var lessons: [LessonMetadata] = []
 
   // The Bundle Manager instance used to perform operations on Bundles.
-  private let bundleManager: BundleManager
+  // Exposed as internal (not private) for search index initialization.
+  let bundleManager: BundleManager
 
   // Creates a new Notebook Library with the given Bundle Manager.
   // The Bundle Manager dependency is passed in to allow testing and flexibility.

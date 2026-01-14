@@ -81,6 +81,8 @@ struct ExtractedContent: Sendable, Equatable {
 enum DocumentType: String, Sendable, Codable {
   case notebook
   case pdf
+  case lesson
+  case folder
 }
 
 // MARK: - JIIX Parsing Models

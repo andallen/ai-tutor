@@ -183,9 +183,11 @@ actor SearchIndex: SearchIndexProtocol {
 
     // Build search query with ranking.
     // Use bm25 with title weighted higher than content.
+    // Use highlight markers in snippet for UI to display matched text with emphasis.
+    // [MATCH] and [/MATCH] wrap matched terms for parsing in the search results view.
     let sql = """
       SELECT documentID, documentType, folderID, title,
-             snippet(\(SearchIndexConstants.ftsTableName), 4, '...', '...', '', \(configuration.snippetLength)) as snippet,
+             snippet(\(SearchIndexConstants.ftsTableName), 4, '\(SearchIndexConstants.matchStartMarker)', '\(SearchIndexConstants.matchEndMarker)', '...', \(configuration.snippetLength)) as snippet,
              bm25(\(SearchIndexConstants.ftsTableName), \(SearchIndexConstants.titleWeight), 1.0, 1.0, \(SearchIndexConstants.titleWeight), \(SearchIndexConstants.contentWeight), 1.0) as rank
       FROM \(SearchIndexConstants.ftsTableName)
       WHERE \(SearchIndexConstants.ftsTableName) MATCH ?
@@ -311,8 +313,8 @@ actor SearchIndex: SearchIndexProtocol {
   }
 
   private func escapeFTSQuery(_ query: String) -> String {
-    // For basic queries, wrap each word in quotes to treat as literal.
-    // This prevents FTS5 syntax errors from user input.
+    // For basic queries, use prefix matching so partial words match.
+    // "lin" becomes "lin*" which matches "Linear", "line", etc.
     let words = query.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
 
     // Check if query already uses FTS5 operators (advanced user).
@@ -324,12 +326,20 @@ actor SearchIndex: SearchIndexProtocol {
       return query
     }
 
-    // Escape special characters and create search pattern.
+    // Create prefix search pattern for each word.
+    // Remove special FTS5 characters that could cause syntax errors.
     let escaped = words.map { word -> String in
-      // Escape double quotes in words.
-      let escapedWord = word.replacingOccurrences(of: "\"", with: "\"\"")
-      return "\"\(escapedWord)\""
-    }
+      // Remove characters that have special meaning in FTS5.
+      let sanitized = word
+        .replacingOccurrences(of: "\"", with: "")
+        .replacingOccurrences(of: "*", with: "")
+        .replacingOccurrences(of: "(", with: "")
+        .replacingOccurrences(of: ")", with: "")
+        .replacingOccurrences(of: ":", with: "")
+        .replacingOccurrences(of: "^", with: "")
+      // Add wildcard for prefix matching.
+      return sanitized.isEmpty ? "" : "\(sanitized)*"
+    }.filter { !$0.isEmpty }
 
     return escaped.joined(separator: " ")
   }

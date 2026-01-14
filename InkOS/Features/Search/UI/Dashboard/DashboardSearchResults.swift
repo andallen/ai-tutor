@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // Search results list for the dashboard search overlay.
 // Displays loading, empty, and results states.
@@ -90,13 +91,22 @@ struct DashboardSearchResults: View {
 private struct SearchResultRow: View {
   let result: SearchResult
 
+  // Preview thumbnail dimensions.
+  // Uses the same aspect ratio as dashboard cards (0.72) for visual consistency.
+  private let previewWidth: CGFloat = 44
+  private let previewHeight: CGFloat = 61
+  private let previewCornerRadius: CGFloat = 6
+
   var body: some View {
     HStack(alignment: .top, spacing: 12) {
-      // Document type icon.
-      Image(systemName: iconName)
-        .font(.system(size: 20))
-        .foregroundColor(Color.offBlack)
-        .frame(width: 24)
+      // Preview thumbnail.
+      SearchResultPreview(
+        previewImageData: result.previewImageData,
+        documentType: result.documentType
+      )
+      .frame(width: previewWidth, height: previewHeight)
+      .clipShape(RoundedRectangle(cornerRadius: previewCornerRadius, style: .continuous))
+      .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
 
       VStack(alignment: .leading, spacing: 4) {
         // Document title.
@@ -105,11 +115,14 @@ private struct SearchResultRow: View {
           .foregroundColor(Color.ink)
           .lineLimit(1)
 
-        // Match snippet.
-        Text(result.matchSnippet)
-          .font(.system(size: 13))
-          .foregroundColor(Color.inkSubtle)
-          .lineLimit(2)
+        // Match snippet with highlighted matching text, rendered markdown, and LaTeX.
+        SnippetContentView(
+          snippet: result.matchSnippet,
+          fontSize: 13,
+          textColor: Color.inkSubtle,
+          highlightColor: Color.ink
+        )
+        .lineLimit(2)
 
         // Match source and folder path.
         HStack(spacing: 8) {
@@ -143,16 +156,6 @@ private struct SearchResultRow: View {
     .contentShape(Rectangle())
   }
 
-  // Icon based on document type.
-  private var iconName: String {
-    switch result.documentType {
-    case .notebook:
-      return "doc.text"
-    case .pdf:
-      return "doc.richtext"
-    }
-  }
-
   // Label for match source badge.
   private var matchSourceLabel: String {
     switch result.matchSource {
@@ -162,6 +165,91 @@ private struct SearchResultRow: View {
       return "Handwriting"
     case .pdfText:
       return "PDF Text"
+    case .lessonContent:
+      return "Lesson"
+    case .folderName:
+      return "Folder"
+    }
+  }
+
+}
+
+// MARK: - Search Result Preview
+
+// Displays a preview thumbnail for a search result.
+// Shows the same preview image used in dashboard cards, just smaller.
+// Falls back to a document type icon if no preview is available.
+private struct SearchResultPreview: View {
+  // Preview image data from the search result.
+  let previewImageData: Data?
+  // Document type for fallback icon selection.
+  let documentType: DocumentType
+
+  var body: some View {
+    GeometryReader { proxy in
+      let width = proxy.size.width
+      let height = proxy.size.height
+
+      ZStack {
+        // Background color based on document type.
+        backgroundColor
+
+        // Preview image or fallback icon.
+        if let previewImageData, let uiImage = UIImage(data: previewImageData) {
+          Image(uiImage: uiImage)
+            .resizable()
+            .scaledToFill()
+            .frame(width: width, height: height)
+            .clipped()
+        } else {
+          // Fallback icon when no preview is available.
+          Image(systemName: placeholderIcon)
+            .font(.system(size: 16))
+            .foregroundColor(iconColor)
+        }
+      }
+    }
+  }
+
+  // Background color based on document type.
+  private var backgroundColor: Color {
+    switch documentType {
+    case .notebook:
+      return .white
+    case .pdf:
+      return Color(.systemGray5)
+    case .lesson:
+      return .white
+    case .folder:
+      return Color(.systemGray6)
+    }
+  }
+
+  // Placeholder icon based on document type.
+  private var placeholderIcon: String {
+    switch documentType {
+    case .notebook:
+      return "doc.text"
+    case .pdf:
+      return "doc.richtext"
+    case .lesson:
+      return "book.pages"
+    case .folder:
+      return "folder.fill"
+    }
+  }
+
+  // Icon color for placeholder.
+  private var iconColor: Color {
+    switch documentType {
+    case .notebook:
+      return Color.inkSubtle
+    case .pdf:
+      return .accentColor
+    case .lesson:
+      return Color.inkSubtle
+    case .folder:
+      return .accentColor
     }
   }
 }

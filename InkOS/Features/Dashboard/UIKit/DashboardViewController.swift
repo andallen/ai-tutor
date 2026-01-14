@@ -2,6 +2,7 @@
 // Replaces SwiftUI DashboardView for full animation control.
 
 import Combine
+import PDFKit
 import SwiftUI
 import UIKit
 
@@ -48,6 +49,31 @@ class DashboardViewController: UIViewController {
   // Hosting controller for lesson generation overlay.
   private var lessonOverlayHostingController: UIHostingController<LessonGenerationOverlay>?
 
+  // MARK: - Search Properties
+
+  // Shared state for search overlay.
+  private let searchOverlayState = SearchOverlayState()
+
+  // Search index for SQLite FTS5 queries.
+  private var searchIndex: SearchIndex?
+
+  // Search service for transforming results.
+  private var searchService: SearchService?
+
+  // Tracks whether the search index has been initialized.
+  private var isSearchIndexReady = false
+
+  // Hosting controller for search overlay.
+  private var searchOverlayHostingController: UIHostingController<SearchOverlayRootView>?
+
+  // Debounce timer for search queries.
+  private var searchDebounceTimer: Timer?
+
+  #if DEBUG
+  // Debug data populator for testing search with real notebooks.
+  private lazy var debugDataPopulator = DebugDataPopulator(bundleManager: library.bundleManager)
+  #endif
+
   // Section definition.
   private enum Section: Hashable {
     case main
@@ -73,6 +99,7 @@ class DashboardViewController: UIViewController {
     setupDataSource()
     setupBindings()
     setupAIOverlayCoordinator()
+    setupSearch()
   }
 
   // Sets up the AI overlay coordinator with dashboard configuration.
@@ -82,11 +109,260 @@ class DashboardViewController: UIViewController {
     aiOverlayCoordinator = coordinator
   }
 
+  // Initializes the search index and service.
+  private func setupSearch() {
+    Task {
+      await initializeSearchIndex()
+    }
+    setupSearchBindings()
+  }
+
+  // Sets up Combine bindings for search text changes.
+  private func setupSearchBindings() {
+    searchOverlayState.$searchText
+      .dropFirst()
+      .removeDuplicates()
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] query in
+        self?.handleSearchTextChanged(query)
+      }
+      .store(in: &cancellables)
+  }
+
+  // Handles search text changes with debouncing.
+  private func handleSearchTextChanged(_ query: String) {
+    searchDebounceTimer?.invalidate()
+
+    let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+    if trimmed.isEmpty {
+      searchOverlayState.searchResults = []
+      searchOverlayState.isSearching = false
+      return
+    }
+
+    searchOverlayState.isSearching = true
+    searchDebounceTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: false) { [weak self] _ in
+      Task {
+        await self?.performSearch(query: trimmed)
+      }
+    }
+  }
+
+  // Initializes the search index and indexes existing documents.
+  private func initializeSearchIndex() async {
+    guard !isSearchIndexReady else { return }
+
+    let index = SearchIndex()
+    searchIndex = index
+
+    do {
+      try await index.initialize()
+      let folderLookup = BundleManagerFolderLookup(bundleManager: library.bundleManager)
+      let previewLookup = LibraryPreviewLookup(library: library)
+      let service = SearchService(index: index, folderLookup: folderLookup, previewLookup: previewLookup)
+      searchService = service
+      isSearchIndexReady = true
+      await indexExistingDocuments()
+    } catch {
+      print("Failed to initialize search index: \(error.localizedDescription)")
+    }
+  }
+
+  // Indexes all existing notebooks and PDFs.
+  private func indexExistingDocuments() async {
+    guard let index = searchIndex else { return }
+
+    let bundleManager = library.bundleManager
+
+    // Index notebooks.
+    for notebook in library.notebooks {
+      do {
+        let handle = try await bundleManager.openNotebook(id: notebook.id)
+        let manifest = handle.initialManifest
+        let content = await extractNotebookContent(from: handle)
+        await handle.close()
+
+        let entry = SearchIndexEntry(
+          documentID: notebook.id,
+          documentType: .notebook,
+          folderID: nil,
+          title: manifest.displayName,
+          contentText: content,
+          modifiedAt: manifest.modifiedAt
+        )
+        try await index.indexDocument(entry)
+      } catch {
+        print("Failed to index notebook \(notebook.id): \(error.localizedDescription)")
+      }
+    }
+
+    // Index PDFs.
+    for pdf in library.pdfDocuments {
+      do {
+        let content = await extractPDFContent(documentID: pdf.id)
+        let entry = SearchIndexEntry(
+          documentID: pdf.id,
+          documentType: .pdf,
+          folderID: nil,
+          title: pdf.displayName,
+          contentText: content,
+          modifiedAt: pdf.modifiedAt
+        )
+        try await index.indexDocument(entry)
+      } catch {
+        print("Failed to index PDF \(pdf.id): \(error.localizedDescription)")
+      }
+    }
+
+    // Index lessons.
+    print("[Search] Indexing \(library.lessons.count) lessons")
+    for lesson in library.lessons {
+      do {
+        let content = await extractLessonContent(lessonID: lesson.id)
+        print("[Search] Indexing lesson '\(lesson.displayName)' with \(content.count) chars of content")
+        let entry = SearchIndexEntry(
+          documentID: lesson.id,
+          documentType: .lesson,
+          folderID: nil,
+          title: lesson.displayName,
+          contentText: content,
+          modifiedAt: lesson.modifiedAt
+        )
+        try await index.indexDocument(entry)
+        print("[Search] Successfully indexed lesson '\(lesson.displayName)'")
+      } catch {
+        print("[Search] Failed to index lesson \(lesson.id): \(error.localizedDescription)")
+      }
+    }
+  }
+
+  // Extracts text content from a notebook's JIIX data.
+  private func extractNotebookContent(from handle: DocumentHandle) async -> String {
+    do {
+      guard let jiixData = try await handle.loadJIIXData() else { return "" }
+
+      if let json = try JSONSerialization.jsonObject(with: jiixData) as? [String: Any],
+         let label = json["label"] as? String {
+        return label
+      }
+    } catch {
+      print("Failed to load/parse JIIX: \(error.localizedDescription)")
+    }
+    return ""
+  }
+
+  // Extracts text content from a PDF document.
+  private func extractPDFContent(documentID: String) async -> String {
+    do {
+      guard let uuid = UUID(uuidString: documentID) else { return "" }
+      let documentDir = try await PDFNoteStorage.documentDirectory(for: uuid)
+      let pdfURL = documentDir.appendingPathComponent("source.pdf")
+
+      guard let pdfDoc = PDFDocument(url: pdfURL) else { return "" }
+
+      var content = ""
+      for pageIndex in 0..<pdfDoc.pageCount {
+        if let page = pdfDoc.page(at: pageIndex),
+           let pageContent = page.string {
+          content += pageContent + " "
+        }
+      }
+      return content.trimmingCharacters(in: .whitespacesAndNewlines)
+    } catch {
+      print("Failed to extract PDF content: \(error.localizedDescription)")
+      return ""
+    }
+  }
+
+  // Extracts searchable text content from a lesson.
+  // Includes lesson title, section prompts, content, questions, and answers.
+  private func extractLessonContent(lessonID: String) async -> String {
+    let bundleManager = library.bundleManager
+    do {
+      let lesson = try await bundleManager.loadLesson(lessonID: lessonID)
+      var content = ""
+
+      // Add lesson title.
+      content += lesson.title + " "
+
+      // Add subject if present.
+      if let subject = lesson.metadata.subject {
+        content += subject + " "
+      }
+
+      // Extract text from each section.
+      for section in lesson.sections {
+        switch section {
+        case .content(let contentSection):
+          // Add markdown content.
+          content += contentSection.content + " "
+
+        case .visual(let visualSection):
+          // Add image prompt and fallback description if present.
+          if let imagePrompt = visualSection.imagePrompt {
+            content += imagePrompt + " "
+          }
+          if let fallbackDescription = visualSection.fallbackDescription {
+            content += fallbackDescription + " "
+          }
+
+        case .question(let questionSection):
+          // Add question prompt, answer, and explanation.
+          content += questionSection.prompt + " "
+          content += questionSection.answer + " "
+          if let explanation = questionSection.explanation {
+            content += explanation + " "
+          }
+          // Add multiple choice options if present.
+          if let options = questionSection.options {
+            content += options.joined(separator: " ") + " "
+          }
+
+        case .summary(let summarySection):
+          // Add summary content.
+          content += summarySection.content + " "
+        }
+      }
+
+      return content.trimmingCharacters(in: .whitespacesAndNewlines)
+    } catch {
+      print("Failed to extract lesson content: \(error.localizedDescription)")
+      return ""
+    }
+  }
+
+  // Performs a search query against the search service.
+  private func performSearch(query: String) async {
+    guard let searchService = searchService, isSearchIndexReady else {
+      await MainActor.run {
+        searchOverlayState.isSearching = false
+        searchOverlayState.searchResults = []
+      }
+      return
+    }
+
+    do {
+      let results = try await searchService.searchAll(query: query)
+      await MainActor.run {
+        searchOverlayState.searchResults = results
+        searchOverlayState.isSearching = false
+      }
+    } catch {
+      print("Search error: \(error.localizedDescription)")
+      await MainActor.run {
+        searchOverlayState.searchResults = []
+        searchOverlayState.isSearching = false
+      }
+    }
+  }
+
   override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
     // Reload data when view appears.
     Task {
       await library.loadBundles()
+      // Reindex documents after bundles are loaded to catch any new/updated content.
+      await indexExistingDocuments()
     }
   }
 
@@ -265,14 +541,192 @@ class DashboardViewController: UIViewController {
 
   // Shows the search interface.
   private func showSearch() {
-    // TODO: Implement search UI
-    let alert = UIAlertController(
-      title: "Search",
-      message: "Search functionality is coming soon.",
-      preferredStyle: .alert
+    // Create the search overlay view.
+    var overlayView = SearchOverlayRootView(
+      state: searchOverlayState,
+      onDismiss: { [weak self] in
+        self?.dismissSearch()
+      },
+      onClear: { [weak self] in
+        self?.searchOverlayState.searchText = ""
+      },
+      onResultTapped: { [weak self] result in
+        self?.handleSearchResultTapped(result)
+      }
     )
-    alert.addAction(UIAlertAction(title: "OK", style: .default))
-    present(alert, animated: true)
+
+    // Set up debug callbacks.
+    #if DEBUG
+    overlayView.onPopulateDebugData = { [weak self] in
+      self?.populateDebugData()
+    }
+    overlayView.onClearDebugData = { [weak self] in
+      self?.clearDebugData()
+    }
+    #endif
+
+    // Create hosting controller.
+    let hostingController = UIHostingController(rootView: overlayView)
+    hostingController.view.backgroundColor = .clear
+    hostingController.modalPresentationStyle = .overFullScreen
+    hostingController.modalTransitionStyle = .crossDissolve
+
+    searchOverlayHostingController = hostingController
+
+    // Present and expand.
+    present(hostingController, animated: false) { [weak self] in
+      self?.searchOverlayState.isExpanded = true
+      self?.searchOverlayState.isSearchFieldFocused = true
+    }
+  }
+
+  // Dismisses the search overlay.
+  private func dismissSearch() {
+    searchOverlayState.isExpanded = false
+    searchOverlayState.isSearchFieldFocused = false
+
+    // Delay dismissal to allow animation.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+      self?.searchOverlayHostingController?.dismiss(animated: false) {
+        self?.searchOverlayHostingController = nil
+        self?.searchOverlayState.searchText = ""
+        self?.searchOverlayState.searchResults = []
+      }
+    }
+  }
+
+  #if DEBUG
+  // Populates the dashboard with debug test data.
+  // Creates notebooks with JIIX content and folders for testing search.
+  private func populateDebugData() {
+    Task {
+      do {
+        let count = try await debugDataPopulator.populateTestData()
+        print("[DashboardViewController] Populated \(count) debug items")
+
+        // Reload library to show new items.
+        await library.loadBundles()
+
+        // Reindex to include new items in search.
+        await indexExistingDocuments()
+
+        // Show success feedback.
+        await MainActor.run {
+          let alert = UIAlertController(
+            title: "Debug Data Created",
+            message: "Created \(count) test items with JIIX content.\n\nTry searching for: budget, calculus, cookie, or project",
+            preferredStyle: .alert
+          )
+          alert.addAction(UIAlertAction(title: "OK", style: .default))
+          self.searchOverlayHostingController?.present(alert, animated: true)
+        }
+      } catch {
+        print("[DashboardViewController] Failed to populate debug data: \(error.localizedDescription)")
+        await MainActor.run {
+          let alert = UIAlertController(
+            title: "Error",
+            message: "Failed to create debug data: \(error.localizedDescription)",
+            preferredStyle: .alert
+          )
+          alert.addAction(UIAlertAction(title: "OK", style: .default))
+          self.searchOverlayHostingController?.present(alert, animated: true)
+        }
+      }
+    }
+  }
+
+  // Clears only debug-created data from the dashboard.
+  // Does not affect user-created items.
+  private func clearDebugData() {
+    Task {
+      do {
+        let count = try await debugDataPopulator.clearDebugData()
+        print("[DashboardViewController] Cleared \(count) debug items")
+
+        // Reload library to reflect deletions.
+        await library.loadBundles()
+
+        // Reinitialize search index to remove deleted items.
+        isSearchIndexReady = false
+        await initializeSearchIndex()
+
+        // Show success feedback.
+        await MainActor.run {
+          let alert = UIAlertController(
+            title: "Debug Data Cleared",
+            message: "Removed \(count) debug items.",
+            preferredStyle: .alert
+          )
+          alert.addAction(UIAlertAction(title: "OK", style: .default))
+          self.searchOverlayHostingController?.present(alert, animated: true)
+        }
+      } catch {
+        print("[DashboardViewController] Failed to clear debug data: \(error.localizedDescription)")
+        await MainActor.run {
+          let alert = UIAlertController(
+            title: "Error",
+            message: "Failed to clear debug data: \(error.localizedDescription)",
+            preferredStyle: .alert
+          )
+          alert.addAction(UIAlertAction(title: "OK", style: .default))
+          self.searchOverlayHostingController?.present(alert, animated: true)
+        }
+      }
+    }
+  }
+  #endif
+
+  // Handles tapping on a search result.
+  private func handleSearchResultTapped(_ result: SearchResult) {
+    dismissSearch()
+
+    // Delay navigation to allow overlay to dismiss.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+      guard let self = self else { return }
+
+      switch result.documentType {
+      case .notebook:
+        // Find the notebook and open it.
+        if let notebook = self.library.notebooks.first(where: { $0.id == result.documentID }) {
+          self.delegate?.dashboardDidSelectNotebook(notebook)
+        }
+      case .pdf:
+        // Find the PDF and open it.
+        if let pdf = self.library.pdfDocuments.first(where: { $0.id == result.documentID }) {
+          self.delegate?.dashboardDidSelectPDF(pdf)
+        }
+      case .lesson:
+        // Find the lesson and open it.
+        if let lesson = self.library.lessons.first(where: { $0.id == result.documentID }) {
+          self.delegate?.dashboardDidSelectLesson(lesson)
+        }
+      case .folder:
+        // Find the folder and open its overlay.
+        if let folder = self.library.folders.first(where: { $0.id == result.documentID }) {
+          self.openFolderFromSearch(folder)
+        }
+      }
+    }
+  }
+
+  // Opens a folder overlay when a folder is selected from search results.
+  // Uses screen center as source frame since there's no cell to animate from.
+  private func openFolderFromSearch(_ folder: FolderMetadata) {
+    Task {
+      let notebooks = await library.notebooksInFolder(folderID: folder.id)
+      let pdfs = await library.pdfDocumentsInFolder(folderID: folder.id)
+
+      await MainActor.run {
+        // Use center of screen as source frame for animation.
+        let centerFrame = CGRect(
+          x: view.bounds.midX - 50,
+          y: view.bounds.midY - 50,
+          width: 100,
+          height: 100
+        )
+        presentFolderOverlay(folder: folder, notebooks: notebooks, pdfs: pdfs, sourceFrame: centerFrame)
+      }
+    }
   }
 
   // Shows the lesson generation overlay.
@@ -331,6 +785,8 @@ class DashboardViewController: UIViewController {
 
     // Reload the library to show the new lesson.
     await library.loadBundles()
+    // Reindex to include the new lesson in search.
+    await indexExistingDocuments()
   }
 
   // Shows rename alert for a notebook.

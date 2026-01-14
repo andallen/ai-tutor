@@ -45,21 +45,8 @@ enum AIOverlayLocation {
   case note
 }
 
-// MARK: - Liquid Glass Modifier
-
-// Applies liquid glass effect on iOS 26+, falls back to ultraThinMaterial on earlier versions.
-private struct LiquidGlassModifier: ViewModifier {
-  func body(content: Content) -> some View {
-    if #available(iOS 26.0, *) {
-      content
-        .glassEffect(
-          .regular.interactive(false), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-    } else {
-      content
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-  }
-}
+// Liquid glass styling is provided by the unified LiquidGlassStyle and modifiers
+// defined in UIComponents.swift. Use .liquidGlassBackground() or .liquidGlass() modifiers.
 
 // MARK: - Skill Item View
 
@@ -464,7 +451,7 @@ struct AIChatOverlayContent: View {
       }
     }
     .frame(width: boxWidth, height: boxHeight)
-    .modifier(LiquidGlassModifier())
+    .liquidGlassBackground(cornerRadius: 16, style: .regular)
     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     .mask(
       // Create a gradient mask that fades out the trailing edge.

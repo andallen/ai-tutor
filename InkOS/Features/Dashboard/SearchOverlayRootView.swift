@@ -7,6 +7,12 @@ struct SearchOverlayRootView: View {
   let onClear: () -> Void
   let onResultTapped: (SearchResult) -> Void
 
+  // Debug callbacks for populating and clearing test data.
+  #if DEBUG
+  var onPopulateDebugData: (() -> Void)?
+  var onClearDebugData: (() -> Void)?
+  #endif
+
   var body: some View {
     GeometryReader { geometry in
       let safeAreaTop = geometry.safeAreaInsets.top
@@ -20,33 +26,35 @@ struct SearchOverlayRootView: View {
       let slideDistance = overlayHeight + safeAreaTop + 50
 
       ZStack {
-        // Blur background (tap to dismiss).
-        // Always present so it can smoothly fade in/out.
+        // Layer 1: Blur background (visual only, no hit testing).
         AnimatedBlurView(
           blurFraction: state.isExpanded ? 1 : 0,
           animationDuration: state.isExpanded ? 0.35 : 0.2
         )
         .ignoresSafeArea()
-        .onTapGesture {
-          print("[DashboardView] Blur background tapped - dismissing search")
-          onDismiss()
-        }
-        .allowsHitTesting(state.isExpanded)
+        .allowsHitTesting(false)
 
-        // Glass panel with search bar row and results.
+        // Layer 2: Tap-to-dismiss layer covering the entire screen.
+        Color.black.opacity(0.001)
+          .ignoresSafeArea()
+          .contentShape(Rectangle())
+          .onTapGesture {
+            dismissOverlay()
+          }
+          .allowsHitTesting(state.isExpanded)
+
+        // Layer 3: Glass panel with search bar and results.
         VStack(spacing: 0) {
-          // Search bar row with a separate clear button.
+          // Search bar row.
           HStack(spacing: 12) {
-            // Search bar fills the remaining width.
             DashboardSearchBar(
               text: $state.searchText,
               isFocused: $state.isSearchFieldFocused
             )
             .frame(maxWidth: .infinity)
 
-            // Clear button sits outside the search bar.
+            // Clear button.
             Button {
-              print("[DashboardView] Clear button tapped")
               onClear()
             } label: {
               Text("Clear")
@@ -59,26 +67,66 @@ struct SearchOverlayRootView: View {
                     .fill(Color.black.opacity(0.08))
                 )
             }
-            // Button stays visible but inactive when there is no text.
             .buttonStyle(.plain)
             .disabled(state.searchText.isEmpty)
             .opacity(state.searchText.isEmpty ? 0.4 : 1)
-            .overlay(HitTestLoggerView(label: "SearchClearButton"))
-            .simultaneousGesture(
-              TapGesture().onEnded {
-                print("[DashboardView] Clear button TapGesture fired")
-              }
-            )
           }
           .padding(.horizontal, 16)
           .padding(.top, 16)
           .padding(.bottom, 12)
-          .overlay(HitTestLoggerView(label: "SearchBarRow"))
-          .simultaneousGesture(
-            TapGesture().onEnded {
-              print("[DashboardView] Search bar row TapGesture fired")
+
+          // Debug buttons for testing.
+          #if DEBUG
+          if onPopulateDebugData != nil || onClearDebugData != nil {
+            HStack(spacing: 12) {
+              if let onPopulate = onPopulateDebugData {
+                Button {
+                  onPopulate()
+                } label: {
+                  HStack(spacing: 4) {
+                    Image(systemName: "testtube.2")
+                      .font(.system(size: 12))
+                    Text("Populate")
+                      .font(.system(size: 12, weight: .medium))
+                  }
+                  .foregroundColor(.white)
+                  .padding(.horizontal, 10)
+                  .padding(.vertical, 6)
+                  .background(
+                    Capsule()
+                      .fill(Color.green.opacity(0.8))
+                  )
+                }
+                .buttonStyle(.plain)
+              }
+
+              if let onClear = onClearDebugData {
+                Button {
+                  onClear()
+                } label: {
+                  HStack(spacing: 4) {
+                    Image(systemName: "trash")
+                      .font(.system(size: 12))
+                    Text("Clear Debug")
+                      .font(.system(size: 12, weight: .medium))
+                  }
+                  .foregroundColor(.white)
+                  .padding(.horizontal, 10)
+                  .padding(.vertical, 6)
+                  .background(
+                    Capsule()
+                      .fill(Color.red.opacity(0.8))
+                  )
+                }
+                .buttonStyle(.plain)
+              }
+
+              Spacer()
             }
-          )
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+          }
+          #endif
 
           // Results list.
           DashboardSearchResults(
@@ -91,21 +139,10 @@ struct SearchOverlayRootView: View {
           )
           .padding(.bottom, 16)
         }
-        .overlay(HitTestLoggerView(label: "SearchOverlayPanel"))
         .frame(width: overlayWidth, height: overlayHeight)
-        .background(
-          Group {
-            if #available(iOS 26.0, *) {
-              RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(Color.clear)
-                .glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
-            } else {
-              RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(.ultraThinMaterial)
-            }
-          }
-        )
+        .liquidGlassBackground(cornerRadius: cornerRadius, style: .regular)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .position(x: screenWidth / 2, y: safeAreaTop + 16 + overlayHeight / 2)
         .offset(y: state.isExpanded ? 0 : -slideDistance)
         .animation(
@@ -114,21 +151,22 @@ struct SearchOverlayRootView: View {
         )
         .allowsHitTesting(state.isExpanded)
       }
-      .overlay(HitTestLoggerView(label: "SearchOverlayZStack"))
-      // Logs window-level taps while the overlay is visible.
-      .background(
-        Group {
-          if state.isExpanded {
-            WindowTapLoggerView(label: "SearchOverlayWindow")
-              .frame(width: 1, height: 1)
-          }
-        }
-      )
     }
     .ignoresSafeArea()
-    .zIndex(160)
     .allowsHitTesting(state.isExpanded)
     .fontDesign(.rounded)
     .tint(Color.offBlack)
   }
+
+  private func dismissOverlay() {
+    // Dismiss keyboard first.
+    UIApplication.shared.sendAction(
+      #selector(UIResponder.resignFirstResponder),
+      to: nil,
+      from: nil,
+      for: nil
+    )
+    onDismiss()
+  }
 }
+

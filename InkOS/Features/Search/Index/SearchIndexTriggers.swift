@@ -17,6 +17,9 @@ final class SearchIndexTriggers: SearchIndexTriggersProtocol {
   // Notification observers.
   private var notebookObserver: NSObjectProtocol?
   private var pdfObserver: NSObjectProtocol?
+  private var lessonObserver: NSObjectProtocol?
+  private var folderCreatedObserver: NSObjectProtocol?
+  private var folderRenamedObserver: NSObjectProtocol?
 
   // Debounce timers per document ID.
   private var debounceTimers: [String: Task<Void, Never>] = [:]
@@ -60,6 +63,33 @@ final class SearchIndexTriggers: SearchIndexTriggersProtocol {
       self?.handlePDFDocumentImported(notification)
     }
 
+    // Observe lesson content saved.
+    lessonObserver = NotificationCenter.default.addObserver(
+      forName: .lessonContentSaved,
+      object: nil,
+      queue: .main
+    ) { [weak self] notification in
+      self?.handleLessonContentSaved(notification)
+    }
+
+    // Observe folder created.
+    folderCreatedObserver = NotificationCenter.default.addObserver(
+      forName: .folderCreated,
+      object: nil,
+      queue: .main
+    ) { [weak self] notification in
+      self?.handleFolderChanged(notification)
+    }
+
+    // Observe folder renamed.
+    folderRenamedObserver = NotificationCenter.default.addObserver(
+      forName: .folderRenamed,
+      object: nil,
+      queue: .main
+    ) { [weak self] notification in
+      self?.handleFolderChanged(notification)
+    }
+
     isObserving = true
   }
 
@@ -72,6 +102,21 @@ final class SearchIndexTriggers: SearchIndexTriggersProtocol {
     if let observer = pdfObserver {
       NotificationCenter.default.removeObserver(observer)
       pdfObserver = nil
+    }
+
+    if let observer = lessonObserver {
+      NotificationCenter.default.removeObserver(observer)
+      lessonObserver = nil
+    }
+
+    if let observer = folderCreatedObserver {
+      NotificationCenter.default.removeObserver(observer)
+      folderCreatedObserver = nil
+    }
+
+    if let observer = folderRenamedObserver {
+      NotificationCenter.default.removeObserver(observer)
+      folderRenamedObserver = nil
     }
 
     // Cancel any pending debounce timers.
@@ -104,6 +149,28 @@ final class SearchIndexTriggers: SearchIndexTriggersProtocol {
     // Index immediately for imports (no debounce needed).
     Task {
       await indexHandler?(documentID, .pdf)
+    }
+  }
+
+  private func handleLessonContentSaved(_ notification: Notification) {
+    guard let documentID = notification.userInfo?["documentID"] as? String else {
+      return
+    }
+
+    // Debounce rapid saves.
+    debounceIndexing(documentID: documentID) { [weak self] in
+      await self?.indexHandler?(documentID, .lesson)
+    }
+  }
+
+  private func handleFolderChanged(_ notification: Notification) {
+    guard let folderID = notification.userInfo?["folderID"] as? String else {
+      return
+    }
+
+    // Index folder immediately (folder changes are infrequent).
+    Task {
+      await indexHandler?(folderID, .folder)
     }
   }
 

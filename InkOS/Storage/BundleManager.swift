@@ -531,7 +531,7 @@ actor BundleManager {
     let folderManifestURL = folderURL.appendingPathComponent(Self.folderManifestFileName)
     try writeFolderManifest(folderManifest, to: folderManifestURL)
 
-    return FolderMetadata(
+    let metadata = FolderMetadata(
       id: folderID,
       displayName: displayName,
       previewImages: [],
@@ -539,6 +539,17 @@ actor BundleManager {
       pdfCount: 0,
       modifiedAt: folderManifest.modifiedAt
     )
+
+    // Notify that a folder was created for search indexing.
+    await MainActor.run {
+      NotificationCenter.default.post(
+        name: .folderCreated,
+        object: nil,
+        userInfo: ["folderID": folderID, "displayName": displayName]
+      )
+    }
+
+    return metadata
   }
 
   // Renames a folder by updating the display name in folder.json.
@@ -575,6 +586,15 @@ actor BundleManager {
     folderManifest.modifiedAt = Date()
 
     try writeFolderManifest(folderManifest, to: folderManifestURL)
+
+    // Notify that a folder was renamed for search indexing.
+    await MainActor.run {
+      NotificationCenter.default.post(
+        name: .folderRenamed,
+        object: nil,
+        userInfo: ["folderID": folderID, "displayName": newDisplayName]
+      )
+    }
   }
 
   // Deletes a folder and ALL notebooks contained within it.

@@ -260,6 +260,15 @@ struct DashboardView: View {
   // Reference to the UIWindow for search overlay presentation.
   @State private var windowRef: UIWindow?
 
+  // MARK: - Search Service
+
+  // The search index actor for SQLite FTS5 operations.
+  @State private var searchIndex: SearchIndex?
+  // The search service actor for transforming results.
+  @State private var searchService: SearchService?
+  // Tracks whether the search index has been initialized.
+  @State private var isSearchIndexReady = false
+
   // Screen bounds for layout calculations.
   // Updated from GeometryReader to avoid deprecated UIScreen.main usage.
   @State private var screenBounds: CGRect = .zero
@@ -335,6 +344,9 @@ struct DashboardView: View {
       })
       .onChange(of: searchOverlayState.searchText) { _, newValue in
         handleSearchTextChanged(newValue)
+      }
+      .task {
+        await initializeSearchIndex()
       }
   }
 
@@ -800,11 +812,29 @@ struct DashboardView: View {
 
   // Performs the actual search using SearchService.
   private func performSearch(query: String) async {
-    // Search service integration will be added here.
-    // For now, return empty results to test the UI.
-    await MainActor.run {
-      searchOverlayState.isSearching = false
-      // Results will be populated when SearchService is integrated.
+    // Ensure search service is ready.
+    guard let searchService = searchService, isSearchIndexReady else {
+      await MainActor.run {
+        searchOverlayState.isSearching = false
+        searchOverlayState.searchResults = []
+      }
+      return
+    }
+
+    do {
+      // Perform the search using SearchService.
+      let results = try await searchService.searchAll(query: query)
+      await MainActor.run {
+        searchOverlayState.searchResults = results
+        searchOverlayState.isSearching = false
+      }
+    } catch {
+      // Handle search errors gracefully by returning empty results.
+      print("Search error: \(error.localizedDescription)")
+      await MainActor.run {
+        searchOverlayState.searchResults = []
+        searchOverlayState.isSearching = false
+      }
     }
   }
 
@@ -827,6 +857,150 @@ struct DashboardView: View {
            let uuid = UUID(uuidString: pdf.id) {
           openPDFDocument(documentID: uuid)
         }
+      case .lesson:
+        // Find the lesson metadata and open it.
+        if let lesson = library.lessons.first(where: { $0.id == result.documentID }) {
+          openLesson(lesson)
+        }
+      case .folder:
+        // Find the folder metadata and open it.
+        if let folder = library.folders.first(where: { $0.id == result.documentID }) {
+          openFolderFromSearch(folder)
+        }
+      }
+    }
+  }
+
+  // MARK: - Search Index Initialization
+
+  // Initializes the search index and indexes existing documents.
+  private func initializeSearchIndex() async {
+    // Skip if already initialized.
+    guard !isSearchIndexReady else { return }
+
+    // Create the search index with default configuration.
+    let index = SearchIndex()
+    searchIndex = index
+
+    do {
+      // Initialize the SQLite FTS5 database.
+      try await index.initialize()
+
+      // Create the folder lookup for enriching results.
+      let folderLookup = BundleManagerFolderLookup(bundleManager: library.bundleManager)
+
+      // Create the preview lookup for thumbnail images.
+      let previewLookup = LibraryPreviewLookup(library: library)
+
+      // Create the search service with dependencies.
+      let service = SearchService(index: index, folderLookup: folderLookup, previewLookup: previewLookup)
+      searchService = service
+
+      // Mark as ready so searches can proceed.
+      isSearchIndexReady = true
+
+      // Index existing documents in the background.
+      await indexExistingDocuments()
+    } catch {
+      print("Failed to initialize search index: \(error.localizedDescription)")
+    }
+  }
+
+  // Indexes all existing notebooks and PDFs that are not yet in the search index.
+  private func indexExistingDocuments() async {
+    guard let index = searchIndex else { return }
+
+    let contentExtractor = ContentExtractor()
+
+    // Index notebooks.
+    for notebook in library.notebooks {
+      do {
+        // Open the notebook to get the manifest and JIIX data.
+        let handle = try await library.bundleManager.openNotebook(id: notebook.id)
+
+        // Get the manifest to check modified date.
+        let manifest = handle.initialManifest
+
+        // Check if already indexed with current version.
+        let needsIndex = await index.documentNeedsReindex(
+          documentID: notebook.id,
+          modifiedAt: manifest.modifiedAt
+        )
+
+        guard needsIndex else {
+          // Close the handle since we don't need to index.
+          await handle.close()
+          continue
+        }
+
+        // Extract content from JIIX.
+        let content = try await contentExtractor.extractFromNotebook(
+          handle: handle,
+          manifest: manifest
+        )
+
+        // Build the search index entry.
+        // Note: folderID is not tracked in NotebookMetadata, set to nil for now.
+        let entry = SearchIndexEntry(
+          documentID: notebook.id,
+          documentType: .notebook,
+          folderID: nil,
+          title: notebook.displayName,
+          contentText: content.text,
+          modifiedAt: manifest.modifiedAt
+        )
+
+        // Index the document.
+        try await index.indexDocument(entry)
+
+        // Close the handle after indexing.
+        await handle.close()
+      } catch {
+        print("Failed to index notebook \(notebook.id): \(error.localizedDescription)")
+      }
+    }
+
+    // Index PDFs.
+    for pdf in library.pdfDocuments {
+      // Check if already indexed with current version.
+      let needsIndex = await index.documentNeedsReindex(
+        documentID: pdf.id,
+        modifiedAt: pdf.modifiedAt
+      )
+
+      guard needsIndex else { continue }
+
+      do {
+        // Get the PDF document directory using PDFNoteStorage.
+        guard let documentID = UUID(uuidString: pdf.id) else { continue }
+        let documentDir = try await PDFNoteStorage.documentDirectory(for: documentID)
+
+        // The PDF file is stored with the source filename.
+        let pdfURL = documentDir.appendingPathComponent(pdf.sourceFileName)
+        guard FileManager.default.fileExists(atPath: pdfURL.path) else { continue }
+
+        // Extract text from PDF.
+        let content = try await contentExtractor.extractFromPDF(
+          url: pdfURL,
+          documentID: pdf.id,
+          displayName: pdf.displayName,
+          modifiedAt: pdf.modifiedAt
+        )
+
+        // Build the search index entry.
+        let entry = SearchIndexEntry(
+          documentID: pdf.id,
+          documentType: .pdf,
+          folderID: pdf.folderID,
+          title: pdf.displayName,
+          contentText: content.text,
+          modifiedAt: pdf.modifiedAt
+        )
+
+        // Index the document.
+        try await index.indexDocument(entry)
+      } catch {
+        print("Failed to index PDF \(pdf.id): \(error.localizedDescription)")
       }
     }
   }
@@ -1389,6 +1563,34 @@ struct DashboardView: View {
   }
 
   // MARK: - Folder Expansion Actions
+
+  // Opens a folder from a search result.
+  // Uses a center-screen source frame since there's no folder card to animate from.
+  private func openFolderFromSearch(_ folder: FolderMetadata) {
+    // Use center of screen as source frame for animation.
+    let centerFrame = CGRect(
+      x: UIScreen.main.bounds.midX - 50,
+      y: UIScreen.main.bounds.midY - 50,
+      width: 100,
+      height: 100
+    )
+    expandedFolderSourceFrame = centerFrame
+
+    Task {
+      let notebooks = await library.notebooksInFolder(folderID: folder.id)
+      let pdfs = await library.pdfDocumentsInFolder(folderID: folder.id)
+      expandedFolderNotebooks = notebooks
+      expandedFolderPDFs = pdfs
+
+      expandedFolder = folder
+
+      DispatchQueue.main.async {
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+          isOverlayExpanded = true
+        }
+      }
+    }
+  }
 
   // Opens a folder and loads its notebooks and PDFs for display in the overlay.
   // Uses scale-based animation from the folder card's position.
@@ -2444,155 +2646,6 @@ struct DashboardView: View {
         deletingLesson = lesson
       },
     ]
-  }
-
-  // MARK: - Search Overlay
-
-  // Presents the search overlay above the navigation bar in its own window.
-  private func presentSearchOverlay() {
-    if searchOverlayWindow == nil {
-      createSearchOverlayWindow()
-    }
-
-    DispatchQueue.main.async {
-      self.searchOverlayState.isExpanded = true
-      self.searchOverlayState.isSearchFieldFocused = true
-    }
-  }
-
-  // Creates the search overlay window if a scene is available.
-  private func createSearchOverlayWindow() {
-    guard let windowScene = resolveSearchOverlayScene() else {
-      print("[DashboardView] Search overlay window scene unavailable")
-      return
-    }
-
-    let rootView = makeSearchOverlayRootView()
-    let hostingController = UIHostingController(rootView: rootView)
-    hostingController.view.backgroundColor = .clear
-
-    let overlayWindow = UIWindow(windowScene: windowScene)
-    overlayWindow.rootViewController = hostingController
-    overlayWindow.windowLevel = .alert + 1
-    overlayWindow.isHidden = false
-    overlayWindow.makeKeyAndVisible()
-
-    searchOverlayHostingController = hostingController
-    searchOverlayWindow = overlayWindow
-  }
-
-  // Releases the overlay window and restores focus to the main window.
-  private func removeSearchOverlayWindow() {
-    searchOverlayWindow?.isHidden = true
-    searchOverlayWindow?.rootViewController = nil
-    searchOverlayWindow = nil
-    searchOverlayHostingController = nil
-    windowRef?.makeKeyAndVisible()
-  }
-
-  // Builds the root view used by the overlay window.
-  private func makeSearchOverlayRootView() -> SearchOverlayRootView {
-    SearchOverlayRootView(
-      state: searchOverlayState,
-      onDismiss: {
-        dismissSearch()
-      },
-      onClear: {
-        clearSearchText()
-      },
-      onResultTapped: { result in
-        handleSearchResultTapped(result)
-      }
-    )
-  }
-
-  // Chooses the active scene for presenting the overlay window.
-  private func resolveSearchOverlayScene() -> UIWindowScene? {
-    if let windowScene = windowRef?.windowScene {
-      return windowScene
-    }
-
-    return UIApplication.shared.connectedScenes
-      .compactMap { $0 as? UIWindowScene }
-      .first(where: { $0.activationState == .foregroundActive })
-  }
-
-  // Dismisses the search overlay and resets state.
-  private func dismissSearch() {
-    searchOverlayState.isSearchFieldFocused = false
-    searchOverlayState.isExpanded = false
-    // Clear search after animation completes.
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-      if !searchOverlayState.isExpanded {
-        searchOverlayState.searchText = ""
-        searchOverlayState.searchResults = []
-        searchOverlayState.isSearching = false
-        removeSearchOverlayWindow()
-      }
-    }
-  }
-
-  // Clears the search text without closing the overlay.
-  private func clearSearchText() {
-    // Clear the bound search text.
-    searchOverlayState.searchText = ""
-    // Reset results for the empty query state.
-    searchOverlayState.searchResults = []
-    // Stop the loading state.
-    searchOverlayState.isSearching = false
-    // Maintain focus in the search field.
-    searchOverlayState.isSearchFieldFocused = true
-  }
-
-  // Handles search text changes with debouncing.
-  private func handleSearchTextChanged(_ newValue: String) {
-    searchDebounceTask?.cancel()
-    let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
-
-    if trimmed.isEmpty {
-      searchOverlayState.searchResults = []
-      searchOverlayState.isSearching = false
-      return
-    }
-
-    searchOverlayState.isSearching = true
-    searchDebounceTask = Task {
-      try? await Task.sleep(nanoseconds: 250_000_000)
-      guard !Task.isCancelled else { return }
-      await performSearch(query: trimmed)
-    }
-  }
-
-  // Performs the actual search using SearchService.
-  private func performSearch(query: String) async {
-    // Search service integration will be added here.
-    // For now, return empty results to test the UI.
-    await MainActor.run {
-      searchOverlayState.isSearching = false
-      // Results will be populated when SearchService is integrated.
-    }
-  }
-
-  // Handles tapping on a search result.
-  private func handleSearchResultTapped(_ result: SearchResult) {
-    // Dismiss the search overlay first.
-    dismissSearch()
-
-    // Navigate to the document after a brief delay for animation.
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-      switch result.documentType {
-      case .notebook:
-        // Find the notebook and open it.
-        if let notebook = library.notebooks.first(where: { $0.id == result.documentID }) {
-          openNotebook(notebook)
-        }
-      case .pdf:
-        // Open the PDF document by ID.
-        if let uuid = UUID(uuidString: result.documentID) {
-          openPDFDocument(documentID: uuid)
-        }
-      }
-    }
   }
 }
 // swiftlint:enable type_body_length
