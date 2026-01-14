@@ -1,0 +1,132 @@
+#!/bin/bash
+# Simplified UI test runner for Claude.
+# Runs a specific test, captures output, and makes results easy to read.
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+LOCK_FILE="/tmp/inkos-ui-test.lock"
+RESULT_DIR="/tmp/inkos-ui-tests"
+SCREENSHOT_DIR="$RESULT_DIR/screenshots"
+
+# Device configuration.
+# Note: xcodebuild uses different UDIDs than devicectl.
+IPAD_UDID="00008120-001665CC21900032"
+
+# Check lock.
+check_lock() {
+    if [ -f "$LOCK_FILE" ]; then
+        local lock_age=$(($(date +%s) - $(stat -f %m "$LOCK_FILE" 2>/dev/null || echo 0)))
+        if [ $lock_age -lt 300 ]; then
+            echo "ERROR: Tests already running (lock age: ${lock_age}s)"
+            echo "Remove $LOCK_FILE if stale"
+            exit 1
+        fi
+        rm -f "$LOCK_FILE"
+    fi
+    echo $$ > "$LOCK_FILE"
+    trap "rm -f $LOCK_FILE" EXIT
+}
+
+# Run a specific test.
+run_test() {
+    local test_name="$1"
+    local use_simulator="$2"
+
+    mkdir -p "$SCREENSHOT_DIR"
+
+    echo "=== Running test: $test_name ==="
+
+    local destination
+    if [ "$use_simulator" = "sim" ]; then
+        destination="platform=iOS Simulator,name=iPad Pro 13-inch (M5)"
+    else
+        destination="platform=iOS,id=$IPAD_UDID"
+    fi
+
+    cd "$PROJECT_DIR"
+
+    # Run the test.
+    xcodebuild test \
+        -workspace InkOS.xcworkspace \
+        -scheme InkOS \
+        -destination "$destination" \
+        -only-testing:"InkOSUITests/InkOSUITests/$test_name" \
+        -skip-testing:InkOSTests \
+        -allowProvisioningUpdates \
+        2>&1 | tee "$RESULT_DIR/output.log"
+
+    echo ""
+    echo "=== Test Complete ==="
+    echo "Screenshots: $SCREENSHOT_DIR"
+    ls -la "$SCREENSHOT_DIR" 2>/dev/null || echo "(no screenshots)"
+}
+
+# List available screenshots.
+list_screenshots() {
+    echo "=== Available Screenshots ==="
+    if [ -d "$SCREENSHOT_DIR" ]; then
+        ls -la "$SCREENSHOT_DIR"/*.png 2>/dev/null || echo "No screenshots found"
+    else
+        echo "No screenshot directory"
+    fi
+}
+
+# Show test output summary.
+show_results() {
+    echo "=== Test Results Summary ==="
+    if [ -f "$RESULT_DIR/output.log" ]; then
+        # Show test result lines.
+        grep -E "(Test Case|passed|failed|error:)" "$RESULT_DIR/output.log" | tail -30
+    else
+        echo "No results found"
+    fi
+}
+
+# Main.
+case "${1:-help}" in
+    run)
+        check_lock
+        run_test "${2:-testDashboardLoads}" "${3:-device}"
+        ;;
+    longpress)
+        check_lock
+        run_test "testLongPressShowsActionSheet" "${2:-device}"
+        ;;
+    animation)
+        check_lock
+        run_test "testLongPressAnimationVisual" "${2:-device}"
+        ;;
+    debug)
+        check_lock
+        run_test "testPrintAccessibilityTree" "${2:-device}"
+        ;;
+    screenshots)
+        list_screenshots
+        ;;
+    results)
+        show_results
+        ;;
+    clean)
+        rm -rf "$RESULT_DIR"
+        rm -f "$LOCK_FILE"
+        echo "Cleaned test artifacts"
+        ;;
+    *)
+        echo "Usage: $0 <command> [options]"
+        echo ""
+        echo "Commands:"
+        echo "  run <test_name> [sim|device]  - Run specific test"
+        echo "  longpress [sim|device]        - Run long press test"
+        echo "  animation [sim|device]        - Run animation visual test"
+        echo "  debug [sim|device]            - Print accessibility tree"
+        echo "  screenshots                   - List captured screenshots"
+        echo "  results                       - Show test results"
+        echo "  clean                         - Remove test artifacts"
+        echo ""
+        echo "Examples:"
+        echo "  $0 longpress device"
+        echo "  $0 run testDashboardLoads sim"
+        ;;
+esac

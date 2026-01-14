@@ -10,7 +10,7 @@ rm -f ./Logs/build_logs.txt
 echo "🔨 Compiling InkOS (No Tests)..."
 
 DESTINATION="generic/platform=iOS Simulator"
-DERIVED_DATA_PATH="./Logs/DerivedData"
+DERIVED_DATA_PATH="./Logs.nosync/DerivedData"
 CONFIGURATION="Debug"
 
 COMMON_BUILD_ARGS=(

@@ -1,0 +1,51 @@
+
+----- xcbeautify -----
+Version: 3.1.2
+----------------------
+
+note: Building targets in dependency order
+note: Target dependency graph (3 targets)
+note: Run script build phase 'Copy Recognition Assets' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'InkOS' from project 'InkOS')
+[InkOS] Write Auxiliary File InkOS.SwiftFileList
+[InkOS] Write Auxiliary File InkOS.SwiftConstValuesFileList
+[InkOS] Write Auxiliary File InkOS.LinkFileList
+[InkOS] Write Auxiliary File InkOS.SwiftFileList
+[InkOS] Write Auxiliary File InkOS.SwiftConstValuesFileList
+[InkOS] Write Auxiliary File InkOS.LinkFileList
+[InkOS] Write Auxiliary File InkOS-OutputFileMap.json
+[InkOS] Write Auxiliary File InkOS-OutputFileMap.json
+[InkOS] Processing Info.plist
+[InkOS] Compiling GraphImageRenderer.swift
+[InkOS] Compiling GraphImageRenderer.swift
+[InkOS] Compiling GraphInsertionService.swift
+[x] /Users/andrewallen/Desktop/swift_projects/InkOS-skills/InkOS/Features/Skills/Graph/GraphInsertionService.swift:70:9: actor-isolated instance method 'validateImage' cannot be called from outside of the actor
+    try validateImage(request.image)
+    ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/InkOS-skills/InkOS/Features/Skills/Graph/GraphInsertionService.swift:73:29: actor-isolated instance method 'validatePosition' cannot be called from outside of the actor
+    let validatedPosition = validatePosition(request.position)
+                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/InkOS-skills/InkOS/Features/Skills/Graph/GraphInsertionService.swift:80:24: actor-isolated instance method 'createUserData(specification:notebookID:)' cannot be called from outside of the actor
+    let userData = try createUserData(
+                   ~~~~^~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/InkOS-skills/InkOS/Features/Skills/Graph/GraphInsertionService.swift:130:9: actor-isolated instance method 'validateImage' cannot be called from outside of the actor
+    try validateImage(newImage)
+    ~~~~^~~~~~~~~~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/InkOS-skills/InkOS/Features/Skills/Graph/GraphInsertionService.swift:138:24: actor-isolated instance method 'createUserData(specification:notebookID:)' cannot be called from outside of the actor
+    let userData = try createUserData(
+                   ~~~~^~~~~~~~~~~~~~~
+[InkOS] Compiling GraphInsertionService.swift
+[x] /Users/andrewallen/Desktop/swift_projects/InkOS-skills/InkOS/Features/Skills/Graph/GraphInsertionService.swift:70:9: actor-isolated instance method 'validateImage' cannot be called from outside of the actor
+    try validateImage(request.image)
+    ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/InkOS-skills/InkOS/Features/Skills/Graph/GraphInsertionService.swift:73:29: actor-isolated instance method 'validatePosition' cannot be called from outside of the actor
+    let validatedPosition = validatePosition(request.position)
+                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/InkOS-skills/InkOS/Features/Skills/Graph/GraphInsertionService.swift:80:24: actor-isolated instance method 'createUserData(specification:notebookID:)' cannot be called from outside of the actor
+    let userData = try createUserData(
+                   ~~~~^~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/InkOS-skills/InkOS/Features/Skills/Graph/GraphInsertionService.swift:130:9: actor-isolated instance method 'validateImage' cannot be called from outside of the actor
+    try validateImage(newImage)
+    ~~~~^~~~~~~~~~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/InkOS-skills/InkOS/Features/Skills/Graph/GraphInsertionService.swift:138:24: actor-isolated instance method 'createUserData(specification:notebookID:)' cannot be called from outside of the actor
+    let userData = try createUserData(
+                   ~~~~^~~~~~~~~~~~~~~

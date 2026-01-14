@@ -32,7 +32,7 @@ rm -f ./Logs/test_logs_raw.txt
 echo "🧪 Building and Testing InkOS..."
 
 DESTINATION="platform=iOS Simulator,name=iPhone 17 Pro"
-DERIVED_DATA_PATH="./Logs/DerivedData"
+DERIVED_DATA_PATH="./Logs.nosync/DerivedData"
 
 # Run tests and capture output - allow command to fail
 set +e
