@@ -2,18 +2,16 @@
 // NotebookContract.swift
 // InkOS
 //
-// Core Notebook container types for the Alan educational content system.
-// A Notebook holds Blocks and serves as the base type for both standalone
-// notebooks and branches (notebooks with a parent).
+// Notebook Document Schema - the single source of truth for what appears
+// on the canvas during a tutoring session. Contains an ordered list of blocks.
 //
 
 import Foundation
 
-// MARK: - NotebookID
+// MARK: - NotebookDocumentID
 
-// Type-safe identifier for notebooks.
-// Uses String internally for JSON compatibility and easy debugging.
-struct NotebookID: Hashable, Sendable, Codable, Equatable, CustomStringConvertible {
+// Type-safe identifier for notebook documents.
+struct NotebookDocumentID: Hashable, Sendable, Codable, Equatable, CustomStringConvertible {
   let rawValue: String
 
   init() {
@@ -37,81 +35,140 @@ struct NotebookID: Hashable, Sendable, Codable, Equatable, CustomStringConvertib
   }
 }
 
-// MARK: - NotebookSchemaVersion
+// MARK: - NotebookDocument
 
-// Schema version for Notebook format migration.
-enum NotebookSchemaVersion {
-  static let current = 1
-  static let supported: Set<Int> = [1]
-}
+// The single source of truth for a tutoring session's visual state.
+// Contains an ordered list of primitive blocks to render.
+struct NotebookDocument: Identifiable, Sendable, Equatable, Codable {
+  // Unique identifier for this notebook document.
+  let id: NotebookDocumentID
 
-// MARK: - NotebookMeta
+  // Increments on each update, enables optimistic concurrency.
+  var version: Int
 
-// Metadata about a notebook's creation and modification.
-// Named NotebookMeta to avoid conflict with storage layer's NotebookMetadata.
-struct NotebookMeta: Sendable, Codable, Equatable {
-  // Timestamp when notebook was created.
+  // Timestamp when document was created.
   let createdAt: Date
 
-  // Timestamp when notebook was last modified.
-  var modifiedAt: Date
+  // Timestamp when document was last modified.
+  var updatedAt: Date
 
-  // Schema version for migration.
-  let schemaVersion: Int
+  // Links to the tutoring session this document belongs to.
+  let sessionId: String?
+
+  // Optional title for this notebook.
+  var title: String?
+
+  // Ordered list of primitive blocks to render.
+  var blocks: [Block]
 
   private enum CodingKeys: String, CodingKey {
-    case createdAt
-    case modifiedAt
-    case schemaVersion
+    case id
+    case version
+    case createdAt = "created_at"
+    case updatedAt = "updated_at"
+    case sessionId = "session_id"
+    case title
+    case blocks
   }
 
   init(
+    id: NotebookDocumentID = NotebookDocumentID(),
+    version: Int = 1,
     createdAt: Date = Date(),
-    modifiedAt: Date = Date(),
-    schemaVersion: Int = NotebookSchemaVersion.current
+    updatedAt: Date = Date(),
+    sessionId: String? = nil,
+    title: String? = nil,
+    blocks: [Block] = []
   ) {
+    self.id = id
+    self.version = version
     self.createdAt = createdAt
-    self.modifiedAt = modifiedAt
-    self.schemaVersion = schemaVersion
+    self.updatedAt = updatedAt
+    self.sessionId = sessionId
+    self.title = title
+    self.blocks = blocks
+  }
+
+  // Increments version and updates timestamp.
+  mutating func incrementVersion() {
+    version += 1
+    updatedAt = Date()
+  }
+
+  // Appends a block and increments version.
+  mutating func appendBlock(_ block: Block) {
+    blocks.append(block)
+    incrementVersion()
+  }
+
+  // Inserts a block at index and increments version.
+  mutating func insertBlock(_ block: Block, at index: Int) {
+    blocks.insert(block, at: index)
+    incrementVersion()
+  }
+
+  // Removes block at index and increments version.
+  @discardableResult
+  mutating func removeBlock(at index: Int) -> Block {
+    let block = blocks.remove(at: index)
+    incrementVersion()
+    return block
+  }
+
+  // Updates block at index and increments version.
+  mutating func updateBlock(at index: Int, with block: Block) {
+    blocks[index] = block
+    incrementVersion()
+  }
+
+  // Finds block by ID.
+  func block(withId id: BlockID) -> Block? {
+    blocks.first { $0.id == id }
+  }
+
+  // Finds index of block by ID.
+  func indexOfBlock(withId id: BlockID) -> Int? {
+    blocks.firstIndex { $0.id == id }
   }
 }
 
-// MARK: - Notebook
+// MARK: - JSON Encoding Helpers
 
-// Container for blocks in InkOS.
-// If parentId is nil, this is a standalone notebook.
-// If parentId is set, this is a branch (child of another notebook).
-struct Notebook: Identifiable, Sendable, Equatable {
-  // Unique identifier for this notebook.
-  let id: NotebookID
+extension NotebookDocument {
+  // Encodes notebook document to JSON data with standard date formatting.
+  func toJSONData() throws -> Data {
+    let encoder = JSONEncoder()
+    encoder.dateEncodingStrategy = .iso8601
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    return try encoder.encode(self)
+  }
 
-  // What this notebook is about.
-  var topic: String
+  // Decodes notebook document from JSON data with standard date formatting.
+  static func fromJSONData(_ data: Data) throws -> NotebookDocument {
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    return try decoder.decode(NotebookDocument.self, from: data)
+  }
 
-  // Linear sequence of blocks shown to user.
-  var blocks: [Block]
+  // Encodes notebook document to JSON string.
+  func toJSONString() throws -> String {
+    let data = try toJSONData()
+    guard let string = String(data: data, encoding: .utf8) else {
+      throw EncodingError.invalidValue(
+        self,
+        EncodingError.Context(codingPath: [], debugDescription: "Failed to convert JSON data to string")
+      )
+    }
+    return string
+  }
 
-  // Reference to parent notebook. Nil means standalone, set means branch.
-  let parentId: NotebookID?
-
-  // Metadata about creation and modification.
-  let metadata: NotebookMeta
-
-  // Returns true if this notebook has a parent (is a branch).
-  var isBranch: Bool { parentId != nil }
-
-  // Initializer with defaults for optional fields.
-  init(
-    id: NotebookID = NotebookID(),
-    topic: String,
-    blocks: [Block] = [],
-    parentId: NotebookID? = nil,
-    metadata: NotebookMeta = NotebookMeta()
-  ) {
-    self.id = id
-    self.topic = topic
-    self.blocks = blocks
-    self.parentId = parentId
-    self.metadata = metadata
+  // Decodes notebook document from JSON string.
+  static func fromJSONString(_ string: String) throws -> NotebookDocument {
+    guard let data = string.data(using: .utf8) else {
+      throw DecodingError.dataCorrupted(
+        DecodingError.Context(codingPath: [], debugDescription: "Failed to convert string to data")
+      )
+    }
+    return try fromJSONData(data)
   }
 }
