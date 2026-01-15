@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Alan is an iPad app built with SwiftUI and the MyScript iink SDK for handwriting recognition.
+Alan is an iPad app built with SwiftUI and the MyScript iink SDK for handwriting recognition. It features a tutoring agent (Alan) that generates interactive notebook content through a subagent architecture.
 
 ## Module Organization
 
@@ -18,45 +18,58 @@ Alan/
 │   │   └── AppRootView.swift             # Root view
 │   │
 │   ├── Features/                         # Feature Modules
-│   │   ├── Block/                        # Block primitive system (Alan content model)
-│   │   │   ├── Core/                     # Core block types and contracts
-│   │   │   │   ├── BlockContract.swift          # Block, BlockID, BlockMetadata, BlockSource
-│   │   │   │   ├── BlockKind.swift              # BlockKind enum (20 types) + BlockTrait
-│   │   │   │   ├── BlockProperties.swift        # Type-safe property structs per kind
-│   │   │   │   ├── BlockParameter.swift         # Parameter system (sliders, toggles, etc.)
-│   │   │   │   ├── BlockAction.swift            # Actions blocks can trigger
-│   │   │   │   ├── BlockState.swift             # State enum + valid transitions
-│   │   │   │   └── BlockValidation.swift        # BlockError + DefaultBlockValidator
-│   │   │   └── Extensions/               # Codable and utility extensions
-│   │   │       └── Block+Codable.swift          # Manual Codable conformance
+│   │   ├── Alan/                         # Alan tutoring agent system
+│   │   │   ├── Core/                     # Core types and contracts
+│   │   │   │   ├── AlanContract.swift           # Request/response types, VisualIntent, SubagentRequest
+│   │   │   │   └── AlanError.swift              # Error types for Alan operations
+│   │   │   │
+│   │   │   ├── Networking/               # API communication
+│   │   │   │   ├── AlanAPIClient.swift          # HTTP client for Alan and subagents
+│   │   │   │   ├── AlanEndpoints.swift          # Firebase endpoint URLs
+│   │   │   │   └── SSEParser.swift              # Server-sent events parser for streaming
+│   │   │   │
+│   │   │   └── Orchestration/            # Response processing
+│   │   │       ├── OrchestrationActor.swift     # Coordinates Alan + subagent flow
+│   │   │       ├── BlockFactory.swift           # Creates blocks from subagent responses
+│   │   │       └── OutputParser.swift           # Parses Alan structured output
+│   │   │
+│   │   ├── Block/                        # Block primitive system (content model)
+│   │   │   ├── Core/                     # Core block types
+│   │   │   │   ├── BlockContract.swift          # Block, BlockID, BlockType, BlockStatus
+│   │   │   │   └── BlockContent.swift           # BlockContent enum (type-erased content)
+│   │   │   │
+│   │   │   └── Content/                  # Content type definitions
+│   │   │       ├── TextContent.swift            # Text block content
+│   │   │       ├── ImageContent.swift           # Image block content
+│   │   │       ├── GraphicsContent.swift        # Interactive graphics (Chart.js, p5.js, etc.)
+│   │   │       ├── TableContent.swift           # Table block content
+│   │   │       ├── EmbedContent.swift           # Embedded content (PhET, GeoGebra, etc.)
+│   │   │       └── InputContent.swift           # User input block content
 │   │   │
 │   │   ├── Notebook/                     # Notebook data models
-│   │   │   ├── Core/                     # Core notebook contracts
-│   │   │   │   └── NotebookContract.swift       # Notebook, Page, NotebookID
-│   │   │   ├── Extensions/               # Notebook extensions
-│   │   │   │   └── Notebook+Codable.swift       # Codable conformance
-│   │   │   └── Validation/               # Notebook validation
-│   │   │       └── NotebookValidation.swift     # Validation logic
+│   │   │   └── Core/                     # Core notebook contracts
+│   │   │       └── NotebookContract.swift       # Notebook, Page, NotebookID
 │   │   │
 │   │   └── Shared/                       # Shared utilities
-│   │       ├── UIComponents.swift        # Color extensions, UI modifiers
-│   │       ├── FileLogger.swift          # Debug logging utility
-│   │       └── ContextMenuView.swift     # Reusable context menu
+│   │       ├── UIComponents.swift               # Color extensions, UI modifiers
+│   │       ├── FileLogger.swift                 # Debug logging utility
+│   │       └── ContextMenuView.swift            # Reusable context menu
 │   │
 │   ├── Editor/                           # Editor canvas components
 │   │   ├── BaseEditorViewController.swift       # Base editor controller
 │   │   ├── EditorViewController.swift           # Main editor controller
+│   │   ├── EditorUIComponents.swift             # Editor-specific UI components
 │   │   └── HomeButtonView.swift                 # Home navigation button
 │   │
 │   ├── Storage/                          # Persistence Layer
-│   │   ├── BundleStorage.swift           # Directory path helpers
-│   │   ├── SDKProtocols.swift            # SDK protocol definitions
-│   │   └── JIIXPersistence/              # JIIX format persistence
+│   │   ├── BundleStorage.swift                  # Directory path helpers
+│   │   ├── SDKProtocols.swift                   # SDK protocol definitions
+│   │   └── JIIXPersistence/                     # JIIX format persistence
 │   │       └── JIIXPersistenceService.swift     # Persistence service
 │   │
 │   ├── Frameworks/
 │   │   └── Ink/                          # MyScript SDK Wrappers
-│   │       ├── EngineProvider.swift      # MyScript engine singleton
+│   │       ├── EngineProvider.swift             # MyScript engine singleton
 │   │       │
 │   │       ├── Input/                    # Touch/Pen input handling
 │   │       │   ├── InputViewController.swift
@@ -95,19 +108,14 @@ Alan/
 │
 ├── InkOSTests/                           # Unit test suite
 │   ├── Features/
+│   │   ├── Alan/                         # Alan agent tests
+│   │   │   ├── AlanContractTests.swift          # Contract type tests
+│   │   │   └── SSEParserTests.swift             # SSE parsing tests
 │   │   ├── Block/                        # Block tests
-│   │   │   ├── BlockActionTests.swift
-│   │   │   ├── BlockCodableTests.swift
-│   │   │   ├── BlockContractTests.swift
-│   │   │   ├── BlockKindTests.swift
-│   │   │   ├── BlockParameterTests.swift
-│   │   │   ├── BlockPropertiesTests.swift
-│   │   │   ├── BlockStateTests.swift
-│   │   │   └── BlockValidationTests.swift
+│   │   │   ├── BlockTests.swift                 # Core block tests
+│   │   │   └── TextContentTests.swift           # Text content tests
 │   │   └── Notebook/                     # Notebook tests
-│   │       ├── NotebookCodableTests.swift
-│   │       ├── NotebookContractTests.swift
-│   │       └── NotebookValidationTests.swift
+│   │       └── NotebookDocumentTests.swift      # Notebook document tests
 │   │
 │   └── Rendering/
 │       ├── DisplayViewModelTests.swift
@@ -120,6 +128,25 @@ Alan/
 │   ├── firebase.json                     # Firebase configuration
 │   └── functions/                        # Cloud Functions
 │       ├── src/                          # TypeScript source files
+│       │   ├── index.ts                         # Function exports
+│       │   ├── config.ts                        # Configuration
+│       │   ├── embeddings.ts                    # Embedding utilities
+│       │   ├── files.ts                         # File operations
+│       │   │
+│       │   ├── alan/                     # Alan agent endpoint
+│       │   │   ├── alanAgent.ts                 # Main Alan agent with Gemini
+│       │   │   ├── alanPrompts.ts               # System prompts for Alan
+│       │   │   └── outputSchema.ts              # Structured output schema
+│       │   │
+│       │   └── subagents/                # Subagent system
+│       │       ├── types.ts                     # Shared types (VisualIntent, SubagentRequest, etc.)
+│       │       ├── subagentRouter.ts            # Main router endpoint
+│       │       ├── visualRouter.ts              # Routes visual requests to subagents
+│       │       ├── tableSubagent.ts             # Table generation subagent
+│       │       ├── imageSubagent.ts             # Image search/generation subagent
+│       │       ├── graphicsSubagent.ts          # Interactive graphics subagent
+│       │       └── embedSubagent.ts             # Embed provider subagent
+│       │
 │       ├── package.json                  # Node.js dependencies
 │       └── tsconfig.json                 # TypeScript configuration
 │
@@ -153,6 +180,33 @@ Alan/
 └── Pods/                                 # CocoaPods dependencies (generated)
 ```
 
+## Architecture Overview
+
+### Alan Agent System
+
+Alan is the main tutoring agent that generates notebook content. It uses a subagent architecture:
+
+1. **Alan Agent** (`alan/alanAgent.ts`) - Main tutoring agent powered by Gemini. Outputs Text/Input blocks directly and delegates Table/Visual blocks to specialized subagents.
+
+2. **Subagent Router** (`subagents/subagentRouter.ts`) - Dispatches requests to appropriate subagents based on `target_type`.
+
+3. **Visual Router** (`subagents/visualRouter.ts`) - Routes visual requests to image, graphics, or embed subagents based on intent.
+
+4. **Subagents**:
+   - **Table** - Generates table content
+   - **Image** - Searches libraries or generates images
+   - **Graphics** - Creates interactive visualizations (Chart.js, p5.js, Three.js, JSXGraph)
+   - **Embed** - Matches to embed providers (PhET, GeoGebra, Desmos, YouTube)
+
+### iOS Orchestration
+
+The iOS app coordinates with the backend through:
+
+1. **OrchestrationActor** - Sends messages to Alan, processes streaming responses, dispatches subagent requests in parallel
+2. **AlanAPIClient** - HTTP client for Alan and subagent endpoints
+3. **SSEParser** - Parses server-sent events for streaming responses
+4. **BlockFactory** - Creates Block instances from subagent responses
+
 ## Project Rules
 
 ### 1. Comments
@@ -171,5 +225,7 @@ Alan/
 
 ## Build Commands
 
-- **Build**: `Scripts/buildapp`
-- **Test**: `Scripts/testapp`
+- **Build iOS**: `Scripts/buildapp`
+- **Test iOS**: `Scripts/testapp`
+- **Build Firebase**: `cd Firebase/functions && npm run build`
+- **Deploy Firebase**: `cd Firebase && firebase deploy --only functions`
