@@ -1,5 +1,52 @@
 import UIKit
 
+// MARK: - JIIXPersistenceError
+
+// Errors that can occur during JIIX persistence operations.
+enum JIIXPersistenceError: Error, LocalizedError {
+  case exportFailed(reason: String)
+  case saveFailed(reason: String)
+  case loadFailed(reason: String)
+
+  var errorDescription: String? {
+    switch self {
+    case .exportFailed(let reason):
+      return "JIIX export failed: \(reason)"
+    case .saveFailed(let reason):
+      return "JIIX save failed: \(reason)"
+    case .loadFailed(let reason):
+      return "JIIX load failed: \(reason)"
+    }
+  }
+}
+
+// MARK: - Notification Names
+
+extension NSNotification.Name {
+  // Posted when notebook content is saved successfully.
+  static let notebookContentSaved = NSNotification.Name("notebookContentSaved")
+}
+
+// MARK: - Editor Export Protocol
+
+// Protocol for exporting JIIX from an editor.
+// Implemented by editor view controllers that can export handwriting data.
+@MainActor
+protocol EditorExportProtocol: AnyObject {
+  func exportJIIX() throws -> String
+}
+
+// MARK: - JIIX Document Handle Protocol
+
+// Protocol for document file I/O operations.
+// Abstracts file system access for JIIX persistence.
+protocol JIIXDocumentHandleProtocol: Sendable {
+  func saveJIIXData(_ data: Data) async throws
+  func loadJIIXData() async throws -> Data
+}
+
+// MARK: - PDF Background Renderer Protocol
+
 // Protocol for PDF background rendering.
 // Used by the display chain to draw PDF pages behind ink strokes.
 protocol PDFBackgroundRendererProtocol: AnyObject {
