@@ -58,6 +58,30 @@ struct TextContent: Sendable, Codable, Equatable {
   static func code(_ code: String, language: String = "plaintext") -> TextContent {
     TextContent(segments: [.code(code: code, language: language)])
   }
+
+  // Calculates the streaming animation duration in milliseconds.
+  // Matches the timing logic in StreamingTextView.
+  var streamingDurationMs: Int {
+    let charactersPerSecond: Double = 60
+    let fadeCharacters = 3
+    let fadeDuration = Double(fadeCharacters) / charactersPerSecond
+
+    var duration: Double = 0
+    for segment in segments {
+      switch segment {
+      case .plain(let text, _):
+        duration += Double(text.count) / charactersPerSecond
+      case .pause(let durationMs):
+        duration += Double(durationMs) / 1000.0
+      case .kinetic(_, _, let durationMs, let delayMs, _):
+        duration += Double(durationMs + delayMs) / 1000.0
+      case .latex, .code:
+        // Non-streaming segments appear instantly.
+        break
+      }
+    }
+    return Int((duration + fadeDuration) * 1000)
+  }
 }
 
 // MARK: - TextAlignment
@@ -86,6 +110,8 @@ enum TextSegment: Sendable, Equatable {
   case latex(latex: String, displayMode: Bool = false, color: String? = nil)
   case code(code: String, language: String = "plaintext", showLineNumbers: Bool = false, highlightLines: [Int]? = nil)
   case kinetic(text: String, animation: KineticAnimation = .typewriter, durationMs: Int = 500, delayMs: Int = 0, style: TextStyle? = nil)
+  // Human-like pause in the text flow. Default 400ms is a natural breath pause.
+  case pause(durationMs: Int = 400)
 }
 
 // MARK: - TextSegment Codable
@@ -112,6 +138,7 @@ extension TextSegment: Codable {
     case latex
     case code
     case kinetic
+    case pause
   }
 
   init(from decoder: Decoder) throws {
@@ -144,6 +171,10 @@ extension TextSegment: Codable {
       let delayMs = try container.decodeIfPresent(Int.self, forKey: .delayMs) ?? 0
       let style = try container.decodeIfPresent(TextStyle.self, forKey: .style)
       self = .kinetic(text: text, animation: animation, durationMs: durationMs, delayMs: delayMs, style: style)
+
+    case .pause:
+      let durationMs = try container.decodeIfPresent(Int.self, forKey: .durationMs) ?? 400
+      self = .pause(durationMs: durationMs)
     }
   }
 
@@ -176,6 +207,10 @@ extension TextSegment: Codable {
       if durationMs != 500 { try container.encode(durationMs, forKey: .durationMs) }
       if delayMs != 0 { try container.encode(delayMs, forKey: .delayMs) }
       try container.encodeIfPresent(style, forKey: .style)
+
+    case .pause(let durationMs):
+      try container.encode(SegmentType.pause, forKey: .type)
+      if durationMs != 400 { try container.encode(durationMs, forKey: .durationMs) }
     }
   }
 }
@@ -252,12 +287,9 @@ enum TextWeight: String, Sendable, Codable, Equatable {
 // MARK: - KineticAnimation
 
 // Kinetic typography animation types.
+// All animations are finite (they complete and stop).
+// Typewriter is the only animation - sequential text output maintains
+// the sense of a living agent producing content in real-time.
 enum KineticAnimation: String, Sendable, Codable, Equatable {
   case typewriter
-  case wordCascade = "word_cascade"
-  case letterBounce = "letter_bounce"
-  case slam
-  case shake
-  case pulse
-  case rainbow
 }

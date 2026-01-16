@@ -1,21 +1,12 @@
 import SwiftUI
 
-// Root view that presents the main navigation structure of the app.
+// Root view that presents the notebook canvas renderer.
 struct AppRootView: View {
+    @State private var viewModel = NotebookViewModel(document: .preview)
+
     var body: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "hammer.fill")
-                .font(.system(size: 64))
-                .foregroundStyle(.secondary)
-
-            Text("Coming Soon")
-                .font(.title)
-                .fontWeight(.semibold)
-
-            Text("Building something new...")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
+        NotebookCanvasView(viewModel: viewModel)
+            .ignoresSafeArea()
     }
 }
 

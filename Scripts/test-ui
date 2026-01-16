@@ -39,11 +39,11 @@ run_test() {
 
     cd "$PROJECT_DIR"
 
-    # Run the test on device.
+    # Run the test on device using device ID for reliability.
     xcodebuild test \
         -workspace InkOS.xcworkspace \
         -scheme InkOS \
-        -destination "platform=iOS,name=$IPAD_NAME" \
+        -destination "platform=iOS,id=$IPAD_UDID" \
         -only-testing:"InkOSUITests/InkOSUITests/$test_name" \
         -skip-testing:InkOSTests \
         -allowProvisioningUpdates \

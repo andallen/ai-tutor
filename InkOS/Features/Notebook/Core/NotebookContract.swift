@@ -156,7 +156,8 @@ extension NotebookDocument {
     guard let string = String(data: data, encoding: .utf8) else {
       throw EncodingError.invalidValue(
         self,
-        EncodingError.Context(codingPath: [], debugDescription: "Failed to convert JSON data to string")
+        EncodingError.Context(
+          codingPath: [], debugDescription: "Failed to convert JSON data to string")
       )
     }
     return string

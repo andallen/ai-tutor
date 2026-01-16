@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		41A37C58D9454AC24022BC08 /* libPods-InkOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FAE72E6CE6B665ECB4F183CE /* libPods-InkOS.a */; };
+		AE35C59B2F199D3100F4336A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = AE35C59A2F199D3100F4336A /* GoogleService-Info.plist */; };
 		AE4C26BF2EF84C9A0089CC3C /* me.andy.allen.Trivial.c in Sources */ = {isa = PBXBuildFile; fileRef = AE4C26BE2EF84C9A0089CC3C /* me.andy.allen.Trivial.c */; };
 		DC020180631A0C08B2049EAE /* libPods-InkOSTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D15461011C3C1A3022313DC2 /* libPods-InkOSTests.a */; };
 /* End PBXBuildFile section */
@@ -33,6 +34,7 @@
 		3C72F6D8DDA74BAAB09FB025 /* Pods-InkOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InkOS.release.xcconfig"; path = "Target Support Files/Pods-InkOS/Pods-InkOS.release.xcconfig"; sourceTree = "<group>"; };
 		3D1AAC0C313519CAE29AE659 /* Pods-InkOSTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InkOSTests.release.xcconfig"; path = "Target Support Files/Pods-InkOSTests/Pods-InkOSTests.release.xcconfig"; sourceTree = "<group>"; };
 		AE1AC10D2EFB3B9E00E6E4BA /* InkOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = InkOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AE35C59A2F199D3100F4336A /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		AE4C26BE2EF84C9A0089CC3C /* me.andy.allen.Trivial.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = me.andy.allen.Trivial.c; path = /Users/andrewallen/Downloads/me.andy.allen.Trivial.c; sourceTree = "<absolute>"; };
 		AEAB2C832EF7BD3300424068 /* MyCertificate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MyCertificate.h; sourceTree = "<group>"; };
 		AEAFC2392EF4B85B00811728 /* InkOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InkOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -47,9 +49,7 @@
 		AEBCDA6F2F01D2C200324888 /* Exceptions for "InkOS" folder in "InkOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Editor/CLAUDE.md,
 				Info.plist,
-				Storage/CLAUDE.md,
 			);
 			target = AEAFC2382EF4B85B00811728 /* InkOS */;
 		};
@@ -58,15 +58,11 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AE1AC10E2EFB3B9E00E6E4BA /* InkOSUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = InkOSUITests;
 			sourceTree = "<group>";
 		};
 		AEA6BC452EF8643800D18138 /* recognition-assets */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = "recognition-assets";
 			sourceTree = "<group>";
 		};
@@ -80,8 +76,6 @@
 		};
 		AECB52322F022B2B007CACA0 /* InkOSTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = InkOSTests;
 			sourceTree = "<group>";
 		};
@@ -145,6 +139,7 @@
 				7D21902157F5C13C106A1960 /* Pods */,
 				AEA6BC452EF8643800D18138 /* recognition-assets */,
 				F2E3911B917C595F2660348C /* Frameworks */,
+				AE35C59A2F199D3100F4336A /* GoogleService-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -292,6 +287,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AE35C59B2F199D3100F4336A /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -313,9 +309,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-InkOS/Pods-InkOS-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-InkOS/Pods-InkOS-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;

@@ -38,7 +38,7 @@ struct BlockID: Hashable, Sendable, Codable, Equatable, CustomStringConvertible 
 
 // MARK: - BlockType
 
-// The 6 primitive block types available in the system.
+// The 7 primitive block types available in the system.
 // Each type maps to a specific content schema and renderer.
 enum BlockType: String, Sendable, Codable, Equatable, CaseIterable {
   // Rich text with LaTeX, code, and kinetic typography. Rendered natively.
@@ -58,6 +58,9 @@ enum BlockType: String, Sendable, Codable, Equatable, CaseIterable {
 
   // User input collection (text, handwriting, multiple choice, etc.). Rendered natively.
   case input
+
+  // Pause point requiring user interaction to continue. Rendered natively.
+  case checkpoint
 }
 
 // MARK: - BlockStatus
@@ -179,6 +182,16 @@ struct Block: Identifiable, Sendable, Equatable {
     content: InputContent
   ) -> Block {
     Block(id: id, type: .input, createdAt: createdAt, status: status, content: .input(content))
+  }
+
+  // Creates a checkpoint block.
+  static func checkpoint(
+    id: BlockID = BlockID(),
+    createdAt: Date = Date(),
+    status: BlockStatus = .ready,
+    content: CheckpointContent = CheckpointContent()
+  ) -> Block {
+    Block(id: id, type: .checkpoint, createdAt: createdAt, status: status, content: .checkpoint(content))
   }
 }
 

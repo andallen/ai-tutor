@@ -171,8 +171,8 @@ class InputViewModel {
   var totalContentHeight: CGFloat = 0
 
   // Stores the tool controller so tools can be switched from the Notebook toolbar.
-  // Uses protocol type to allow dependency injection for testing.
-  private var toolController: (any ToolControllerProtocol)?
+  // Uses optional type to allow dependency injection for testing.
+  private var toolController: IINKToolController?
   private(set) var originalViewOffset: CGPoint = CGPoint.zero
   private weak var editorDelegate: EditorDelegate?
   private var editorDelegateTrampoline: EditorDelegateTrampoline

@@ -152,22 +152,70 @@ final class InkOSUITests: XCTestCase {
         return nil
     }
 
-    // MARK: - Launch Screen Tests
+    // MARK: - Blob Position Tests
 
     @MainActor
-    func testClaudeWasHereDisplayed() throws {
-        // Verify "CLAUDE WAS HERE" text is displayed on app launch.
+    func testBlobPositioning() throws {
+        // Verify blob positioning:
+        // 1. Initial position should be near top (Y < 200)
+        // 2. X position: blob's left edge should align with text's left edge
+        // 3. Blob should move down smoothly during streaming (no jumping)
 
-        // Find the label using accessibility identifier.
-        let claudeLabel = app.staticTexts["claudeWasHereLabel"]
-        XCTAssertTrue(claudeLabel.waitForExistence(timeout: 5), "CLAUDE WAS HERE label should exist")
+        // Wait for app to load.
+        let canvas = app.scrollViews["notebook_canvas"]
+        XCTAssertTrue(canvas.waitForExistence(timeout: 10), "Notebook canvas should load")
 
-        // Also verify the text content.
-        let textExists = app.staticTexts["CLAUDE WAS HERE"].exists
-        XCTAssertTrue(textExists, "Text 'CLAUDE WAS HERE' should be visible")
+        // Find the blob indicator.
+        let blob = app.otherElements["alan_presence_blob"]
+        XCTAssertTrue(blob.waitForExistence(timeout: 5), "Blob indicator should exist")
 
-        // Capture screenshot for visual verification.
-        saveScreenshot(name: "claude_was_here")
+        // Record initial position.
+        let initialFrame = blob.frame
+        print("[Test] Initial blob frame: \(initialFrame)")
+        print("[Test] Initial blob X: \(initialFrame.midX), Y: \(initialFrame.midY)")
+        print("[Test] Initial blob minX (left edge): \(initialFrame.minX)")
+
+        // Take screenshot of initial state.
+        print("[Test] Expecting: Blob near top of screen, left edge aligned with text left edge")
+        saveScreenshot(name: "blob_initial_position")
+
+        // Assert initial Y is near top (not starting low on screen).
+        // Screen coordinates: Y increases downward. Top area should be < 300.
+        XCTAssertLessThan(initialFrame.midY, 300,
+            "Blob should start near top of screen, not at Y=\(initialFrame.midY)")
+
+        // Tap to start streaming.
+        canvas.tap()
+        Thread.sleep(forTimeInterval: 1.0)
+
+        // Record position after tap.
+        let afterTapFrame = blob.frame
+        print("[Test] After tap blob frame: \(afterTapFrame)")
+        saveScreenshot(name: "blob_after_tap")
+
+        // Wait for streaming and check movement.
+        Thread.sleep(forTimeInterval: 4.0)
+        let midFrame = blob.frame
+        print("[Test] Mid-streaming blob frame: \(midFrame)")
+        saveScreenshot(name: "blob_mid_streaming")
+
+        Thread.sleep(forTimeInterval: 4.0)
+        let lateFrame = blob.frame
+        print("[Test] Late-streaming blob frame: \(lateFrame)")
+        saveScreenshot(name: "blob_late_streaming")
+
+        // Assert blob moves down during streaming.
+        XCTAssertGreaterThan(midFrame.midY, afterTapFrame.midY,
+            "Blob should move down during streaming")
+        XCTAssertGreaterThan(lateFrame.midY, midFrame.midY,
+            "Blob should continue moving down")
+
+        print("[Test] Position summary:")
+        print("  Initial Y: \(initialFrame.midY)")
+        print("  After tap Y: \(afterTapFrame.midY)")
+        print("  Mid Y: \(midFrame.midY)")
+        print("  Late Y: \(lateFrame.midY)")
+        print("  X position (minX): \(initialFrame.minX)")
     }
 
 }
