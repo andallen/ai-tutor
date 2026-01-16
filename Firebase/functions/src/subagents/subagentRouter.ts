@@ -3,7 +3,12 @@
 // Dispatches to table, image, graphics, or embed subagents.
 
 import {onRequest} from "firebase-functions/v2/https";
+import {defineSecret} from "firebase-functions/params";
 import * as logger from "firebase-functions/logger";
+
+// Define secrets for API access
+const smithsonianApiKey = defineSecret("SMITHSONIAN_API_KEY");
+const googleGenaiApiKey = defineSecret("GOOGLE_GENAI_API_KEY");
 import {
   SubagentRequestSchema,
   SubagentRequest,
@@ -17,7 +22,7 @@ import {executeVisualRouter} from "./visualRouter";
  * Main subagent execution endpoint.
  * Routes requests to appropriate subagent based on target_type.
  */
-export const executeSubagent = onRequest({cors: true, maxInstances: 10}, async (req, res) => {
+export const executeSubagent = onRequest({cors: true, maxInstances: 10, secrets: [smithsonianApiKey, googleGenaiApiKey]}, async (req, res) => {
   // Only allow POST requests.
   if (req.method !== "POST") {
     res.status(405).send({error: "Method not allowed. Use POST."});
@@ -88,7 +93,7 @@ export const executeSubagent = onRequest({cors: true, maxInstances: 10}, async (
  * Batch subagent execution endpoint.
  * Processes multiple requests in parallel.
  */
-export const executeSubagentBatch = onRequest({cors: true, maxInstances: 10}, async (req, res) => {
+export const executeSubagentBatch = onRequest({cors: true, maxInstances: 10, secrets: [smithsonianApiKey, googleGenaiApiKey]}, async (req, res) => {
   if (req.method !== "POST") {
     res.status(405).send({error: "Method not allowed. Use POST."});
     return;

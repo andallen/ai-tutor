@@ -258,18 +258,67 @@ struct P5Spec: Sendable, Codable, Equatable {
   let sketchType: P5SketchType
   let parameters: [String: AnyCodable]?
   let customCode: String?
+  let katexAnnotations: [KaTeXAnnotation]?
 
   private enum CodingKeys: String, CodingKey {
     case sketchType = "sketch_type"
     case parameters
     case customCode = "custom_code"
+    case katexAnnotations = "katex_annotations"
   }
 
-  init(sketchType: P5SketchType, parameters: [String: AnyCodable]? = nil, customCode: String? = nil) {
+  init(
+    sketchType: P5SketchType,
+    parameters: [String: AnyCodable]? = nil,
+    customCode: String? = nil,
+    katexAnnotations: [KaTeXAnnotation]? = nil
+  ) {
     self.sketchType = sketchType
     self.parameters = parameters
     self.customCode = customCode
+    self.katexAnnotations = katexAnnotations
   }
+}
+
+// MARK: - KaTeXAnnotation
+
+// Math equation overlay rendered via KaTeX.
+struct KaTeXAnnotation: Sendable, Codable, Equatable {
+  let latex: String
+  let x: Double // 0-1 relative X position
+  let y: Double // 0-1 relative Y position
+  let anchor: TextAnchor
+
+  private enum CodingKeys: String, CodingKey {
+    case latex
+    case x
+    case y
+    case anchor
+  }
+
+  init(latex: String, x: Double, y: Double, anchor: TextAnchor = .center) {
+    self.latex = latex
+    self.x = x
+    self.y = y
+    self.anchor = anchor
+  }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    self.latex = try container.decode(String.self, forKey: .latex)
+    self.x = try container.decode(Double.self, forKey: .x)
+    self.y = try container.decode(Double.self, forKey: .y)
+    self.anchor = try container.decodeIfPresent(TextAnchor.self, forKey: .anchor) ?? .center
+  }
+}
+
+// MARK: - TextAnchor
+
+// Text alignment anchor for KaTeX annotations.
+enum TextAnchor: String, Sendable, Codable, Equatable {
+  case left
+  case center
+  case right
 }
 
 // MARK: - P5SketchType

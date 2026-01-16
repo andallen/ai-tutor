@@ -47,6 +47,14 @@ export type SubagentRequest = z.infer<typeof SubagentRequestSchema>;
 // Response status - replaces success boolean.
 export type ResponseStatus = "ready" | "pending" | "failed";
 
+// KaTeX annotation for math overlays on visualizations.
+export interface KaTeXAnnotation {
+  latex: string;
+  x: number; // 0-1 relative position
+  y: number;
+  anchor?: "left" | "center" | "right";
+}
+
 // Response metadata for observability.
 export interface ResponseMetadata {
   fulfillment_method:
@@ -54,7 +62,8 @@ export interface ResponseMetadata {
     | "api_search"
     | "ai_generation"
     | "render"
-    | "embed_match";
+    | "embed_match"
+    | "placeholder";
   latency_ms: number;
   engine_selected?: string; // For graphics
   provider?: string; // For embed
