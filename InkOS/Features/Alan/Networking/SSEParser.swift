@@ -21,6 +21,9 @@ enum AlanStreamEvent: Sendable, Equatable {
   // A subagent request that needs processing.
   case subagentRequest(SubagentRequest)
 
+  // Updated session model from Alan.
+  case sessionModelUpdate(SessionModel)
+
   // Stream completed successfully.
   case done(tokenMetadata: TokenMetadata?)
 
@@ -102,6 +105,13 @@ struct SSEParser {
       return parseNotebookUpdate(updateDict)
     }
 
+    // Check for session model update.
+    if let modelDict = json["session_model"] as? [String: Any] {
+      if let sessionModel = decodeSessionModel(from: modelDict) {
+        return .sessionModelUpdate(sessionModel)
+      }
+    }
+
     return nil
   }
 
@@ -172,6 +182,18 @@ struct SSEParser {
       let data = try JSONSerialization.data(withJSONObject: dict)
       let decoder = JSONDecoder()
       return try decoder.decode(SubagentRequest.self, from: data)
+    } catch {
+      return nil
+    }
+  }
+
+  // Decodes a SessionModel from a dictionary.
+  private static func decodeSessionModel(from dict: [String: Any]) -> SessionModel? {
+    do {
+      let data = try JSONSerialization.data(withJSONObject: dict)
+      let decoder = JSONDecoder()
+      decoder.keyDecodingStrategy = .convertFromSnakeCase
+      return try decoder.decode(SessionModel.self, from: data)
     } catch {
       return nil
     }

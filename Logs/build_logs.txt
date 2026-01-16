@@ -1,0 +1,317 @@
+
+----- xcbeautify -----
+Version: 3.1.2
+----------------------
+
+note: Building targets in dependency order
+note: Target dependency graph (5 targets)
+[Pods-InkOS] Write Auxiliary File Pods-InkOS-own-target-headers.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS-project-headers.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS.DependencyStaticMetadataFileList
+[Pods-InkOS] Write Auxiliary File Pods-InkOS.DependencyMetadataFileList
+[Pods-InkOS] Write Auxiliary File Pods-InkOS-generated-files.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS-all-target-headers.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS-all-non-framework-target-headers.hmap
+[Pods-InkOS] Write Auxiliary File Pods-InkOS.LinkFileList
+[Pods-InkOS] Write Auxiliary File e6072d4f65d7061329687fe24e3d63a7-common-args.resp
+[Pods-InkOS] Write Auxiliary File Pods-InkOS.LinkFileList
+[Pods-InkOS] Write Auxiliary File e6072d4f65d7061329687fe24e3d63a7-common-args.resp
+[InkOS] Write Auxiliary File Script-AEA6BC5A2EF8654800D18138.sh
+[InkOS] Write Auxiliary File Script-89BBA18F5E78F49FCF8CC369.sh
+[InkOS] Write Auxiliary File Script-0DDFAA30004964993C82F526.sh
+[InkOS] Write Auxiliary File OutputFileList-0DDFAA30004964993C82F526-Pods-InkOS-resources-Debug-output-files-df956b345ba940e53a5d8a524348ec1c-resolved.xcfilelist
+[InkOS] Write Auxiliary File InkOS_const_extract_protocols.json
+[InkOS] Write Auxiliary File InkOS.SwiftFileList
+[InkOS] Write Auxiliary File af3fcb34312c57c0f52879cdce924b91-common-args.resp
+[InkOS] Write Auxiliary File InkOS.SwiftConstValuesFileList
+[InkOS] Write Auxiliary File InkOS.LinkFileList
+[InkOS] Write Auxiliary File InkOS-OutputFileMap.json
+[InkOS] Write Auxiliary File 7187679823f38a2a940e0043cdf9d637-common-args.resp
+[InkOS] Write Auxiliary File InkOS_const_extract_protocols.json
+[InkOS] Write Auxiliary File af3fcb34312c57c0f52879cdce924b91-common-args.resp
+[InkOS] Write Auxiliary File InkOS.SwiftFileList
+[InkOS] Write Auxiliary File InkOS.SwiftConstValuesFileList
+[InkOS] Write Auxiliary File InkOS.LinkFileList
+[InkOS] Write Auxiliary File InkOS-OutputFileMap.json
+[InkOS] Write Auxiliary File 7187679823f38a2a940e0043cdf9d637-common-args.resp
+[InkOS] Write Auxiliary File InputFileList-0DDFAA30004964993C82F526-Pods-InkOS-resources-Debug-input-files-b52885e4196bcd8f9e36dfb78ddb6aa2-resolved.xcfilelist
+[InkOS] Write Auxiliary File InkOS.hmap
+[InkOS] Write Auxiliary File InkOS.DependencyStaticMetadataFileList
+[InkOS] Write Auxiliary File InkOS.DependencyMetadataFileList
+[InkOS] Write Auxiliary File InkOS-project-headers.hmap
+[InkOS] Write Auxiliary File InkOS-own-target-headers.hmap
+[InkOS] Write Auxiliary File InkOS-generated-files.hmap
+[InkOS] Write Auxiliary File InkOS-all-target-headers.hmap
+[InkOS] Write Auxiliary File InkOS-all-non-framework-target-headers.hmap
+[InkOS] Write Auxiliary File InkOS-DebugDylibPath-normal-x86_64.txt
+[InkOS] Write Auxiliary File InkOS-DebugDylibPath-normal-arm64.txt
+[InkOS] Write Auxiliary File InkOS-DebugDylibInstallName-normal-x86_64.txt
+[InkOS] Write Auxiliary File InkOS-DebugDylibInstallName-normal-arm64.txt
+[iosMath-mathFonts] Write Auxiliary File mathFonts.hmap
+[iosMath-mathFonts] Write Auxiliary File mathFonts.DependencyStaticMetadataFileList
+[iosMath-mathFonts] Write Auxiliary File mathFonts.DependencyMetadataFileList
+[iosMath-mathFonts] Write Auxiliary File mathFonts-project-headers.hmap
+[iosMath-mathFonts] Write Auxiliary File mathFonts-own-target-headers.hmap
+[iosMath-mathFonts] Write Auxiliary File mathFonts-generated-files.hmap
+[iosMath-mathFonts] Write Auxiliary File mathFonts-all-target-headers.hmap
+[iosMath-mathFonts] Write Auxiliary File mathFonts-all-non-framework-target-headers.hmap
+[iosMath] Write Auxiliary File iosMath.hmap
+[iosMath] Write Auxiliary File iosMath.DependencyStaticMetadataFileList
+[iosMath] Write Auxiliary File iosMath-project-headers.hmap
+[iosMath] Write Auxiliary File iosMath.DependencyMetadataFileList
+[iosMath] Write Auxiliary File iosMath-own-target-headers.hmap
+[iosMath] Write Auxiliary File iosMath-generated-files.hmap
+[iosMath] Write Auxiliary File iosMath-all-target-headers.hmap
+[iosMath] Write Auxiliary File iosMath-all-non-framework-target-headers.hmap
+[iosMath] Write Auxiliary File e6072d4f65d7061329687fe24e3d63a7-common-args.resp
+[iosMath] Write Auxiliary File iosMath.LinkFileList
+[iosMath] Write Auxiliary File iosMath.LinkFileList
+[iosMath] Write Auxiliary File e6072d4f65d7061329687fe24e3d63a7-common-args.resp
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File Script-4A7B4ECFEDB50C2F025F224FD29FFEA9.sh
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File Script-39CDEF633587C8ABCC20EB5BD6520245.sh
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File OutputFileList-39CDEF633587C8ABCC20EB5BD6520245-MyScriptInteractiveInk-Runtime-xcframeworks-output-files-95af1427652334bd66802fb601846ae0-resolved.xcfilelist
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File e6072d4f65d7061329687fe24e3d63a7-common-args.resp
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime_const_extract_protocols.json
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.SwiftFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.LinkFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.SwiftConstValuesFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-OutputFileMap.json
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime_const_extract_protocols.json
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File e6072d4f65d7061329687fe24e3d63a7-common-args.resp
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.SwiftFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.LinkFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.SwiftConstValuesFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-OutputFileMap.json
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.DependencyStaticMetadataFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime.DependencyMetadataFileList
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-project-headers.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-own-target-headers.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-generated-files.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-all-target-headers.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File MyScriptInteractiveInk-Runtime-all-non-framework-target-headers.hmap
+[MyScriptInteractiveInk-Runtime] Write Auxiliary File InputFileList-39CDEF633587C8ABCC20EB5BD6520245-MyScriptInteractiveInk-Runtime-xcframeworks-input-files-8ba278330ae87a824cf1f1c17178cbb1-resolved.xcfilelist
+[iosMath-mathFonts] Processing ResourceBundle-mathFonts-iosMath-Info.plist
+[iosMath-mathFonts] Copying xits-math.otf
+[iosMath-mathFonts] Copying texgyretermes-math.otf
+[iosMath-mathFonts] Copying latinmodern-math.otf
+[iosMath-mathFonts] Copying xits-math.plist
+[iosMath-mathFonts] Copying texgyretermes-math.plist
+[iosMath-mathFonts] Copying latinmodern-math.plist
+[MyScriptInteractiveInk-Runtime] Running script [CP] Copy XCFrameworks
+[iosMath-mathFonts] RegisterExecutionPolicyException mathFonts.bundle
+[iosMath-mathFonts] Touching mathFonts.bundle
+[iosMath] Compiling NSView+backgroundColor.m
+[iosMath] Compiling UIColor+HexString.m
+[iosMath] Compiling MTMathUILabel.m
+[iosMath] Compiling MTMathListIndex.m
+[iosMath] Compiling MTTypesetter.m
+[!]  /Users/andrewallen/Desktop/swift_projects/Alan-b/Pods/iosMath/iosMath/render/internal/MTTypesetter.m:28:31: a function declaration without a prototype is deprecated in all versions of C [-Wstrict-prototypes]
+   28 | NSArray* getInterElementSpaces() {
+      |                               ^
+[!]  /Users/andrewallen/Desktop/swift_projects/Alan-b/Pods/iosMath/iosMath/render/internal/MTTypesetter.m:1302:20: variable 'ascent' may be uninitialized when used here [-Wconditional-uninitialized]
+ 1302 |     *glyphAscent = ascent;
+      |                    ^~~~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/Alan-b/Pods/iosMath/iosMath/render/internal/MTTypesetter.m:1303:21: variable 'descent' may be uninitialized when used here [-Wconditional-uninitialized]
+ 1303 |     *glyphDescent = descent;
+      |                     ^~~~~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/Alan-b/Pods/iosMath/iosMath/render/internal/MTTypesetter.m:1304:19: variable 'width' may be uninitialized when used here [-Wconditional-uninitialized]
+ 1304 |     *glyphWidth = width;
+      |                   ^~~~~
+[iosMath] Compiling iosMath-dummy.m
+[iosMath] Compiling NSBezierPath+addLineToPoint.m
+[iosMath] Compiling NSColor+HexString.m
+[iosMath] Compiling MTUnicode.m
+[iosMath] Compiling MTMathListDisplay.m
+[!]  /Users/andrewallen/Desktop/swift_projects/Alan-b/Pods/iosMath/iosMath/render/MTMathListDisplay.m:22:28: a function declaration without a prototype is deprecated in all versions of C [-Wstrict-prototypes]
+   22 | static BOOL isIos6Supported() {
+      |                            ^
+[iosMath] Compiling MTMathListBuilder.m
+[iosMath] Compiling MTMathList.m
+[iosMath] Compiling MTMathAtomFactory.m
+[iosMath] Compiling MTLabel.m
+[iosMath] Compiling MTFontMathTable.m
+[iosMath] Compiling MTFontManager.m
+[iosMath] Compiling MTFont.m
+[iosMath] Compiling iosMath-dummy.m
+[iosMath] Compiling UIColor+HexString.m
+[iosMath] Compiling NSView+backgroundColor.m
+[iosMath] Compiling NSColor+HexString.m
+[iosMath] Compiling NSBezierPath+addLineToPoint.m
+[iosMath] Compiling MTUnicode.m
+[iosMath] Compiling MTTypesetter.m
+[!]  /Users/andrewallen/Desktop/swift_projects/Alan-b/Pods/iosMath/iosMath/render/internal/MTTypesetter.m:28:31: a function declaration without a prototype is deprecated in all versions of C [-Wstrict-prototypes]
+   28 | NSArray* getInterElementSpaces() {
+      |                               ^
+[!]  /Users/andrewallen/Desktop/swift_projects/Alan-b/Pods/iosMath/iosMath/render/internal/MTTypesetter.m:1302:20: variable 'ascent' may be uninitialized when used here [-Wconditional-uninitialized]
+ 1302 |     *glyphAscent = ascent;
+      |                    ^~~~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/Alan-b/Pods/iosMath/iosMath/render/internal/MTTypesetter.m:1303:21: variable 'descent' may be uninitialized when used here [-Wconditional-uninitialized]
+ 1303 |     *glyphDescent = descent;
+      |                     ^~~~~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/Alan-b/Pods/iosMath/iosMath/render/internal/MTTypesetter.m:1304:19: variable 'width' may be uninitialized when used here [-Wconditional-uninitialized]
+ 1304 |     *glyphWidth = width;
+      |                   ^~~~~
+[iosMath] Compiling MTMathUILabel.m
+[iosMath] Building library libiosMath.a
+[iosMath] Compiling MTMathListIndex.m
+[iosMath] Compiling MTMathListDisplay.m
+[!]  /Users/andrewallen/Desktop/swift_projects/Alan-b/Pods/iosMath/iosMath/render/MTMathListDisplay.m:22:28: a function declaration without a prototype is deprecated in all versions of C [-Wstrict-prototypes]
+   22 | static BOOL isIos6Supported() {
+      |                            ^
+[iosMath] Compiling MTMathListBuilder.m
+[iosMath] Compiling MTMathList.m
+[iosMath] Compiling MTMathAtomFactory.m
+[iosMath] Compiling MTLabel.m
+[iosMath] Compiling MTFontMathTable.m
+[iosMath] Compiling MTFontManager.m
+[iosMath] Compiling MTFont.m
+[iosMath] Building library libiosMath.a
+[iosMath] Create Universal Binary libiosMath.a
+[MyScriptInteractiveInk-Runtime] Compiling IINK.swift
+[MyScriptInteractiveInk-Runtime] Compiling IINK.swift
+[MyScriptInteractiveInk-Runtime] Compiling IINK.swift
+[MyScriptInteractiveInk-Runtime] Compiling IINK.swift
+[MyScriptInteractiveInk-Runtime] Copy x86_64-apple-ios-simulator.abi.json -> MyScriptInteractiveInk_Runtime.abi.json
+[MyScriptInteractiveInk-Runtime] Copy x86_64-apple-ios-simulator.swiftmodule -> MyScriptInteractiveInk_Runtime.swiftmodule
+[MyScriptInteractiveInk-Runtime] Copy arm64-apple-ios-simulator.swiftmodule -> MyScriptInteractiveInk_Runtime.swiftmodule
+[MyScriptInteractiveInk-Runtime] Copy arm64-apple-ios-simulator.swiftdoc -> MyScriptInteractiveInk_Runtime.swiftdoc
+[MyScriptInteractiveInk-Runtime] Copy x86_64-apple-ios-simulator.swiftdoc -> MyScriptInteractiveInk_Runtime.swiftdoc
+[MyScriptInteractiveInk-Runtime] Copy arm64-apple-ios-simulator.abi.json -> MyScriptInteractiveInk_Runtime.abi.json
+[MyScriptInteractiveInk-Runtime] Copy x86_64-apple-ios-simulator.swiftsourceinfo -> MyScriptInteractiveInk_Runtime.swiftsourceinfo
+[MyScriptInteractiveInk-Runtime] Copy arm64-apple-ios-simulator.swiftsourceinfo -> MyScriptInteractiveInk_Runtime.swiftsourceinfo
+[MyScriptInteractiveInk-Runtime] Compiling MyScriptInteractiveInk-Runtime-dummy.m
+[MyScriptInteractiveInk-Runtime] Compiling MyScriptInteractiveInk-Runtime-dummy.m
+[MyScriptInteractiveInk-Runtime] Building library libMyScriptInteractiveInk-Runtime.a
+[MyScriptInteractiveInk-Runtime] Building library libMyScriptInteractiveInk-Runtime.a
+[MyScriptInteractiveInk-Runtime] Create Universal Binary libMyScriptInteractiveInk-Runtime.a
+[MyScriptInteractiveInk-Runtime] Running script Copy generated compatibility header
+[MyScriptInteractiveInk-Runtime] Extract App Intents Metadata
+[Pods-InkOS] Compiling Pods-InkOS-dummy.m
+[Pods-InkOS] Compiling Pods-InkOS-dummy.m
+[Pods-InkOS] Building library libPods-InkOS.a
+[Pods-InkOS] Building library libPods-InkOS.a
+[Pods-InkOS] Create Universal Binary libPods-InkOS.a
+[InkOS] Running script [CP] Check Pods Manifest.lock
+[InkOS] Copying theme.css
+[InkOS] Linking __preview.dylib
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Linking __preview.dylib
+[!] ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.48.0.fNcRTW/Metal.xctoolchain/usr/lib/swift/iphonesimulator' not found
+[InkOS] Generate Asset Symbols Assets.xcassets
+[InkOS] Create Universal Binary __preview.dylib
+[InkOS] Compiling DisplayViewModel.swift
+[InkOS] Compiling Canvas.swift
+[InkOS] Compiling InputView.swift
+[InkOS] Compiling OffscreenRenderSurfaces.swift
+[InkOS] Compiling RenderView.swift
+[InkOS] Compiling ContextualActionsHelper.swift
+[InkOS] Compiling ContextMenuView.swift
+[InkOS] Compiling FileLogger.swift
+[InkOS] Compiling UIComponents.swift
+[InkOS] Compiling InputViewController.swift
+[InkOS] Compiling InputViewModel.swift
+[InkOS] Compiling DisplayViewController.swift
+[InkOS] Compiling CTRun+Metrics.swift
+[InkOS] Compiling FontMetricsProvider.swift
+[InkOS] Compiling Helper.swift
+[InkOS] Compiling IInkUIRefImplUtils.swift
+[InkOS] Compiling ImageLoader.swift
+[InkOS] Compiling ImagePainter.swift
+[InkOS] Compiling AppRootView.swift
+[InkOS] Compiling BaseEditorViewController.swift
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/BaseEditorViewController.swift:22:37: cannot find type 'ToolPaletteView' in scope
+  private(set) var toolPaletteView: ToolPaletteView?
+                                    ^~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/BaseEditorViewController.swift:25:35: cannot find type 'EditingToolbarView' in scope
+  private var editingToolbarView: EditingToolbarView?
+                                  ^~~~~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/BaseEditorViewController.swift:71:43: cannot find type 'ToolPaletteView' in scope
+  func handleToolSelectionChanged(_ tool: ToolPaletteView.ToolSelection) {
+                                          ^~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/BaseEditorViewController.swift:76:37: cannot find type 'ToolPaletteView' in scope
+  func handleToolColorChanged(tool: ToolPaletteView.ToolSelection, hex: String) {
+                                    ^~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/BaseEditorViewController.swift:81:41: cannot find type 'ToolPaletteView' in scope
+  func handleToolThicknessChanged(tool: ToolPaletteView.ToolSelection, width: CGFloat) {
+                                        ^~~~~~~~~~~~~~~
+[!]  /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/BaseEditorViewController.swift:43:48: 'main' was deprecated in iOS 26.0: Use a UIScreen instance found through context instead (i.e, view.window.windowScene.screen), or for properties like UIScreen.scale with trait equivalents, use a traitCollection found through context.
+    let containerView = UIView(frame: UIScreen.main.bounds)
+                                               ^
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/BaseEditorViewController.swift:133:23: cannot find 'ToolPaletteView' in scope
+    let paletteView = ToolPaletteView(accentColor: offBlack)
+                      ^~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/BaseEditorViewController.swift:136:13: reference to member 'handleToolSelectionChanged' cannot be resolved without a contextual type
+      self?.handleToolSelectionChanged(selection)
+            ^
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/BaseEditorViewController.swift:135:50: cannot infer type of closure parameter 'selection' without a type annotation
+    paletteView.selectionChanged = { [weak self] selection in
+                                                 ^
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/BaseEditorViewController.swift:139:13: reference to member 'handleToolColorChanged' cannot be resolved without a contextual type
+      self?.handleToolColorChanged(tool: tool, hex: hex)
+            ^
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/BaseEditorViewController.swift:138:55: cannot infer type of closure parameter 'tool' without a type annotation
+    paletteView.colorSelectionChanged = { [weak self] tool, hex in
+                                                      ^
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/BaseEditorViewController.swift:138:61: cannot infer type of closure parameter 'hex' without a type annotation
+    paletteView.colorSelectionChanged = { [weak self] tool, hex in
+                                                            ^
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/BaseEditorViewController.swift:142:13: reference to member 'handleToolThicknessChanged' cannot be resolved without a contextual type
+      self?.handleToolThicknessChanged(tool: tool, width: width)
+            ^
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/BaseEditorViewController.swift:141:50: cannot infer type of closure parameter 'tool' without a type annotation
+    paletteView.thicknessChanged = { [weak self] tool, width in
+                                                 ^
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/BaseEditorViewController.swift:141:56: cannot infer type of closure parameter 'width' without a type annotation
+    paletteView.thicknessChanged = { [weak self] tool, width in
+                                                       ^
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/BaseEditorViewController.swift:191:23: cannot find 'EditingToolbarView' in scope
+    let toolbarView = EditingToolbarView(accentColor: offBlack)
+                      ^~~~~~~~~~~~~~~~~~
+[InkOS] Compiling EditorViewController.swift
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/EditorViewController.swift:14:26: cannot find type 'EditorViewModel' in scope
+  private var viewModel: EditorViewModel = EditorViewModel()
+                         ^~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/EditorViewController.swift:17:31: cannot find type 'DocumentHandle' in scope
+  private var documentHandle: DocumentHandle?
+                              ^~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/EditorViewController.swift:64:34: cannot find type 'DocumentHandle' in scope
+  func configure(documentHandle: DocumentHandle) {
+                                 ^~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/EditorViewController.swift:99:52: cannot find type 'ToolPaletteView' in scope
+  override func handleToolSelectionChanged(_ tool: ToolPaletteView.ToolSelection) {
+                                                   ^~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/EditorViewController.swift:103:46: cannot find type 'ToolPaletteView' in scope
+  override func handleToolColorChanged(tool: ToolPaletteView.ToolSelection, hex: String) {
+                                             ^~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/EditorViewController.swift:107:50: cannot find type 'ToolPaletteView' in scope
+  override func handleToolThicknessChanged(tool: ToolPaletteView.ToolSelection, width: CGFloat) {
+                                                 ^~~~~~~~~~~~~~~
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/EditorViewController.swift:71:56: cannot infer type of closure parameter 'editorViewController' without a type annotation
+    viewModel.$editorViewController.sink { [weak self] editorViewController in
+                                                       ^
+[x] /Users/andrewallen/Desktop/swift_projects/Alan-b/InkOS/Editor/EditorViewController.swift:77:41: cannot infer type of closure parameter 'alert' without a type annotation
+    viewModel.$alert.sink { [weak self] alert in
+                                        ^
+[InkOS] Compiling HomeButtonView.swift
+[InkOS] Compiling AlanContract.swift
+[InkOS] Compiling AlanError.swift
+[InkOS] Compiling AlanAPIClient.swift
+[InkOS] Compiling NSAttributedString+Helper.swift
+[InkOS] Compiling NSFileManager+Additions.swift
+[InkOS] Compiling Path.swift
+[InkOS] Compiling SynchronizedSwift.swift
+[InkOS] Compiling TextFormatHelper.swift
+[InkOS] Compiling UIFont+Helper.swift
+[InkOS] Compiling ImageContent.swift
+[InkOS] Compiling InputContent.swift
+[InkOS] Compiling TableContent.swift
+[InkOS] Compiling TextContent.swift
+[InkOS] Compiling BlockContent.swift
+[InkOS] Compiling BlockContract.swift
+[InkOS] Compiling NotebookContract.swift
+note: Run script build phase 'Copy Recognition Assets' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'InkOS' from project 'InkOS')
+[!]  /Users/andrewallen/Desktop/swift_projects/Alan-b/Pods/Pods.xcodeproj: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 6.0, but the range of supported deployment target versions is 12.0 to 26.2.99. (in target 'iosMath-mathFonts' from project 'Pods')
+/Users/andrewallen/Desktop/swift_projects/Alan-b/Pods/Pods.xcodeproj: warning: The iOS Simulator deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 6.0, but the range of supported deployment target versions is 12.0 to 26.2.99. (in target 'iosMath' from project 'Pods')
+

@@ -40,12 +40,14 @@ struct SubagentRequestID: Hashable, Sendable, Codable, Equatable, CustomStringCo
 // MARK: - AlanOutput
 
 // Alan's structured output format.
-// Contains an array of notebook updates that can be direct blocks or subagent requests.
+// Contains notebook updates and the updated session model.
 struct AlanOutput: Sendable, Codable, Equatable {
   let notebookUpdates: [NotebookUpdate]
+  let sessionModel: SessionModel
 
   private enum CodingKeys: String, CodingKey {
     case notebookUpdates = "notebook_updates"
+    case sessionModel = "session_model"
   }
 }
 
@@ -569,6 +571,151 @@ struct NotebookContext: Sendable, Codable, Equatable {
   }
 }
 
+// MARK: - SessionModel
+
+// Per-session user model that tracks student state throughout a tutoring session.
+// Passed with each request and updated by Alan in each response.
+struct SessionModel: Sendable, Codable, Equatable {
+  // Unique identifier for this session.
+  let sessionId: String
+
+  // Number of turns in this session.
+  var turnCount: Int
+
+  // Current learning goal, if set.
+  var goal: SessionGoal?
+
+  // Status of concepts covered in this session.
+  var concepts: [String: ConceptStatus]
+
+  // Engagement and learning signals.
+  var signals: SessionSignals
+
+  // Facts learned about this student.
+  var facts: [String]
+
+  private enum CodingKeys: String, CodingKey {
+    case sessionId = "session_id"
+    case turnCount = "turn_count"
+    case goal
+    case concepts
+    case signals
+    case facts
+  }
+
+  init(
+    sessionId: String,
+    turnCount: Int = 0,
+    goal: SessionGoal? = nil,
+    concepts: [String: ConceptStatus] = [:],
+    signals: SessionSignals = SessionSignals(),
+    facts: [String] = []
+  ) {
+    self.sessionId = sessionId
+    self.turnCount = turnCount
+    self.goal = goal
+    self.concepts = concepts
+    self.signals = signals
+    self.facts = facts
+  }
+
+  // Creates a new session model with default values.
+  static func new(sessionId: String) -> SessionModel {
+    SessionModel(sessionId: sessionId)
+  }
+}
+
+// MARK: - SessionGoal
+
+// A learning goal for the session.
+struct SessionGoal: Sendable, Codable, Equatable {
+  // Description of what the student wants to learn.
+  var description: String
+
+  // Current status of the goal.
+  var status: GoalStatus
+
+  // Progress toward the goal (0-100).
+  var progress: Int
+
+  enum GoalStatus: String, Sendable, Codable, Equatable {
+    case active
+    case completed
+    case abandoned
+  }
+
+  init(description: String, status: GoalStatus = .active, progress: Int = 0) {
+    self.description = description
+    self.status = status
+    self.progress = progress
+  }
+}
+
+// MARK: - ConceptStatus
+
+// Status of a concept in the session.
+struct ConceptStatus: Sendable, Codable, Equatable {
+  // Current learning status.
+  var status: Status
+
+  // Number of attempts/interactions with this concept.
+  var attempts: Int
+
+  enum Status: String, Sendable, Codable, Equatable {
+    case introduced
+    case practicing
+    case mastered
+    case struggling
+  }
+
+  init(status: Status = .introduced, attempts: Int = 0) {
+    self.status = status
+    self.attempts = attempts
+  }
+}
+
+// MARK: - SessionSignals
+
+// Engagement and learning signals detected during the session.
+struct SessionSignals: Sendable, Codable, Equatable {
+  // Current engagement level.
+  var engagement: Engagement
+
+  // Current frustration level.
+  var frustration: Frustration
+
+  // Current learning pace.
+  var pace: Pace
+
+  enum Engagement: String, Sendable, Codable, Equatable {
+    case high
+    case medium
+    case low
+  }
+
+  enum Frustration: String, Sendable, Codable, Equatable {
+    case none
+    case mild
+    case high
+  }
+
+  enum Pace: String, Sendable, Codable, Equatable {
+    case fast
+    case normal
+    case slow
+  }
+
+  init(
+    engagement: Engagement = .medium,
+    frustration: Frustration = .none,
+    pace: Pace = .normal
+  ) {
+    self.engagement = engagement
+    self.frustration = frustration
+    self.pace = pace
+  }
+}
+
 // MARK: - TokenMetadata
 
 // Token usage metadata from Alan's response.
@@ -590,15 +737,22 @@ struct TokenMetadata: Sendable, Codable, Equatable {
 struct AlanRequest: Sendable, Codable, Equatable {
   let messages: [ChatMessage]
   let notebookContext: NotebookContext
+  let sessionModel: SessionModel?
 
   private enum CodingKeys: String, CodingKey {
     case messages
     case notebookContext = "notebook_context"
+    case sessionModel = "session_model"
   }
 
-  init(messages: [ChatMessage], notebookContext: NotebookContext) {
+  init(
+    messages: [ChatMessage],
+    notebookContext: NotebookContext,
+    sessionModel: SessionModel? = nil
+  ) {
     self.messages = messages
     self.notebookContext = notebookContext
+    self.sessionModel = sessionModel
   }
 }
 

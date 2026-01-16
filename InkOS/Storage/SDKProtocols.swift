@@ -116,10 +116,26 @@ extension IINKEditor {
     }
 }
 
+// MARK: - ToolControllerProtocol
+
+// Protocol for tool controller to enable dependency injection in tests.
+// Wraps IINKToolController functionality for tool selection and styling.
+protocol ToolControllerProtocol {
+  // Sets the active tool for a given pointer type.
+  func setToolForPointerType(tool: IINKPointerTool, pointerType: IINKPointerType) throws
+
+  // Sets the style string for a specific tool.
+  func setStyleForTool(style: String, tool: IINKPointerTool) throws
+
+  // Gets the current style string for a specific tool.
+  func styleForTool(tool: IINKPointerTool) throws -> String
+}
+
 // MARK: - IINKToolController Extensions
 
 // Extensions for IINKToolController to provide convenience wrapper methods.
-extension IINKToolController {
+// Also conforms IINKToolController to ToolControllerProtocol.
+extension IINKToolController: ToolControllerProtocol {
     func setToolForPointerType(tool: IINKPointerTool, pointerType: IINKPointerType) throws {
         try self.set(tool: tool, forType: pointerType)
     }

@@ -132,9 +132,41 @@ export const NotebookUpdateSchema = z.object({
   content: UpdateContentSchema,
 });
 
+// Session model goal schema.
+export const SessionGoalSchema = z.object({
+  description: z.string(),
+  status: z.enum(["active", "completed", "abandoned"]),
+  progress: z.number().min(0).max(100),
+});
+
+// Session model concept status schema.
+export const ConceptStatusSchema = z.object({
+  status: z.enum(["introduced", "practicing", "mastered", "struggling"]),
+  attempts: z.number(),
+});
+
+// Session model signals schema.
+export const SessionSignalsSchema = z.object({
+  engagement: z.enum(["high", "medium", "low"]),
+  frustration: z.enum(["none", "mild", "high"]),
+  pace: z.enum(["fast", "normal", "slow"]),
+});
+
+// Per-session user model schema.
+// Tracks student state throughout a tutoring session.
+export const SessionModelSchema = z.object({
+  session_id: z.string(),
+  turn_count: z.number(),
+  goal: SessionGoalSchema.nullable(),
+  concepts: z.record(z.string(), ConceptStatusSchema),
+  signals: SessionSignalsSchema,
+  facts: z.array(z.string()),
+});
+
 // Alan's complete output schema.
 export const AlanOutputSchema = z.object({
   notebook_updates: z.array(NotebookUpdateSchema),
+  session_model: SessionModelSchema,
 });
 
 // Type exports.
@@ -144,6 +176,10 @@ export type TextSegment = z.infer<typeof TextSegmentSchema>;
 export type TextContent = z.infer<typeof TextContentSchema>;
 export type InputContent = z.infer<typeof InputContentSchema>;
 export type NotebookUpdate = z.infer<typeof NotebookUpdateSchema>;
+export type SessionGoal = z.infer<typeof SessionGoalSchema>;
+export type ConceptStatus = z.infer<typeof ConceptStatusSchema>;
+export type SessionSignals = z.infer<typeof SessionSignalsSchema>;
+export type SessionModel = z.infer<typeof SessionModelSchema>;
 export type AlanOutput = z.infer<typeof AlanOutputSchema>;
 
 // JSON Schema for Gemini structured output.
@@ -174,6 +210,48 @@ export const GEMINI_RESPONSE_SCHEMA = {
         required: ["action", "content"],
       },
     },
+    session_model: {
+      type: "object",
+      properties: {
+        session_id: {type: "string"},
+        turn_count: {type: "number"},
+        goal: {
+          type: "object",
+          nullable: true,
+          properties: {
+            description: {type: "string"},
+            status: {type: "string", enum: ["active", "completed", "abandoned"]},
+            progress: {type: "number"},
+          },
+          required: ["description", "status", "progress"],
+        },
+        concepts: {
+          type: "object",
+          additionalProperties: {
+            type: "object",
+            properties: {
+              status: {type: "string", enum: ["introduced", "practicing", "mastered", "struggling"]},
+              attempts: {type: "number"},
+            },
+            required: ["status", "attempts"],
+          },
+        },
+        signals: {
+          type: "object",
+          properties: {
+            engagement: {type: "string", enum: ["high", "medium", "low"]},
+            frustration: {type: "string", enum: ["none", "mild", "high"]},
+            pace: {type: "string", enum: ["fast", "normal", "slow"]},
+          },
+          required: ["engagement", "frustration", "pace"],
+        },
+        facts: {
+          type: "array",
+          items: {type: "string"},
+        },
+      },
+      required: ["session_id", "turn_count", "goal", "concepts", "signals", "facts"],
+    },
   },
-  required: ["notebook_updates"],
+  required: ["notebook_updates", "session_model"],
 };

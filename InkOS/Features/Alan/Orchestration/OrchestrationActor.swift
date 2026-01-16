@@ -22,6 +22,9 @@ protocol OrchestrationDelegate: AnyObject {
   // Called when streaming text is received (for live typing effect).
   func orchestration(_ orchestration: OrchestrationActor, didReceiveStreamingText text: String)
 
+  // Called when the session model is updated by Alan.
+  func orchestration(_ orchestration: OrchestrationActor, didUpdateSessionModel model: SessionModel)
+
   // Called when all processing is complete.
   func orchestrationDidComplete(_ orchestration: OrchestrationActor, tokenMetadata: TokenMetadata?)
 
@@ -70,7 +73,8 @@ actor OrchestrationActor {
   func sendMessage(
     _ content: String,
     conversationHistory: [ChatMessage],
-    notebookContext: NotebookContext
+    notebookContext: NotebookContext,
+    sessionModel: SessionModel? = nil
   ) async {
     // Build messages array with history and new message.
     var messages = conversationHistory
@@ -79,7 +83,8 @@ actor OrchestrationActor {
     // Start streaming response from Alan.
     let stream = await apiClient.sendMessage(
       messages: messages,
-      notebookContext: notebookContext
+      notebookContext: notebookContext,
+      sessionModel: sessionModel
     )
 
     // Process the stream.
@@ -117,6 +122,10 @@ actor OrchestrationActor {
             startTime: Date()
           )
           collectedRequests.append(request)
+
+        case .sessionModelUpdate(let model):
+          // Notify delegate of updated session model.
+          await notifySessionModelUpdated(model)
 
         case .done(let metadata):
           tokenMetadata = metadata
@@ -238,6 +247,12 @@ actor OrchestrationActor {
   private func notifyStreamingText(_ text: String) async {
     await MainActor.run {
       _delegate?.orchestration(self, didReceiveStreamingText: text)
+    }
+  }
+
+  private func notifySessionModelUpdated(_ model: SessionModel) async {
+    await MainActor.run {
+      _delegate?.orchestration(self, didUpdateSessionModel: model)
     }
   }
 

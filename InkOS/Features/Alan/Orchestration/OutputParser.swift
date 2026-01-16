@@ -72,6 +72,9 @@ struct OutputParser {
         subagentRequests.append(request)
       case .done(let metadata):
         tokenMetadata = metadata
+      case .sessionModelUpdate:
+        // Session model updates are handled by the orchestration layer.
+        break
       case .textChunk, .error:
         // Text chunks are handled elsewhere; errors are thrown.
         break

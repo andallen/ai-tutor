@@ -6,7 +6,7 @@ import {onRequest} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import {z} from "zod";
 import {ALAN_SYSTEM_PROMPT} from "./alanPrompts";
-import {AlanOutputSchema} from "./outputSchema";
+import {AlanOutputSchema, SessionModelSchema} from "./outputSchema";
 
 // Request validation schema.
 const AlanRequestSchema = z.object({
@@ -19,6 +19,7 @@ const AlanRequestSchema = z.object({
     current_blocks: z.array(z.any()).optional(),
     session_topic: z.string().optional(),
   }),
+  session_model: SessionModelSchema.optional(),
 });
 
 type AlanRequest = z.infer<typeof AlanRequestSchema>;
@@ -71,14 +72,23 @@ export const alan = onRequest({cors: true, maxInstances: 10}, async (req, res) =
       parts: [{text: m.content}],
     }));
 
+    // Build system instruction with session model context.
+    let systemPrompt = ALAN_SYSTEM_PROMPT;
+    if (request.session_model) {
+      systemPrompt += `\n\n## Current Session Model\n\`\`\`json\n${JSON.stringify(request.session_model, null, 2)}\n\`\`\``;
+    } else {
+      // First turn - provide default model structure for Alan to initialize.
+      systemPrompt += `\n\n## Current Session Model\nNo session model provided. This is the first turn. Initialize a new session model with session_id: "${request.notebook_context.document_id}", turn_count: 1, goal: null, concepts: {}, signals with medium engagement/none frustration/normal pace, and empty facts array.`;
+    }
+
     // Call Gemini with streaming.
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
 
     const geminiResponse = await fetch(geminiUrl, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        systemInstruction: {parts: [{text: ALAN_SYSTEM_PROMPT}]},
+        systemInstruction: {parts: [{text: systemPrompt}]},
         contents,
         generationConfig: {
           temperature: 0.7,
@@ -147,6 +157,8 @@ export const alan = onRequest({cors: true, maxInstances: 10}, async (req, res) =
         for (const update of validated.data.notebook_updates) {
           res.write(`data: ${JSON.stringify({notebook_update: update})}\n\n`);
         }
+        // Send the updated session model.
+        res.write(`data: ${JSON.stringify({session_model: validated.data.session_model})}\n\n`);
       } else {
         logger.warn("Alan output validation failed", {error: validated.error});
         // Still send the raw output.
@@ -201,13 +213,21 @@ export const alanSync = onRequest({cors: true, maxInstances: 10}, async (req, re
       parts: [{text: m.content}],
     }));
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    // Build system instruction with session model context.
+    let systemPrompt = ALAN_SYSTEM_PROMPT;
+    if (request.session_model) {
+      systemPrompt += `\n\n## Current Session Model\n\`\`\`json\n${JSON.stringify(request.session_model, null, 2)}\n\`\`\``;
+    } else {
+      systemPrompt += `\n\n## Current Session Model\nNo session model provided. This is the first turn. Initialize a new session model with session_id: "${request.notebook_context.document_id}", turn_count: 1, goal: null, concepts: {}, signals with medium engagement/none frustration/normal pace, and empty facts array.`;
+    }
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     const geminiResponse = await fetch(geminiUrl, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        systemInstruction: {parts: [{text: ALAN_SYSTEM_PROMPT}]},
+        systemInstruction: {parts: [{text: systemPrompt}]},
         contents,
         generationConfig: {
           temperature: 0.7,
