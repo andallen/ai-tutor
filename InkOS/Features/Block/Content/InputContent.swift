@@ -3,7 +3,7 @@
 // InkOS
 //
 // User input collection (text, handwriting, multiple choice, quizzes, etc.).
-// Rendered natively using SwiftUI + MyScript SDK.
+// Rendered natively using SwiftUI.
 //
 
 import Foundation

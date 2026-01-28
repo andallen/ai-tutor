@@ -1369,7 +1369,6 @@ PODS:
   - GTMSessionFetcher/Core (5.0.0)
   - iosMath (0.9.4)
   - leveldb-library (1.22.6)
-  - MyScriptInteractiveInk-Runtime (4.2.1)
   - nanopb (3.30910.0):
     - nanopb/decode (= 3.30910.0)
     - nanopb/encode (= 3.30910.0)
@@ -1388,7 +1387,6 @@ DEPENDENCIES:
   - FirebaseSharedSwift
   - GoogleUtilities
   - iosMath
-  - MyScriptInteractiveInk-Runtime (= 4.2.1)
   - RecaptchaInterop
 
 SPEC REPOS:
@@ -1410,7 +1408,6 @@ SPEC REPOS:
     - GTMSessionFetcher
     - iosMath
     - leveldb-library
-    - MyScriptInteractiveInk-Runtime
     - nanopb
     - RecaptchaInterop
 
@@ -1432,10 +1429,9 @@ SPEC CHECKSUMS:
   GTMSessionFetcher: 02d6e866e90bc236f48a703a041dfe43e6221a29
   iosMath: f7a6cbadf9d836d2149c2a84c435b1effc244cba
   leveldb-library: cc8b8f8e013647a295ad3f8cd2ddf49a6f19be19
-  MyScriptInteractiveInk-Runtime: 2cc9860d6a22673764b79b0f13f07be9bf8a3729
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
 
-PODFILE CHECKSUM: da7d3aa2d5809dd49641c7a1952ea894590ba779
+PODFILE CHECKSUM: 85c2ed298402c3d082e8169787f6525702564eab
 
 COCOAPODS: 1.16.2

@@ -58,11 +58,15 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AE1AC10E2EFB3B9E00E6E4BA /* InkOSUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = InkOSUITests;
 			sourceTree = "<group>";
 		};
 		AEA6BC452EF8643800D18138 /* recognition-assets */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = "recognition-assets";
 			sourceTree = "<group>";
 		};
@@ -76,6 +80,8 @@
 		};
 		AECB52322F022B2B007CACA0 /* InkOSTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = InkOSTests;
 			sourceTree = "<group>";
 		};
@@ -309,13 +315,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-InkOS/Pods-InkOS-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-InkOS/Pods-InkOS-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
