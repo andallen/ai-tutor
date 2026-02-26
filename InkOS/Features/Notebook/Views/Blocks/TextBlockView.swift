@@ -16,7 +16,6 @@ import SwiftUI
 struct TextBlockView: View {
   let content: TextContent
   let animationState: BlockAnimationState
-  let isMetaballTarget: Bool
 
   var body: some View {
     VStack(alignment: swiftUIAlignment, spacing: verticalSpacing) {
@@ -24,8 +23,7 @@ struct TextBlockView: View {
         SegmentGroupView(
           group: group,
           animationState: animationState,
-          sequenceIndex: index,
-          reportAnchor: isMetaballTarget && index == 0
+          sequenceIndex: index
         )
       }
     }
@@ -103,12 +101,10 @@ enum SegmentGroup {
 // MARK: - SegmentGroupView
 
 // Renders a segment group - either inline text or a block segment.
-// Reports anchor preference for current visible text when metaball targeting is active.
 struct SegmentGroupView: View {
   let group: SegmentGroup
   let animationState: BlockAnimationState
   let sequenceIndex: Int
-  let reportAnchor: Bool
 
   var body: some View {
     content
@@ -118,34 +114,14 @@ struct SegmentGroupView: View {
   private var content: some View {
     switch group {
     case .inline(let segments):
-      // StreamingTextView handles its own anchor reporting for visible text.
-      StreamingTextView(segments: segments, animationState: animationState, reportAnchor: reportAnchor)
+      StreamingTextView(segments: segments, animationState: animationState)
     case .block(let segment):
       BlockSegmentView(
         segment: segment,
         animationState: animationState,
         sequenceIndex: sequenceIndex
       )
-      .anchorPreference(key: FirstLineAnchor.self, value: .bounds) { anchor in
-        reportAnchor ? anchor : nil
-      }
     }
-  }
-}
-
-// MARK: - FirstLineMeasurementView
-
-// Invisible view that measures the height of a single line of text.
-// Used to report the anchor for the first line only.
-struct FirstLineMeasurementView: View {
-  let font: Font
-
-  var body: some View {
-    // Single character to get exact line height for this font.
-    Text("X")
-      .font(font)
-      .opacity(0)
-      .accessibilityHidden(true)
   }
 }
 
@@ -157,7 +133,6 @@ struct FirstLineMeasurementView: View {
 struct StreamingTextView: View {
   let segments: [TextSegment]
   let animationState: BlockAnimationState
-  let reportAnchor: Bool
 
   // Animation timing.
   private let charactersPerSecond: Double = 60
@@ -199,31 +174,12 @@ struct StreamingTextView: View {
     Group {
       switch animationState {
       case .waiting:
-        // Hidden but still reports anchor for smooth blob positioning during transitions.
+        // Hidden to preserve layout space before reveal.
         staticText.hidden()
-          .anchorPreference(key: FirstLineAnchor.self, value: .bounds) { anchor in
-            reportAnchor ? anchor : nil
-          }
       case .animating:
         TimelineView(.animation) { timeline in
           let elapsed = elapsedTime(at: timeline.date)
-          let visibleCount = visibleCharacterCount(at: elapsed)
-          // Anchor leads visible text so blob moves before new line appears.
-          let anchorLeadCharacters = 8
-          let anchorCount = min(visibleCount + anchorLeadCharacters, allPlainText.count)
-
-          ZStack(alignment: .topLeading) {
-            // The streaming text with per-character opacity.
-            streamingText(elapsed: elapsed)
-
-            // Invisible measurement text leads visible text slightly.
-            // Blob moves to new line position just before text wraps there.
-            if reportAnchor {
-              styledText(String(allPlainText.prefix(anchorCount)), style: textStyle)
-                .opacity(0)
-                .anchorPreference(key: FirstLineAnchor.self, value: .bounds) { $0 }
-            }
-          }
+          streamingText(elapsed: elapsed)
         }
         .onAppear {
           if animationStartTime == nil {
@@ -232,20 +188,8 @@ struct StreamingTextView: View {
         }
       case .complete:
         staticText
-          .anchorPreference(key: FirstLineAnchor.self, value: .bounds) { anchor in
-            reportAnchor ? anchor : nil
-          }
       }
     }
-  }
-
-  // Calculates visible character count efficiently using math.
-  // O(1) for plain text without pauses.
-  private func visibleCharacterCount(at elapsed: Double) -> Int {
-    let fadeDuration = 3.0 / charactersPerSecond
-    let effectiveElapsed = max(0, elapsed - fadeDuration)
-    let count = Int(effectiveElapsed * charactersPerSecond)
-    return min(count, allPlainText.count)
   }
 
   private func elapsedTime(at date: Date) -> Double {

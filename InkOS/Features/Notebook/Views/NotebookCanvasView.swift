@@ -4,7 +4,6 @@
 //
 // Pure white canvas that renders the notebook document.
 // User taps anywhere on content to advance to the next block.
-// Alan's presence indicator (metaball) tracks the currently animating block.
 // Fixed input bar at the bottom of the screen for messaging Alan.
 // Uses ScrollView with LazyVStack for performance.
 // Follows Apple HIG for iPad with proper touch targets and safe areas.
@@ -27,11 +26,6 @@ struct NotebookCanvasView: View {
   @Bindable var viewModel: NotebookViewModel
   @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-  // Animated Y position for smooth blob movement.
-  // Updated with spring animation when anchor position changes.
-  // Initial position near top of content area.
-  @State private var animatedBlobY: CGFloat = 60
-
   // Shared input view model for user input zone.
   @State private var inputViewModel = CanvasInputViewModel()
 
@@ -40,15 +34,12 @@ struct NotebookCanvasView: View {
       // Main scrollable content with tap-to-advance.
       ScrollViewReader { scrollProxy in
         ScrollView {
-          // Content with blob positioned relative to anchor.
-          // Blob is inside ScrollView so it scrolls naturally with content.
           LazyVStack(spacing: 0) {
             // Alan's content blocks.
             ForEach(viewModel.document.blocks, id: \.id) { block in
               BlockContainerView(
                 block: block,
-                animationState: viewModel.animationState[block.id] ?? .waiting,
-                isMetaballTarget: block.id == viewModel.metaballTargetBlockId
+                animationState: viewModel.animationState[block.id] ?? .waiting
               )
             }
 
@@ -58,68 +49,18 @@ struct NotebookCanvasView: View {
                 response: preview.response,
                 timestamp: preview.timestamp
               )
-              .padding(.horizontal, horizontalPadding)
               .padding(.top, NotebookSpacing.lg)
               .id("preview_\(preview.id)")
             }
 
             // User input zone - drawing and text area below content.
             userInputZone
-              .padding(.horizontal, horizontalPadding)
               .padding(.top, NotebookSpacing.xl)
               .id("input_zone")
           }
           .padding(.horizontal, horizontalPadding)
           .padding(.top, 100)
           .padding(.bottom, 160)  // Extra padding for fixed input bar
-          // Position blob inside content using background preference reader.
-          // This makes the blob scroll with the content naturally.
-          .backgroundPreferenceValue(FirstLineAnchor.self) { anchor in
-            GeometryReader { geometry in
-              // Calculate target position from anchor.
-              // Only use anchor when a block is actually animating (not just waiting).
-              let targetY: CGFloat? = {
-                guard viewModel.hasAnimatingBlock, let anchor = anchor else { return nil }
-                let frame = geometry[anchor]
-                return frame.maxY + NotebookSpacing.lg
-              }()
-
-              // X position: align leftmost orbiting dot with text's left edge.
-              // Frame is 100x100. Orbit radius is 0.55 in UV (-1 to 1), so ~55px diameter.
-              // Leftmost dot = frame_left + 22.5. To align with text: blobX = padding + 27.5.
-              // Account for the larger tap target (140pt) centering.
-              let blobX: CGFloat = horizontalPadding + 28
-
-              // Blob with expanded tap target.
-              // Visual is 100pt, tap target is 140pt for easier interaction.
-              ZStack {
-                // Invisible tap target (140pt diameter).
-                Circle()
-                  .fill(Color.clear)
-                  .frame(width: 140, height: 140)
-                  .contentShape(Circle())
-
-                // Visual blob (100pt frame).
-                AlanPresenceView(state: viewModel.alanState)
-              }
-              .onTapGesture {
-                viewModel.handleBlobTap()
-              }
-              .position(
-                x: blobX,
-                y: animatedBlobY
-              )
-              .accessibilityIdentifier("alan_presence_blob")
-              .onChange(of: targetY) { _, newY in
-                // Only animate when we have a valid anchor position.
-                // Prevents jumping to default when anchor is briefly nil during transitions.
-                guard let newY = newY else { return }
-                withAnimation(.spring(response: 0.15, dampingFraction: 0.85)) {
-                  animatedBlobY = newY
-                }
-              }
-            }
-          }
         }
         .background(NotebookPalette.paper)
         .contentShape(Rectangle())
@@ -135,16 +76,29 @@ struct NotebookCanvasView: View {
           }
         }
       }
+      .accessibilityIdentifier("notebook_canvas")
+
+      // Error banner (if any). Auto-dismisses after 8 seconds.
+      if let error = viewModel.errorMessage {
+        errorBanner(error)
+          .padding(.horizontal, 20)
+          .padding(.bottom, 8)
+          .transition(.move(edge: .bottom).combined(with: .opacity))
+          .task(id: error) {
+            // Task is automatically cancelled when the error changes or view disappears.
+            try? await Task.sleep(for: .seconds(8))
+            guard !Task.isCancelled else { return }
+            withAnimation {
+              viewModel.errorMessage = nil
+            }
+          }
+      }
 
       // Glass pill toolbar centered at bottom of screen.
       canvasInputBar
         .padding(.bottom, 30)
     }
     .background(NotebookPalette.paper)
-    .accessibilityIdentifier("notebook_canvas")
-    .onAppear {
-      viewModel.prepareFirstBlock()
-    }
   }
 
   // MARK: - User Input Zone
@@ -162,6 +116,35 @@ struct NotebookCanvasView: View {
     CanvasInputBar(viewModel: inputViewModel) { response in
       viewModel.submitCanvasInput(response)
     }
+  }
+
+  // Error banner shown when Alan encounters an error.
+  private func errorBanner(_ message: String) -> some View {
+    HStack(spacing: 8) {
+      Image(systemName: "exclamationmark.circle.fill")
+        .foregroundColor(.red)
+      Text(message)
+        .font(NotebookTypography.caption)
+        .foregroundColor(NotebookPalette.ink)
+        .lineLimit(2)
+
+      Spacer()
+
+      Button(action: { viewModel.errorMessage = nil }) {
+        Image(systemName: "xmark")
+          .font(.system(size: 12, weight: .bold))
+          .foregroundColor(NotebookPalette.inkSubtle)
+      }
+    }
+    .padding(12)
+    .background(
+      RoundedRectangle(cornerRadius: 10)
+        .fill(Color.red.opacity(0.08))
+    )
+    .overlay(
+      RoundedRectangle(cornerRadius: 10)
+        .stroke(Color.red.opacity(0.2), lineWidth: 1)
+    )
   }
 
   // Responsive horizontal padding based on size class.
@@ -209,6 +192,7 @@ struct CanvasInputBar: View {
       // Glass pill toolbar.
       glassPillToolbar
     }
+    .accessibilityElement(children: .contain)
     .accessibilityIdentifier("canvas_input_bar")
     .onChange(of: selectedPhotos) { _, newItems in
       Task {
@@ -360,5 +344,7 @@ struct CanvasInputBar: View {
 // MARK: - Preview
 
 #Preview {
-  NotebookCanvasView(viewModel: NotebookViewModel(document: .preview))
+  NotebookCanvasView(
+    viewModel: NotebookViewModel(document: .preview)
+  )
 }
