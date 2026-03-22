@@ -9,14 +9,6 @@ DerivedData/
 *.tmp
 .cursor/
 *.moved-aside
-Resources/
-recognition-assets/
-Pods/
-Pods_old/
 buildServer.json
 .xcode-home/
-
-# Secrets and credentials
-GoogleService-Info.plist
-Firebase/functions/.env*
-*.env.local
+Logs.nosync/
