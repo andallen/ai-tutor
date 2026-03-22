@@ -137,7 +137,9 @@ struct NoteCanvasView: View {
     let bounds = drawing.bounds
     let image = drawing.image(from: bounds, scale: 2.0)
 
-    guard let pngData = image.pngData() else { return }
+    guard let cgImage = image.cgImage,
+          let pngData = PNGMetadata.buildMarkedPNG(from: cgImage)
+    else { return }
 
     UIPasteboard.general.setData(pngData, forPasteboardType: "public.png")
 
