@@ -89,20 +89,29 @@ class ClipboardMonitor {
     }
   }
 
-  // Simulates Ctrl+V keystroke in the frontmost app.
+  // Simulates Ctrl+V keystroke in the frontmost app using CGEvent.
+  // Only requires Accessibility permission (no Automation needed).
   // Claude Code intercepts Ctrl+V for image paste in the terminal.
   private func simulateCtrlV() {
-    let script = NSAppleScript(source: """
-      tell application "System Events"
-        keystroke "v" using control down
-      end tell
-      """)
-    var error: NSDictionary?
-    script?.executeAndReturnError(&error)
-    if let error = error {
-      print("[InkOSRelay] AppleScript error: \(error)")
-    } else {
-      print("[InkOSRelay] Pasted successfully.")
+    let vKeyCode: UInt16 = 9
+
+    // Key down with control modifier.
+    guard let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: vKeyCode, keyDown: true) else {
+      print("[InkOSRelay] Failed to create key down event.")
+      return
     }
+    keyDown.flags = .maskControl
+
+    // Key up with control modifier.
+    guard let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: vKeyCode, keyDown: false) else {
+      print("[InkOSRelay] Failed to create key up event.")
+      return
+    }
+    keyUp.flags = .maskControl
+
+    keyDown.post(tap: .cghidEventTap)
+    keyUp.post(tap: .cghidEventTap)
+
+    print("[InkOSRelay] Pasted successfully.")
   }
 }
