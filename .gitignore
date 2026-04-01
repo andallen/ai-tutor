@@ -13,3 +13,5 @@ buildServer.json
 .xcode-home/
 Logs.nosync/
 Logs/
+.claude/
+apple-hig/
