@@ -12,9 +12,8 @@ import ImageIO
 
 // Capture mode embedded in PNG metadata by the iPad app.
 enum CaptureMode: String {
-  case crop       = "crop"
-  case viewport   = "viewport"
-  case fullCanvas = "fullCanvas"
+  case crop     = "crop"
+  case viewport = "viewport"
 }
 
 enum PNGCaptureMode {

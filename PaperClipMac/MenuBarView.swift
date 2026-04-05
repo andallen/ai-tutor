@@ -34,8 +34,7 @@ struct MenuBarView: View {
       if let imageData = service.lastReceivedImage,
         let nsImage = NSImage(data: imageData)
       {
-        let useRoundedCorners = service.lastCaptureMode != .fullCanvas
-        thumbnailView(nsImage, roundedCorners: useRoundedCorners)
+        thumbnailView(nsImage, roundedCorners: true)
           .padding(.horizontal, 16)
           .padding(.bottom, 10)
       }

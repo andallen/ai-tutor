@@ -3,7 +3,7 @@
 // PaperClip
 //
 // Full-screen PencilKit canvas for drawing.
-// Three send modes: crop (rectangle drag), viewport (current screen), full canvas.
+// Two send modes: crop (rectangle drag) and viewport (current screen).
 // Floating send button + mode picker pill in the bottom-right corner.
 // Canvas is capped at 4000pt (8000px at 2x) to fit Claude Code's image limit.
 // Shows an end-of-canvas indicator when the user scrolls near the bottom.
@@ -16,9 +16,8 @@ import SwiftUI
 
 // Which region of the canvas to capture when the user taps Send.
 enum SendMode: String {
-  case crop       // User drags a rectangle to select a region.
-  case viewport   // Captures strokes visible in the current scroll position.
-  case fullCanvas // Captures from y=0 to the bottommost stroke.
+  case crop      // User drags a rectangle to select a region.
+  case viewport  // Captures strokes visible in the current scroll position.
 }
 
 // MARK: - NoteCanvasView
@@ -199,9 +198,8 @@ struct NoteCanvasView: View {
   // Display name shown in the fade-out label when the user switches modes.
   private var modeDisplayName: String {
     switch sendMode {
-    case .crop:       return "Crop"
-    case .viewport:   return "This screen"
-    case .fullCanvas: return "Full canvas"
+    case .crop:     return "Crop"
+    case .viewport: return "This screen"
     }
   }
 
@@ -210,9 +208,8 @@ struct NoteCanvasView: View {
   private var canSend: Bool {
     guard transferService.connectionState == .connected else { return false }
     switch sendMode {
-    case .crop:       return cropContentRect() != nil
-    case .viewport:   return viewportContentRect() != nil
-    case .fullCanvas: return fullCanvasRect() != nil
+    case .crop:     return cropContentRect() != nil
+    case .viewport: return viewportContentRect() != nil
     }
   }
 
@@ -237,15 +234,6 @@ struct NoteCanvasView: View {
     }
     guard hasVisible else { return nil }
     return viewport
-  }
-
-  // Returns the rect from y=0 to the bottommost stroke, full viewport width.
-  // Trailing whitespace below the last stroke is cropped.
-  private func fullCanvasRect() -> CGRect? {
-    guard !viewModel.drawing.strokes.isEmpty else { return nil }
-    let bottom = viewModel.drawing.bounds.maxY
-    guard bottom > 0, viewportWidth > 0 else { return nil }
-    return CGRect(x: 0, y: 0, width: viewportWidth, height: bottom)
   }
 
   // Returns the crop rectangle if it contains at least one stroke.
@@ -423,19 +411,6 @@ struct NoteCanvasView: View {
       }
       .accessibilityLabel("Viewport mode")
 
-      // Full canvas mode.
-      Button {
-        switchMode(to: .fullCanvas)
-      } label: {
-        Image(systemName: "doc.text")
-          .font(.system(size: 18, weight: .medium))
-          .foregroundColor(sendMode == .fullCanvas
-                           ? NotebookPalette.ink
-                           : NotebookPalette.inkFaint)
-          .frame(width: 44, height: 44)
-          .contentShape(Rectangle())
-      }
-      .accessibilityLabel("Full canvas mode")
     }
     .liquidGlassBackground(cornerRadius: 22)
   }
@@ -568,9 +543,8 @@ struct NoteCanvasView: View {
   private func sendDrawing() {
     let rect: CGRect?
     switch sendMode {
-    case .crop:       rect = cropContentRect()
-    case .viewport:   rect = viewportContentRect()
-    case .fullCanvas: rect = fullCanvasRect()
+    case .crop:     rect = cropContentRect()
+    case .viewport: rect = viewportContentRect()
     }
     guard let captureRect = rect else { return }
 
@@ -599,9 +573,8 @@ struct NoteCanvasView: View {
     // Map SendMode to CaptureMode for PNG metadata.
     let captureMode: CaptureMode
     switch sendMode {
-    case .crop:       captureMode = .crop
-    case .viewport:   captureMode = .viewport
-    case .fullCanvas: captureMode = .fullCanvas
+    case .crop:     captureMode = .crop
+    case .viewport: captureMode = .viewport
     }
 
     guard let cgImage = composited.cgImage,

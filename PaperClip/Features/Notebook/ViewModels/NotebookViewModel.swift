@@ -87,6 +87,12 @@ final class NoteViewModel {
   func saveNow() {
     guard var note = noteData, let service = noteService else { return }
 
+    // Sync title from service in case the note was renamed since it was loaded.
+    // Without this, auto-save would overwrite a rename with the stale title.
+    if let current = service.notes.first(where: { $0.id == note.metadata.id }) {
+      note.metadata.title = current.title
+    }
+
     // Serialize drawing.
     note.drawingData = drawing.dataRepresentation()
     note.metadata.updatedAt = Date()

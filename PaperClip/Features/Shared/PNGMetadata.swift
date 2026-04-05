@@ -14,9 +14,8 @@ import UniformTypeIdentifiers
 // Capture mode tag stored alongside the PaperClip marker in PNG metadata.
 // Used by the Mac app to decide display treatment (e.g. rounded corners).
 enum CaptureMode: String {
-  case crop       = "crop"
-  case viewport   = "viewport"
-  case fullCanvas = "fullCanvas"
+  case crop     = "crop"
+  case viewport = "viewport"
 }
 
 enum PNGMetadata {
