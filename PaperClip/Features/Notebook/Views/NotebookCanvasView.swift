@@ -700,10 +700,14 @@ struct NoteCanvasView: View {
       }
 
       // Troubleshooting steps.
-      helpStep(
-        number: "1",
-        text: "Install **PaperClip Receiver** on your Mac. It's a free companion app that lives in your menu bar"
-      )
+      if !transferService.hasEverConnectedToMac {
+        firstTimeStep1
+      } else {
+        helpStep(
+          number: "1",
+          text: "Install **PaperClip Receiver** on your Mac. It's a free companion app that lives in your menu bar"
+        )
+      }
 
       helpStep(
         number: "2",
@@ -746,6 +750,50 @@ struct NoteCanvasView: View {
         .font(NotebookTypography.caption)
         .foregroundColor(NotebookPalette.inkSubtle)
         .fixedSize(horizontal: false, vertical: true)
+    }
+  }
+
+  // AttributedString for help card step 1: makes "PaperClip Receiver" a
+  // tappable link rendered in ink color (not blue).
+  private var step1AttributedText: AttributedString {
+    var text = AttributedString("Install ")
+
+    var linkPart = AttributedString("PaperClip Receiver")
+    linkPart.font = NotebookTypography.nunitoFont(size: 13, weight: .bold)
+    linkPart.foregroundColor = NotebookPalette.ink
+    linkPart.link = AppStoreLinks.macReceiverURL
+
+    var rest = AttributedString(" on your Mac. It's a free companion app that lives in your menu bar")
+
+    text.append(linkPart)
+    text.append(rest)
+    return text
+  }
+
+  // Step-1 row for first-time users: same layout as helpStep but with
+  // "PaperClip Receiver" as an inline tappable link.
+  private var firstTimeStep1: some View {
+    HStack(alignment: .top, spacing: 10) {
+      // Number badge — matches helpStep styling.
+      Text("1")
+        .font(.system(size: 12, weight: .bold, design: .rounded))
+        .foregroundColor(NotebookPalette.paper)
+        .frame(width: 22, height: 22)
+        .background(Circle().fill(NotebookPalette.ink))
+
+      // Attributed text with tappable phrase.
+      // .font and .foregroundColor set defaults for characters without explicit
+      // attributes. .tint overrides SwiftUI's default blue for link ranges,
+      // making the tappable phrase render in ink color instead.
+      Text(step1AttributedText)
+        .font(NotebookTypography.caption)
+        .foregroundColor(NotebookPalette.inkSubtle)
+        .tint(NotebookPalette.ink)
+        .fixedSize(horizontal: false, vertical: true)
+        .environment(\.openURL, OpenURLAction { _ in
+          AppStoreLinks.openMacReceiver()
+          return .handled
+        })
     }
   }
 }
