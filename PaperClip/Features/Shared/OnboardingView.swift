@@ -314,7 +314,8 @@ struct OnboardingView: View {
           icon: "arrow.down.circle",
           title: "Get PaperClip for Mac",
           detail: Text("Free companion app — lives in your menu bar"),
-          visible: checkVisible[0]
+          visible: checkVisible[0],
+          action: AppStoreLinks.openMacReceiver
         )
 
         setupCard(
@@ -361,12 +362,14 @@ struct OnboardingView: View {
     .padding(.horizontal, 40)
   }
 
-  // Setup step card with icon, title, detail, and liquid glass background.
+  // Setup step card with icon, title, detail, and optional tap action.
+  // When action is non-nil, a subtle arrow glyph appears and the card is tappable.
   private func setupCard(
     icon: String,
     title: String,
     detail: Text,
-    visible: Bool
+    visible: Bool,
+    action: (() -> Void)? = nil
   ) -> some View {
     HStack(spacing: 14) {
       // Icon in a subtle ink-tinted circle.
@@ -388,11 +391,19 @@ struct OnboardingView: View {
       }
 
       Spacer()
+
+      // Trailing arrow — only visible when the card is tappable.
+      if action != nil {
+        Image(systemName: "arrow.up.right")
+          .font(.system(size: 12, weight: .medium))
+          .foregroundColor(NotebookPalette.inkFaint)
+      }
     }
     .padding(16)
     .liquidGlassBackground(cornerRadius: 14)
     .opacity(visible ? 1 : 0)
     .offset(y: visible ? 0 : 10)
+    .onTapGesture { action?() }
   }
 
   // MARK: - Page Indicator
