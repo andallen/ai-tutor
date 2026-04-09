@@ -404,6 +404,7 @@ struct OnboardingView: View {
     .opacity(visible ? 1 : 0)
     .offset(y: visible ? 0 : 10)
     .onTapGesture { action?() }
+    .allowsHitTesting(visible)
   }
 
   // MARK: - Page Indicator
