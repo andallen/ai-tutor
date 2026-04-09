@@ -763,7 +763,7 @@ struct NoteCanvasView: View {
     linkPart.foregroundColor = NotebookPalette.ink
     linkPart.link = AppStoreLinks.macReceiverURL
 
-    var rest = AttributedString(" on your Mac. It's a free companion app that lives in your menu bar")
+    let rest = AttributedString(" on your Mac. It's a free companion app that lives in your menu bar")
 
     text.append(linkPart)
     text.append(rest)
