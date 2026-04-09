@@ -763,9 +763,14 @@ struct NoteCanvasView: View {
     linkPart.foregroundColor = NotebookPalette.ink
     linkPart.link = AppStoreLinks.macReceiverURL
 
+    var arrow = AttributedString(" ↗")
+    arrow.font = NotebookTypography.nunitoFont(size: 11, weight: .regular)
+    arrow.foregroundColor = NotebookPalette.inkFaint
+
     let rest = AttributedString(" on your Mac. It's a free companion app that lives in your menu bar")
 
     text.append(linkPart)
+    text.append(arrow)
     text.append(rest)
     return text
   }
